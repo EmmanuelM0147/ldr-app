@@ -897,7 +897,7 @@ components:
     Visit:
       type: object
       additionalProperties: false
-      required: [id, couple_id, created_by, title, starts_at, ends_at, location, notes, budget, created_at, updated_at]
+      required: [id, couple_id, created_by, title, starts_at, ends_at, location, notes, traveler_user_id, budget, created_at, updated_at]
       properties:
         id:
           type: string
@@ -922,6 +922,11 @@ components:
         notes:
           type: string
           nullable: true
+        traveler_user_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Couple member who is traveling for this visit
         budget:
           nullable: true
           allOf:
@@ -955,6 +960,11 @@ components:
           type: string
           maxLength: 2000
           nullable: true
+        traveler_user_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Optional couple member who is traveling
         budget:
           allOf:
             - $ref: "#/components/schemas/BudgetWrite"
@@ -981,6 +991,10 @@ components:
         notes:
           type: string
           maxLength: 2000
+          nullable: true
+        traveler_user_id:
+          type: string
+          format: uuid
           nullable: true
     Countdown:
       type: object

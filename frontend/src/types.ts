@@ -77,6 +77,7 @@ export type Visit = {
   ends_at: string
   location: string | null
   notes: string | null
+  traveler_user_id: string | null
   budget: Budget | null
   created_at: string
   updated_at: string
@@ -88,6 +89,7 @@ export type VisitWrite = {
   ends_at: string
   location?: string | null
   notes?: string | null
+  traveler_user_id?: string | null
   budget?: Budget | null
 }
 

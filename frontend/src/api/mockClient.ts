@@ -338,6 +338,10 @@ export function createMockClient(options: Options = {}) {
         }
         budget = clone(input.budget)
       }
+      const traveler = input.traveler_user_id ?? null
+      if (traveler && !couple.members.some((member) => member.user_id === traveler)) {
+        throw new ApiError(422, "Traveler must be a member of this space.")
+      }
       const visit: Visit = {
         id: newId(),
         couple_id: couple.id,
@@ -347,6 +351,7 @@ export function createMockClient(options: Options = {}) {
         ends_at: input.ends_at,
         location: blankToNull(input.location),
         notes: blankToNull(input.notes),
+        traveler_user_id: traveler,
         budget,
         created_at: stamp,
         updated_at: stamp,

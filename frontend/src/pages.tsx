@@ -11,6 +11,7 @@ import { PartnerHomeCards } from "./components/PartnerHomeCards"
 import { PartnerTodayCards } from "./components/PartnerTodayCards"
 import { QuickActions } from "./components/QuickActions"
 import { itemsThisWeek, ThisWeekList } from "./components/ThisWeekList"
+import { VisitCard } from "./components/VisitCard"
 import {
   BudgetFields,
   BudgetForm,
@@ -22,7 +23,7 @@ import {
   MemoryList,
   RegisterForm,
 } from "./components/widgets"
-import { formatMoney, formatWhen, localDate } from "./format"
+import { formatWhen, localDate } from "./format"
 import { useSession } from "./session"
 import type { CheckIn, EventItem, Memory, Visit } from "./types"
 
@@ -382,6 +383,7 @@ export function VisitsPage() {
       setError(parsed.error)
       return
     }
+    const travelerRaw = String(data.get("traveler_user_id") ?? "").trim()
     setError(null)
     void client
       ?.createVisit({
@@ -389,6 +391,7 @@ export function VisitsPage() {
         starts_at: starts,
         ends_at: ends,
         location: String(data.get("location") ?? ""),
+        traveler_user_id: travelerRaw || null,
         budget: parsed.budget,
       })
       .then(() => {
@@ -404,7 +407,7 @@ export function VisitsPage() {
     <main className="sheet">
       <h1>Visits</h1>
       {countdown ? <CountdownCard countdown={countdown} timeZone={user.timezone} /> : null}
-      <form onSubmit={addVisit} className="stack">
+      <form onSubmit={addVisit} className="stack card">
         <label className="field">
           <span>Title</span>
           <input name="title" required />
@@ -418,8 +421,19 @@ export function VisitsPage() {
           <input name="ends_at" type="datetime-local" required />
         </label>
         <label className="field">
-          <span>City</span>
+          <span>Route / city</span>
           <input name="location" />
+        </label>
+        <label className="field">
+          <span>Traveler</span>
+          <select name="traveler_user_id" defaultValue="">
+            <option value="">Not set</option>
+            {members.map((member) => (
+              <option key={member.user_id} value={member.user_id}>
+                {member.display_name}
+              </option>
+            ))}
+          </select>
         </label>
         {me && them ? (
           <>
@@ -436,23 +450,13 @@ export function VisitsPage() {
       {error ? <p className="error">{error}</p> : null}
       <ul className="list">
         {visits.map((visit) => (
-          <li key={visit.id} className="card">
-            <h2>{visit.title}</h2>
-            <p className="muted">
-              {formatWhen(visit.starts_at, user.timezone)} – {formatWhen(visit.ends_at, user.timezone)}
-            </p>
-            {visit.location ? <p>{visit.location}</p> : null}
-            {visit.budget ? (
-              <p>
-                {formatMoney(visit.budget.total_minor, visit.budget.currency)} split{" "}
-                {visit.budget.shares
-                  .map((share) => {
-                    const name = members.find((member) => member.user_id === share.user_id)?.display_name
-                    return `${name ?? "Partner"} ${formatMoney(share.amount_minor, visit.budget?.currency ?? "USD")}`
-                  })
-                  .join(" / ")}
-              </p>
-            ) : null}
+          <li key={visit.id}>
+            <VisitCard
+              visit={visit}
+              members={members}
+              timeZone={user.timezone}
+              onRemove={() => void client.deleteVisit(visit.id).then(reload)}
+            />
             {me && them ? (
               <BudgetForm
                 memberIds={[me.user_id, them.user_id]}
@@ -462,12 +466,7 @@ export function VisitsPage() {
                   })
                 }}
               />
-            ) : (
-              <p className="muted">The split opens when you are both here.</p>
-            )}
-            <button className="textish" type="button" onClick={() => void client.deleteVisit(visit.id).then(reload)}>
-              Remove visit
-            </button>
+            ) : null}
           </li>
         ))}
       </ul>

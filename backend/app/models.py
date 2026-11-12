@@ -91,6 +91,7 @@ class Visit(Base):
     ends_at: Mapped[datetime] = mapped_column(UtcDateTime)
     location: Mapped[str | None] = mapped_column(String(120), nullable=True)
     notes: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+    traveler_user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(UtcDateTime)
     updated_at: Mapped[datetime] = mapped_column(UtcDateTime)
 

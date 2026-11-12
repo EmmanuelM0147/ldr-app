@@ -483,6 +483,8 @@ export interface components {
             ends_at: string;
             location: string | null;
             notes: string | null;
+            /** Format: uuid */
+            traveler_user_id: string | null;
             budget: components["schemas"]["Budget"] | null;
             /** Format: date-time */
             created_at: string;
@@ -497,6 +499,8 @@ export interface components {
             ends_at: string;
             location?: string | null;
             notes?: string | null;
+            /** Format: uuid */
+            traveler_user_id?: string | null;
             /** @description Optional split set when both partners are in the space */
             budget?: components["schemas"]["BudgetWrite"] | null;
         };
@@ -508,6 +512,8 @@ export interface components {
             ends_at?: string;
             location?: string | null;
             notes?: string | null;
+            /** Format: uuid */
+            traveler_user_id?: string | null;
         };
         Countdown: {
             visit: components["schemas"]["Visit"] | null;

@@ -31,6 +31,15 @@ def _visit_for_couple(db: Session, couple_id: uuid.UUID, visit_id: uuid.UUID) ->
     return visit
 
 
+def _traveler_for_couple(couple: Couple, traveler_user_id: uuid.UUID | None) -> uuid.UUID | None:
+    if traveler_user_id is None:
+        return None
+    member_ids = {item.user_id for item in couple.memberships}
+    if traveler_user_id not in member_ids:
+        raise HTTPException(status_code=422, detail="Traveler must be a member of this space.")
+    return traveler_user_id
+
+
 def _apply_budget(db: Session, couple: Couple, visit: Visit, body: BudgetIn) -> None:
     if len(couple.memberships) < 2:
         raise HTTPException(status_code=409, detail="Both partners need to join before a budget.")
@@ -87,6 +96,7 @@ def create_visit(
     now=Depends(get_clock),
 ) -> VisitOut:
     _ordered(body.starts_at, body.ends_at)
+    traveler_id = _traveler_for_couple(couple, body.traveler_user_id)
     visit = Visit(
         couple_id=couple.id,
         created_by=user.id,
@@ -95,6 +105,7 @@ def create_visit(
         ends_at=body.ends_at,
         location=body.location,
         notes=body.notes,
+        traveler_user_id=traveler_id,
         created_at=now,
         updated_at=now,
     )
@@ -119,6 +130,8 @@ def update_visit(
     starts = changes.get("starts_at", visit.starts_at)
     ends = changes.get("ends_at", visit.ends_at)
     _ordered(starts, ends)
+    if "traveler_user_id" in changes:
+        changes["traveler_user_id"] = _traveler_for_couple(couple, changes["traveler_user_id"])
     for key, value in changes.items():
         setattr(visit, key, value)
     visit.updated_at = now

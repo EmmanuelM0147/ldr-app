@@ -154,3 +154,9 @@ Prompt: same redesign prompt as step 1 (item 3).
 Month grid marks event days, day detail lists that day's events, and a FAB opens a bottom-sheet event form with end-after-start checks and en-GB date framing. Frontend 23 tests passed.
 
 Prompt: same redesign prompt as step 1 (item 4).
+
+## 2026-11-12 — UI redesign step 5: visits
+
+Added `traveler_user_id` to the OpenAPI Visit schemas, migration `0003_visit_traveler`, and backend validation. Visit cards show route, dates, traveler, countdown chip, and cost split; the form takes traveler and optional budget. Backend 20 and frontend 24 tests passed.
+
+Prompt: same redesign prompt as step 1 (item 5).

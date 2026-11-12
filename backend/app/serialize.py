@@ -75,6 +75,7 @@ def visit_out(visit: Visit) -> VisitOut:
         ends_at=visit.ends_at,
         location=visit.location,
         notes=visit.notes,
+        traveler_user_id=visit.traveler_user_id,
         budget=budget_out(visit.budget) if visit.budget is not None else None,
         created_at=visit.created_at,
         updated_at=visit.updated_at,

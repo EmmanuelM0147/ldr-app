@@ -197,6 +197,7 @@ class VisitOut(ApiModel):
     ends_at: datetime
     location: str | None
     notes: str | None
+    traveler_user_id: uuid.UUID | None
     budget: BudgetOut | None
     created_at: datetime
     updated_at: datetime
@@ -208,6 +209,7 @@ class VisitWrite(ApiModel):
     ends_at: datetime
     location: str | None = Field(default=None, max_length=120)
     notes: str | None = Field(default=None, max_length=2000)
+    traveler_user_id: uuid.UUID | None = None
     budget: BudgetIn | None = None
 
     @field_validator("starts_at", "ends_at")
@@ -235,6 +237,7 @@ class VisitPatch(ApiModel):
     ends_at: datetime | None = None
     location: str | None = Field(default=None, max_length=120)
     notes: str | None = Field(default=None, max_length=2000)
+    traveler_user_id: uuid.UUID | None = None
 
     @field_validator("starts_at", "ends_at")
     @classmethod

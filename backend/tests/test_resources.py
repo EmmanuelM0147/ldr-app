@@ -120,6 +120,7 @@ def test_visits_countdown_and_budget(client) -> None:
             "title": "Split on create",
             "starts_at": "2026-12-20T00:00:00Z",
             "ends_at": "2026-12-27T00:00:00Z",
+            "traveler_user_id": members[0]["user_id"],
             "budget": {
                 "currency": "USD",
                 "total_minor": 200,
@@ -132,10 +133,22 @@ def test_visits_countdown_and_budget(client) -> None:
         headers=auth(owner),
     )
     assert with_budget.status_code == 201
+    assert with_budget.json()["traveler_user_id"] == members[0]["user_id"]
     assert with_budget.json()["budget"]["total_minor"] == 200
     assert with_budget.json()["budget"]["shares"][0]["amount_minor"] + with_budget.json()["budget"]["shares"][1][
         "amount_minor"
     ] == 200
+    outsider = client.post(
+        "/visits",
+        json={
+            "title": "Bad traveler",
+            "starts_at": "2026-12-28T00:00:00Z",
+            "ends_at": "2026-12-29T00:00:00Z",
+            "traveler_user_id": "00000000-0000-4000-8000-000000000099",
+        },
+        headers=auth(owner),
+    )
+    assert outsider.status_code == 422
 
 
 def test_check_in_uses_local_date_and_hides_other_couples(client) -> None:

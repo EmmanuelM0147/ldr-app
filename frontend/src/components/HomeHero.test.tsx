@@ -12,6 +12,7 @@ const visit: Visit = {
   ends_at: "2099-01-18T18:00:00.000Z",
   location: "Lagos",
   notes: null,
+  traveler_user_id: "ada",
   budget: null,
   created_at: "2026-11-01T00:00:00.000Z",
   updated_at: "2026-11-01T00:00:00.000Z",
