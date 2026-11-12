@@ -59,3 +59,25 @@ export function IconBook({ className, title = "Memories" }: IconProps) {
     </svg>
   )
 }
+
+export function IconEye({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M12 5.5c5 0 9.3 3.1 11 7.5-1.7 4.4-6 7.5-11 7.5S2.7 17.4 1 13C2.7 8.6 7 5.5 12 5.5Zm0 2.2A7.8 7.8 0 0 0 4.3 13 7.8 7.8 0 0 0 12 18.3 7.8 7.8 0 0 0 19.7 13 7.8 7.8 0 0 0 12 7.7Zm0 2.1a3.2 3.2 0 1 1 0 6.4 3.2 3.2 0 0 1 0-6.4Z"
+      />
+    </svg>
+  )
+}
+
+export function IconEyeOff({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="m3.3 2.2 18.5 18.5-1.4 1.4-3.2-3.2A12.4 12.4 0 0 1 12 20.5c-5 0-9.3-3.1-11-7.5a13 13 0 0 1 4.7-5.6L1.9 3.6 3.3 2.2Zm5.5 5.5 1.7 1.7a3.2 3.2 0 0 0 4.1 4.1l1.7 1.7a5.4 5.4 0 0 1-7.5-7.5ZM12 5.5c5 0 9.3 3.1 11 7.5a13 13 0 0 1-3.4 4.6l-1.6-1.6A7.8 7.8 0 0 0 19.7 13 7.8 7.8 0 0 0 12 7.7c-.5 0-1 .1-1.5.2L8.9 6.3A12 12 0 0 1 12 5.5Zm-1.2 5.3 2.4 2.4a1.5 1.5 0 0 1-2.4-2.4Z"
+      />
+    </svg>
+  )
+}

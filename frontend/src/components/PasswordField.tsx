@@ -1,4 +1,5 @@
 import { useId, useState } from "react"
+import { IconEye, IconEyeOff } from "./icons"
 
 export function PasswordField({
   label,
@@ -36,7 +37,7 @@ export function PasswordField({
           aria-pressed={visible}
           onClick={() => setVisible((value) => !value)}
         >
-          {visible ? "Hide" : "Show"}
+          {visible ? <IconEyeOff /> : <IconEye />}
         </button>
       </div>
     </label>
