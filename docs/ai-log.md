@@ -216,3 +216,9 @@ Prompt: next slice (backlog task 21)
 Added `POST/DELETE /me/avatar` and couple-scoped `GET /users/{id}/avatar`. Settings can upload or remove a JPEG/PNG/WebP photo; Home and the avatar menu show it. Cross-couple fetch returns 404.
 
 Prompt: users can't upload their photos to the profile
+
+## 2026-11-12 — Task 23: Playwright pairing against Compose
+
+Added `e2e/pairing.spec.ts` and `playwright.compose.config.ts` (`npm run test:e2e:compose`). Two browser contexts: A creates a space and invite, B joins, A adds a visit and check-in, B sees both. Mock e2e specs stay on the default Playwright config.
+
+Prompt: proceed

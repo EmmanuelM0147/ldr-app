@@ -112,7 +112,7 @@ Done already: repo layout, Cursor rules, `GET /health`, draft Compose file.
   - Acceptance: JPEG/PNG/WebP up to 5 MiB. Partner in the same couple can fetch it; other couples get 404. Settings can upload and remove.
   - Tests: upload, partner fetch, cross-couple denial, remove.
 
-- [ ] 23. Playwright: user A creates a space, user B joins, both see the same visit and check-in.
+- [x] 23. Playwright: user A creates a space, user B joins, both see the same visit and check-in.
   - Acceptance: the flow runs against the Compose stack.
   - Tests: that Playwright spec.
 
