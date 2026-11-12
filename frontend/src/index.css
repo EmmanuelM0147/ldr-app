@@ -524,6 +524,17 @@ input, textarea, select {
 
 .timeline-card { margin: 0; }
 
+.state {
+  margin: var(--space-4) 0;
+}
+
+.state.empty {
+  padding: var(--space-4);
+  border: 1px dashed var(--color-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-muted);
+}
+
 .tabs {
   position: fixed;
   left: 50%;

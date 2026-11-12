@@ -172,3 +172,9 @@ Prompt: same redesign prompt as step 1 (item 6).
 Timeline cards plus an On this day section; photo upload deferred with a note in the form. Frontend 28 tests passed.
 
 Prompt: same redesign prompt as step 1 (item 7).
+
+## 2026-11-12 — UI redesign step 8: states + Playwright
+
+Shared loading/empty/error states on home, calendar, visits, check-in, and memories. Playwright covers home countdown/partner cards and visit create with traveler/route against `VITE_USE_MOCK=1`. Frontend 29 unit tests and 2 e2e tests passed.
+
+Prompt: same redesign prompt as step 1 (item 8).

@@ -12,6 +12,7 @@ import { PartnerTodayCards } from "./components/PartnerTodayCards"
 import { QuickActions } from "./components/QuickActions"
 import { itemsThisWeek, ThisWeekList } from "./components/ThisWeekList"
 import { MemoryTimeline, OnThisDay, onThisDay } from "./components/MemoryTimeline"
+import { EmptyState, ErrorState, LoadingState } from "./components/ScreenState"
 import { VisitCard } from "./components/VisitCard"
 import {
   BudgetFields,
@@ -124,13 +125,29 @@ export function HomePage() {
   const [events, setEvents] = useState<EventItem[]>([])
   const [visits, setVisits] = useState<Visit[]>([])
   const [checkIns, setCheckIns] = useState<CheckIn[]>([])
+  const [loadingHome, setLoadingHome] = useState(false)
 
   useEffect(() => {
     if (!client || !couple) return
-    void client.getNextVisit().then(setCountdown)
-    void client.listEvents().then(setEvents)
-    void client.listVisits().then(setVisits)
-    void client.listCheckIns().then(setCheckIns)
+    let ignore = false
+    setLoadingHome(true)
+    void Promise.all([client.getNextVisit(), client.listEvents(), client.listVisits(), client.listCheckIns()])
+      .then(([next, eventList, visitList, checkInList]) => {
+        if (ignore) return
+        setCountdown(next)
+        setEvents(eventList)
+        setVisits(visitList)
+        setCheckIns(checkInList)
+        setLoadingHome(false)
+      })
+      .catch((caught: unknown) => {
+        if (ignore) return
+        setError(caught instanceof ApiError ? caught.detail : "Could not load home.")
+        setLoadingHome(false)
+      })
+    return () => {
+      ignore = true
+    }
   }, [client, couple, liveTick])
 
   if (!client || !user) return null
@@ -196,16 +213,19 @@ export function HomePage() {
 
   return (
     <main className="sheet">
-      <HomeHero countdown={countdown} timeZone={user.timezone} />
-      <PartnerHomeCards
-        members={couple.members}
-        presence={presence}
-        checkIns={checkIns}
-        viewerId={user.id}
-        onTogglePresence={(free) => void updatePresence(free)}
-      />
+      {loadingHome ? <LoadingState label="Opening your home…" /> : null}
+      {!loadingHome ? <HomeHero countdown={countdown} timeZone={user.timezone} /> : null}
+      {!loadingHome ? (
+        <PartnerHomeCards
+          members={couple.members}
+          presence={presence}
+          checkIns={checkIns}
+          viewerId={user.id}
+          onTogglePresence={(free) => void updatePresence(free)}
+        />
+      ) : null}
       <QuickActions />
-      <ThisWeekList items={week} timeZone={user.timezone} />
+      {!loadingHome ? <ThisWeekList items={week} timeZone={user.timezone} /> : null}
       {couple.members.length < 2 ? (
         <section className="card">
           <h2>Invite your partner</h2>
@@ -217,7 +237,7 @@ export function HomePage() {
           )}
         </section>
       ) : null}
-      {error ? <p className="error">{error}</p> : null}
+      {error ? <ErrorState message={error} /> : null}
     </main>
   )
 }
@@ -245,7 +265,7 @@ export function SettingsPage() {
 
 export function CalendarPage() {
   const { client, user } = useSession()
-  const [events, setEvents] = useState<EventItem[]>([])
+  const [events, setEvents] = useState<EventItem[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
   const today = new Date()
@@ -254,7 +274,11 @@ export function CalendarPage() {
 
   async function reload() {
     if (!client) return
-    setEvents(await client.listEvents())
+    try {
+      setEvents(await client.listEvents())
+    } catch (caught: unknown) {
+      setError(caught instanceof ApiError ? caught.detail : "Could not load events.")
+    }
   }
 
   useEffect(() => {
@@ -262,6 +286,14 @@ export function CalendarPage() {
   }, [client])
 
   if (!user) return null
+  if (events === null) {
+    return (
+      <main className="sheet">
+        <h1>Calendar</h1>
+        <LoadingState label="Loading calendar…" />
+      </main>
+    )
+  }
 
   const byDay = eventsByDay(events, user.timezone)
   const markedKeys = new Set(byDay.keys())
@@ -300,7 +332,7 @@ export function CalendarPage() {
       <section className="card day-detail" aria-label={`Events on ${selectedLabel}`}>
         <h2>{selectedLabel}</h2>
         {dayEvents.length === 0 ? (
-          <p className="muted">No events on this day.</p>
+          <EmptyState title="No events on this day" body="Tap + to add something you both need on the calendar." />
         ) : (
           <ul className="list compact">
             {dayEvents.map((event) => (
@@ -320,7 +352,7 @@ export function CalendarPage() {
           </ul>
         )}
       </section>
-      {error ? <p className="error">{error}</p> : null}
+      {error ? <ErrorState message={error} /> : null}
       <button className="fab" type="button" aria-label="Add event" onClick={() => setSheetOpen(true)}>
         +
       </button>
@@ -345,7 +377,7 @@ export function CalendarPage() {
 
 export function VisitsPage() {
   const { client, user, couple } = useSession()
-  const [visits, setVisits] = useState<Visit[]>([])
+  const [visits, setVisits] = useState<Visit[] | null>(null)
   const [countdown, setCountdown] = useState<Awaited<ReturnType<NonNullable<typeof client>["getNextVisit"]>> | null>(
     null,
   )
@@ -353,8 +385,12 @@ export function VisitsPage() {
 
   async function reload() {
     if (!client) return
-    setVisits(await client.listVisits())
-    setCountdown(await client.getNextVisit())
+    try {
+      setVisits(await client.listVisits())
+      setCountdown(await client.getNextVisit())
+    } catch (caught: unknown) {
+      setError(caught instanceof ApiError ? caught.detail : "Could not load visits.")
+    }
   }
 
   useEffect(() => {
@@ -362,6 +398,14 @@ export function VisitsPage() {
   }, [client])
 
   if (!client || !user || !couple) return null
+  if (visits === null) {
+    return (
+      <main className="sheet">
+        <h1>Visits</h1>
+        <LoadingState label="Loading visits…" />
+      </main>
+    )
+  }
   const members = couple.members
   const me = members.find((member) => member.user_id === user.id)
   const them = members.find((member) => member.user_id !== user.id)
@@ -448,40 +492,50 @@ export function VisitsPage() {
           Add visit
         </button>
       </form>
-      {error ? <p className="error">{error}</p> : null}
-      <ul className="list">
-        {visits.map((visit) => (
-          <li key={visit.id}>
-            <VisitCard
-              visit={visit}
-              members={members}
-              timeZone={user.timezone}
-              onRemove={() => void client.deleteVisit(visit.id).then(reload)}
-            />
-            {me && them ? (
-              <BudgetForm
-                memberIds={[me.user_id, them.user_id]}
-                onSave={(budget) => {
-                  void client.putBudget(visit.id, budget).then(reload).catch((caught: unknown) => {
-                    setError(caught instanceof ApiError ? caught.detail : "Could not save the split.")
-                  })
-                }}
+      {error ? <ErrorState message={error} /> : null}
+      {visits.length === 0 ? (
+        <EmptyState title="No visits yet" body="Add the next trip so the countdown has somewhere to land." />
+      ) : (
+        <ul className="list">
+          {visits.map((visit) => (
+            <li key={visit.id}>
+              <VisitCard
+                visit={visit}
+                members={members}
+                timeZone={user.timezone}
+                onRemove={() => void client.deleteVisit(visit.id).then(reload)}
               />
-            ) : null}
-          </li>
-        ))}
-      </ul>
+              {me && them ? (
+                <BudgetForm
+                  memberIds={[me.user_id, them.user_id]}
+                  onSave={(budget) => {
+                    void client.putBudget(visit.id, budget).then(reload).catch((caught: unknown) => {
+                      setError(caught instanceof ApiError ? caught.detail : "Could not save the split.")
+                    })
+                  }}
+                />
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   )
 }
 
 export function CheckInsPage() {
   const { client, user, couple, liveTick } = useSession()
-  const [items, setItems] = useState<CheckIn[]>([])
+  const [items, setItems] = useState<CheckIn[] | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   async function reload() {
     if (!client) return
-    setItems(await client.listCheckIns())
+    try {
+      setItems(await client.listCheckIns())
+      setError(null)
+    } catch (caught: unknown) {
+      setError(caught instanceof ApiError ? caught.detail : "Could not load check-ins.")
+    }
   }
 
   useEffect(() => {
@@ -489,10 +543,19 @@ export function CheckInsPage() {
   }, [client, liveTick])
 
   if (!user || !couple) return null
+  if (items === null) {
+    return (
+      <main className="sheet">
+        <h1>Check-in</h1>
+        <LoadingState label="Loading check-ins…" />
+      </main>
+    )
+  }
   const today = localDate(user.timezone)
   const mine = items.find((item) => item.user_id === user.id && item.local_date === today) ?? null
   const myDates = items.filter((item) => item.user_id === user.id).map((item) => item.local_date)
   const streak = checkInStreak(myDates, today)
+  const earlier = items.filter((item) => item.local_date !== today)
   return (
     <main className="sheet">
       <h1>Check-in</h1>
@@ -512,11 +575,13 @@ export function CheckInsPage() {
           void client?.upsertTodayCheckIn(input).then(reload)
         }}
       />
+      {error ? <ErrorState message={error} /> : null}
       <h2>Earlier</h2>
-      <ul className="list">
-        {items
-          .filter((item) => item.local_date !== today)
-          .map((item) => {
+      {earlier.length === 0 ? (
+        <EmptyState title="No earlier check-ins" body="Past moods will collect here as you check in." />
+      ) : (
+        <ul className="list">
+          {earlier.map((item) => {
             const name = couple.members.find((member) => member.user_id === item.user_id)?.display_name
             return (
               <li key={item.id} className="card">
@@ -528,19 +593,24 @@ export function CheckInsPage() {
               </li>
             )
           })}
-      </ul>
+        </ul>
+      )}
     </main>
   )
 }
 
 export function MemoriesPage() {
   const { client, user } = useSession()
-  const [memories, setMemories] = useState<Memory[]>([])
+  const [memories, setMemories] = useState<Memory[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   async function reload() {
     if (!client) return
-    setMemories(await client.listMemories())
+    try {
+      setMemories(await client.listMemories())
+    } catch (caught: unknown) {
+      setError(caught instanceof ApiError ? caught.detail : "Could not load memories.")
+    }
   }
 
   useEffect(() => {
@@ -548,6 +618,14 @@ export function MemoriesPage() {
   }, [client])
 
   if (!client || !user) return null
+  if (memories === null) {
+    return (
+      <main className="sheet">
+        <h1>Memories</h1>
+        <LoadingState label="Loading memories…" />
+      </main>
+    )
+  }
 
   function addMemory(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -587,14 +665,18 @@ export function MemoriesPage() {
           Save memory
         </button>
       </form>
-      {error ? <p className="error">{error}</p> : null}
+      {error ? <ErrorState message={error} /> : null}
       <h2>Timeline</h2>
-      <MemoryTimeline
-        memories={memories}
-        currentUserId={user.id}
-        timeZone={user.timezone}
-        onDelete={(id) => void client.deleteMemory(id).then(reload)}
-      />
+      {memories.length === 0 ? (
+        <EmptyState title="No memories yet" body="Save a small moment you do not want to lose." />
+      ) : (
+        <MemoryTimeline
+          memories={memories}
+          currentUserId={user.id}
+          timeZone={user.timezone}
+          onDelete={(id) => void client.deleteMemory(id).then(reload)}
+        />
+      )}
     </main>
   )
 }

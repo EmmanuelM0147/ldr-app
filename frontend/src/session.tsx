@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import { createApiClient } from "./api/apiClient"
 import { ApiError } from "./api/errors"
-import type { MockClient } from "./api/mockClient"
+import { createDemoClient, type MockClient } from "./api/mockClient"
 import type { Couple, Presence, User } from "./types"
 
 const TOKEN_KEY = "closer-token"
@@ -32,17 +32,21 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false
-    const next = createApiClient(import.meta.env.VITE_API_URL ?? "http://localhost:8000")
-    setClient(next)
-    const token = window.sessionStorage.getItem(TOKEN_KEY)
-    if (!token) {
-      setReady(true)
-      return
-    }
-    next.useToken(token)
-    void next
-      .getMe()
-      .then(async (me) => {
+    void (async () => {
+      const next =
+        import.meta.env.VITE_USE_MOCK === "1"
+          ? await createDemoClient(window.sessionStorage)
+          : createApiClient(import.meta.env.VITE_API_URL ?? "http://localhost:8000")
+      if (cancelled) return
+      setClient(next)
+      const token = window.sessionStorage.getItem(TOKEN_KEY)
+      if (!token) {
+        setReady(true)
+        return
+      }
+      next.useToken(token)
+      try {
+        const me = await next.getMe()
         if (cancelled) return
         setUser(me)
         try {
@@ -50,14 +54,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         } catch (error) {
           if (!(error instanceof ApiError) || error.status !== 404) throw error
         }
-      })
-      .catch(() => {
+      } catch {
         window.sessionStorage.removeItem(TOKEN_KEY)
         next.useToken(null)
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setReady(true)
-      })
+      }
+    })()
     return () => {
       cancelled = true
     }
