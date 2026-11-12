@@ -3,13 +3,14 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.config import cors_origin_list
 from app.routers import auth, checkins, couples, events, memories, presence, visits
 from app.schemas.health import Health, HealthStatus
 
 app = FastAPI(title="Closer API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=cors_origin_list(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

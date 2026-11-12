@@ -118,3 +118,9 @@ Prompt: proceed
 The React app now calls the API through a client generated from `docs/openapi.yaml`. Presence is `GET`/`PUT /presence`, and `/ws` pushes presence and check-in changes to that couple only. The socket takes the JWT in the first frame, not the URL. Backend tests: 19 passed. Frontend tests: 10 passed.
 
 Prompt: proceed
+
+## 2026-11-12 — Prompt pack step 6: Postgres and Docker
+
+Added `psycopg`, Dockerfiles for api and frontend, and Compose services for db/api/frontend. Host Postgres is on port 5433 to avoid a local Postgres on 5432. SQLite unit tests remain the default. Migration tests cover SQLite and Postgres. Backend tests: 20 passed. `docker compose up` serves the stack.
+
+Prompt: proceed

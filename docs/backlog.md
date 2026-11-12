@@ -104,7 +104,7 @@ Done already: repo layout, Cursor rules, `GET /health`, draft Compose file.
 
 ## Deploy
 
-- [ ] 22. Move the app to Postgres and Alembic. Dockerfiles and Compose for api, db, and frontend. Update `.env.example`.
+- [x] 22. Move the app to Postgres and Alembic. Dockerfiles and Compose for api, db, and frontend. Update `.env.example`.
   - Acceptance: `docker compose up` runs all three. SQLite remains available for unit tests.
   - Tests: existing pytest still passes. One migration test against Postgres.
 
