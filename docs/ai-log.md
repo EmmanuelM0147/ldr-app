@@ -202,3 +202,17 @@ Prompt: proceed then make the settings/profile more comprehensive
 Added `logo.svg` (mark + CLOSER wordmark) and `icon.svg` from the existing mark. Shell header uses the logo; favicon points at `icon.svg`; manifest lists `icon-192.png` and `icon-512.png`.
 
 Prompt: Use the existing Closer mark. Add /frontend/public/logo.svg (mark + “Closer” wordmark in ink #1F1710) and rename/adapt the app icon to /frontend/public/icon.svg. Use logo.svg in the header (replace text brand), set icon.svg as favicon in index.html, and add 192/512 PWA icons to manifest.webmanifest. Keep colors: green #1D5A48, terracotta #B8402A, ink #1F1710, cream #F3EBDD. Flat, no gradients.
+
+Follow-up: login and register also use logo.svg instead of the text brand.
+
+## 2026-11-12 — Task 21: Date-night ideas
+
+Added `POST /ideas` (contract-first). Opt-in gated (403, no model call when off). LLM key/base/model from env. Prompts and replies are not logged. Settings can request an idea when opted in. Backend ideas tests + full pytest green; frontend typecheck green.
+
+Prompt: next slice (backlog task 21)
+
+## 2026-11-12 — Profile photo upload
+
+Added `POST/DELETE /me/avatar` and couple-scoped `GET /users/{id}/avatar`. Settings can upload or remove a JPEG/PNG/WebP photo; Home and the avatar menu show it. Cross-couple fetch returns 404.
+
+Prompt: users can't upload their photos to the profile

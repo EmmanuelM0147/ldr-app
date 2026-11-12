@@ -98,7 +98,7 @@ Done already: repo layout, Cursor rules, `GET /health`, draft Compose file.
 
 ## AI features
 
-- [ ] 21. Couple AI opt-in and date-night ideas.
+- [x] 21. Couple AI opt-in and date-night ideas.
   - Acceptance: off by default. Ideas return 403 and do not call the model until either member opts in. API key is read from the environment. Prompts and replies are not logged.
   - Tests: opt-in off and on, with the model client mocked. Log capture contains no idea text.
 
@@ -107,6 +107,10 @@ Done already: repo layout, Cursor rules, `GET /health`, draft Compose file.
 - [x] 22. Move the app to Postgres and Alembic. Dockerfiles and Compose for api, db, and frontend. Update `.env.example`.
   - Acceptance: `docker compose up` runs all three. SQLite remains available for unit tests.
   - Tests: existing pytest still passes. One migration test against Postgres.
+
+- [x] 22b. Profile photo upload in settings.
+  - Acceptance: JPEG/PNG/WebP up to 5 MiB. Partner in the same couple can fetch it; other couples get 404. Settings can upload and remove.
+  - Tests: upload, partner fetch, cross-couple denial, remove.
 
 - [ ] 23. Playwright: user A creates a space, user B joins, both see the same visit and check-in.
   - Acceptance: the flow runs against the Compose stack.

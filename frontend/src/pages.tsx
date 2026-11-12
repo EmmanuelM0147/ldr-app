@@ -13,6 +13,7 @@ import { QuickActions } from "./components/QuickActions"
 import { itemsThisWeek, ThisWeekList } from "./components/ThisWeekList"
 import { MemoryTimeline, OnThisDay, onThisDay } from "./components/MemoryTimeline"
 import { PasswordSettingsForm } from "./components/PasswordSettingsForm"
+import { ProfilePhotoForm } from "./components/ProfilePhotoForm"
 import { ProfileSettingsForm } from "./components/ProfileSettingsForm"
 import { RouteCityField } from "./components/RouteCityField"
 import { EmptyState, ErrorState, LoadingState } from "./components/ScreenState"
@@ -40,7 +41,7 @@ export function LoginPage() {
   if (user) return <Navigate to="/" replace />
   return (
     <main className="sheet">
-      <p className="brand">Closer</p>
+      <img className="brand-logo brand-logo--auth" src="/logo.svg" alt="Closer" width={200} height={60} />
       <h1>The plan for the next time you are in the same place.</h1>
       <LoginForm
         onSubmit={async (email, password) => {
@@ -65,7 +66,7 @@ export function RegisterPage() {
   if (user) return <Navigate to="/" replace />
   return (
     <main className="sheet">
-      <p className="brand">Closer</p>
+      <img className="brand-logo brand-logo--auth" src="/logo.svg" alt="Closer" width={200} height={60} />
       <h1>Open a space for the two of you.</h1>
       <RegisterForm
         onSubmit={async (values) => {
@@ -96,7 +97,7 @@ export function RequireAuth() {
 }
 
 export function Shell() {
-  const { user, couple, signOut } = useSession()
+  const { client, user, couple, signOut } = useSession()
   const partner = couple?.members.find((member) => member.user_id !== user?.id)
   return (
     <div className="shell">
@@ -108,7 +109,15 @@ export function Shell() {
             {partner ? ` and ${partner.display_name}` : ""}
           </p>
         </div>
-        {user ? <AvatarMenu name={user.display_name} onSignOut={signOut} /> : null}
+        {user && client ? (
+          <AvatarMenu
+            userId={user.id}
+            name={user.display_name}
+            avatarUrl={user.avatar_url}
+            loadAvatar={(userId) => client.getUserAvatar(userId)}
+            onSignOut={signOut}
+          />
+        ) : null}
       </header>
       <Outlet />
       <footer className="zone">Times shown in {user?.timezone ?? "UTC"}</footer>
@@ -223,6 +232,7 @@ export function HomePage() {
           presence={presence}
           checkIns={checkIns}
           viewerId={user.id}
+          loadAvatar={(userId) => client.getUserAvatar(userId)}
           onTogglePresence={(free) => void updatePresence(free)}
         />
       ) : null}
@@ -251,6 +261,9 @@ export function SettingsPage() {
   const [copied, setCopied] = useState(false)
   const [spaceError, setSpaceError] = useState<string | null>(null)
   const [aiBusy, setAiBusy] = useState(false)
+  const [ideaBusy, setIdeaBusy] = useState(false)
+  const [idea, setIdea] = useState<string | null>(null)
+  const [ideaError, setIdeaError] = useState<string | null>(null)
   if (!client || !user) return null
 
   async function issueInvite() {
@@ -295,6 +308,32 @@ export function SettingsPage() {
       </section>
 
       <section className="card">
+        <h2>Profile photo</h2>
+        <ProfilePhotoForm
+          user={user}
+          loadBlob={(userId) => client.getUserAvatar(userId)}
+          onUpload={async (file) => {
+            try {
+              await client.uploadMyAvatar(file)
+              await refreshUser()
+              await refreshCouple()
+            } catch (caught) {
+              throw new Error(caught instanceof ApiError ? caught.detail : "Could not upload photo.")
+            }
+          }}
+          onRemove={async () => {
+            try {
+              await client.deleteMyAvatar()
+              await refreshUser()
+              await refreshCouple()
+            } catch (caught) {
+              throw new Error(caught instanceof ApiError ? caught.detail : "Could not remove photo.")
+            }
+          }}
+        />
+      </section>
+
+      <section className="card">
         <h2>Profile</h2>
         <p className="muted">Display name and timezone. Partners see these in the shared space.</p>
         <ProfileSettingsForm
@@ -303,6 +342,7 @@ export function SettingsPage() {
             try {
               await client.updateMe(values)
               await refreshUser()
+              await refreshCouple()
             } catch (caught) {
               throw new Error(caught instanceof ApiError ? caught.detail : "Could not save profile.")
             }
@@ -372,6 +412,30 @@ export function SettingsPage() {
             Off by default. When on, either of you can ask for ideas. We never send personal content without this
             switch, and prompts are not logged.
           </p>
+          {couple.ai_opt_in ? (
+            <div className="stack">
+              <button
+                className="secondary"
+                type="button"
+                disabled={ideaBusy}
+                onClick={() => {
+                  setIdeaBusy(true)
+                  setIdeaError(null)
+                  void client
+                    .createDateNightIdea()
+                    .then((result) => setIdea(result.idea))
+                    .catch((caught: unknown) => {
+                      setIdeaError(caught instanceof ApiError ? caught.detail : "Could not get an idea.")
+                    })
+                    .finally(() => setIdeaBusy(false))
+                }}
+              >
+                {ideaBusy ? "Asking…" : "Suggest a date night"}
+              </button>
+              {idea ? <p className="idea">{idea}</p> : null}
+              {ideaError ? <p className="error">{ideaError}</p> : null}
+            </div>
+          ) : null}
 
           {couple.members.length < 2 ? (
             <>

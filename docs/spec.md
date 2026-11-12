@@ -52,8 +52,10 @@ As a partner, I update my profile and our space preferences.
 Acceptance criteria:
 
 - I can change my display name and IANA timezone.
+- I can upload or remove a profile photo (JPEG, PNG, or WebP, max 5 MiB).
 - I can change my password with the current password plus a new password (min 8 characters).
 - Email is shown but not changed here.
+- My partner in the same couple can see my profile photo; other couples cannot.
 - Either member can turn couple AI opt-in on or off.
 - Either member can delete the couple space from settings with typed confirmation.
 

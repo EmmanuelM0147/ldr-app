@@ -19,6 +19,7 @@ VIDEO_TYPES = {
 ALLOWED = {**IMAGE_TYPES, **VIDEO_TYPES}
 IMAGE_MAX = 10 * 1024 * 1024
 VIDEO_MAX = 40 * 1024 * 1024
+AVATAR_MAX = 5 * 1024 * 1024
 
 
 def media_root() -> Path:
@@ -34,6 +35,12 @@ def classify_upload(content_type: str | None) -> tuple[str, str]:
             detail="Use a JPEG, PNG, WebP photo or an MP4/WebM video.",
         )
     return ALLOWED[content_type]
+
+
+def classify_image(content_type: str | None) -> str:
+    if not content_type or content_type not in IMAGE_TYPES:
+        raise HTTPException(status_code=422, detail="Use a JPEG, PNG, or WebP photo.")
+    return IMAGE_TYPES[content_type][1]
 
 
 async def save_memory_file(couple_id: uuid.UUID, upload: UploadFile) -> tuple[str, str, str, str]:
@@ -55,6 +62,25 @@ async def save_memory_file(couple_id: uuid.UUID, upload: UploadFile) -> tuple[st
     filename = upload.filename or stored_name
     content_type = upload.content_type or "application/octet-stream"
     return kind, content_type, filename[:255], relative
+
+
+async def save_avatar_file(user_id: uuid.UUID, upload: UploadFile) -> tuple[str, str, str]:
+    extension = classify_image(upload.content_type)
+    payload = await upload.read()
+    if len(payload) == 0:
+        raise HTTPException(status_code=422, detail="The file is empty.")
+    if len(payload) > AVATAR_MAX:
+        raise HTTPException(status_code=422, detail="That photo is too large (max 5 MiB).")
+
+    folder = media_root() / "avatars" / str(user_id)
+    folder.mkdir(parents=True, exist_ok=True)
+    stored_name = f"{uuid.uuid4().hex}{extension}"
+    path = folder / stored_name
+    path.write_bytes(payload)
+    relative = f"avatars/{user_id}/{stored_name}"
+    filename = upload.filename or stored_name
+    content_type = upload.content_type or "application/octet-stream"
+    return content_type, filename[:255], relative
 
 
 def absolute_media_path(relative: str) -> Path:

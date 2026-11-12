@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import cors_origin_list
-from app.routers import auth, checkins, couples, events, memories, presence, visits
+from app.routers import auth, checkins, couples, events, ideas, memories, presence, visits
 from app.schemas.health import Health, HealthStatus
 
 app = FastAPI(title="Closer API", version="0.1.0")
@@ -22,6 +22,7 @@ app.include_router(visits.router)
 app.include_router(checkins.router)
 app.include_router(memories.router)
 app.include_router(presence.router)
+app.include_router(ideas.router)
 
 
 @app.exception_handler(RequestValidationError)

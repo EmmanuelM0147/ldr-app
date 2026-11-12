@@ -4,8 +4,20 @@ import type { Member } from "../types"
 import { PartnerHomeCards } from "./PartnerHomeCards"
 
 const members: Member[] = [
-  { user_id: "ada", display_name: "Ada", timezone: "Africa/Lagos", joined_at: "2026-11-01T00:00:00.000Z" },
-  { user_id: "bello", display_name: "Bello", timezone: "Europe/London", joined_at: "2026-11-01T00:00:00.000Z" },
+  {
+    user_id: "ada",
+    display_name: "Ada",
+    timezone: "Africa/Lagos",
+    joined_at: "2026-11-01T00:00:00.000Z",
+    avatar_url: null,
+  },
+  {
+    user_id: "bello",
+    display_name: "Bello",
+    timezone: "Europe/London",
+    joined_at: "2026-11-01T00:00:00.000Z",
+    avatar_url: null,
+  },
 ]
 
 describe("PartnerHomeCards", () => {

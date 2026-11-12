@@ -9,6 +9,8 @@ REQUIRED: dict[str, set[str]] = {
     "/auth/register": {"post"},
     "/auth/login": {"post"},
     "/me": {"get", "patch"},
+    "/me/avatar": {"post", "delete"},
+    "/users/{user_id}/avatar": {"get"},
     "/couples": {"post"},
     "/couples/current": {"get", "delete", "patch"},
     "/couples/current/invites": {"post"},
@@ -27,6 +29,7 @@ REQUIRED: dict[str, set[str]] = {
     "/memories/{memory_id}/media": {"get"},
     "/presence": {"get", "put"},
     "/ws": {"get"},
+    "/ideas": {"post"},
 }
 
 

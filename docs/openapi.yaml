@@ -14,6 +14,7 @@ tags:
   - name: check-ins
   - name: memories
   - name: presence
+  - name: ai
 security:
   - bearerAuth: []
 paths:
@@ -111,6 +112,74 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "422":
           $ref: "#/components/responses/Invalid"
+  /me/avatar:
+    post:
+      tags: [auth]
+      operationId: uploadMyAvatar
+      summary: Upload or replace the caller's profile photo
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: JPEG, PNG, or WebP up to 5 MiB
+      responses:
+        "200":
+          description: Updated user with avatar_url
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/Invalid"
+    delete:
+      tags: [auth]
+      operationId: deleteMyAvatar
+      summary: Remove the caller's profile photo
+      responses:
+        "200":
+          description: Updated user without avatar
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /users/{user_id}/avatar:
+    get:
+      tags: [auth]
+      operationId: getUserAvatar
+      summary: Profile photo for the caller or their couple partner
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: Image bytes
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
   /couples:
     post:
       tags: [pairing]
@@ -684,6 +753,42 @@ paths:
       responses:
         "101":
           description: Switching protocols
+  /ideas:
+    post:
+      tags: [ai]
+      operationId: createDateNightIdea
+      summary: Suggest a date-night idea
+      description: >
+        Requires the couple's `ai_opt_in` to be true. The model API key comes from
+        the environment. Prompt and reply text are never written to logs.
+        No personal couple content is sent unless the optional vibe field is set.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DateNightIdeaRequest"
+      responses:
+        "200":
+          description: One date-night suggestion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DateNightIdea"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/Missing"
+        "422":
+          $ref: "#/components/responses/Invalid"
+        "503":
+          description: Model provider is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   securitySchemes:
     bearerAuth:
@@ -712,6 +817,13 @@ components:
       schema:
         type: string
         format: uuid
+    UserId:
+      name: user_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
   responses:
     BadRequest:
       description: Invite code is missing, used, or expired
@@ -721,6 +833,12 @@ components:
             $ref: "#/components/schemas/Error"
     Unauthorized:
       description: Missing or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: Couple has not opted into AI features
       content:
         application/json:
           schema:
@@ -768,7 +886,7 @@ components:
     User:
       type: object
       additionalProperties: false
-      required: [id, email, display_name, timezone, created_at]
+      required: [id, email, display_name, timezone, created_at, avatar_url]
       properties:
         id:
           type: string
@@ -786,6 +904,10 @@ components:
         created_at:
           type: string
           format: date-time
+        avatar_url:
+          type: string
+          nullable: true
+          description: Path to GET /users/{id}/avatar when a photo is set
     RegisterRequest:
       type: object
       additionalProperties: false
@@ -832,6 +954,23 @@ components:
       properties:
         ai_opt_in:
           type: boolean
+    DateNightIdeaRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        vibe:
+          type: string
+          maxLength: 80
+          description: Optional short mood for the suggestion. Not logged.
+    DateNightIdea:
+      type: object
+      additionalProperties: false
+      required: [idea]
+      properties:
+        idea:
+          type: string
+          minLength: 1
+          maxLength: 1000
     LoginRequest:
       type: object
       additionalProperties: false
@@ -862,7 +1001,7 @@ components:
     Member:
       type: object
       additionalProperties: false
-      required: [user_id, display_name, timezone, joined_at]
+      required: [user_id, display_name, timezone, joined_at, avatar_url]
       properties:
         user_id:
           type: string
@@ -874,6 +1013,10 @@ components:
         joined_at:
           type: string
           format: date-time
+        avatar_url:
+          type: string
+          nullable: true
+          description: Path to GET /users/{id}/avatar when a photo is set
     Couple:
       type: object
       additionalProperties: false

@@ -17,13 +17,15 @@ import type {
   User,
   Visit,
   CouplePatch,
+  DateNightIdea,
+  DateNightIdeaRequest,
   UserPatch,
   VisitWrite,
 } from "../types"
 import { localDate } from "../format"
 import { ApiError } from "./errors"
 
-type StoredUser = User & { password_mark: string }
+type StoredUser = User & { password_mark: string; avatar_data?: string | null }
 
 type Invite = InviteCreated & {
   couple_id: string
@@ -103,6 +105,19 @@ function publicUser(user: StoredUser): User {
     display_name: user.display_name,
     timezone: user.timezone,
     created_at: user.created_at,
+    avatar_url: user.avatar_data ? `/users/${user.id}/avatar` : null,
+  }
+}
+
+function syncMemberAvatars(db: Database, user: StoredUser): void {
+  for (const couple of db.couples) {
+    for (const member of couple.members) {
+      if (member.user_id === user.id) {
+        member.display_name = user.display_name
+        member.timezone = user.timezone
+        member.avatar_url = user.avatar_data ? `/users/${user.id}/avatar` : null
+      }
+    }
   }
 }
 
@@ -181,6 +196,8 @@ export function createMockClient(options: Options = {}) {
         display_name: displayName,
         timezone,
         created_at: now().toISOString(),
+        avatar_url: null,
+        avatar_data: null,
         password_mark: `mock:${input.password}`,
       }
       db.users.push(user)
@@ -219,16 +236,51 @@ export function createMockClient(options: Options = {}) {
       } else if (input.current_password !== undefined) {
         throw new ApiError(422, "Provide a new password to change it.")
       }
-      for (const couple of db.couples) {
-        for (const member of couple.members) {
-          if (member.user_id === user.id) {
-            member.display_name = user.display_name
-            member.timezone = user.timezone
-          }
-        }
-      }
+      syncMemberAvatars(db, user)
       persist()
       return publicUser(user)
+    },
+
+    async uploadMyAvatar(file: File): Promise<User> {
+      const user = currentUser()
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+        throw new ApiError(422, "Use a JPEG, PNG, or WebP photo.")
+      }
+      if (file.size === 0 || file.size > 5 * 1024 * 1024) {
+        throw new ApiError(422, "That photo is too large (max 5 MiB).")
+      }
+      user.avatar_data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(String(reader.result))
+        reader.onerror = () => reject(new ApiError(422, "Could not read that file."))
+        reader.readAsDataURL(file)
+      })
+      syncMemberAvatars(db, user)
+      persist()
+      return publicUser(user)
+    },
+
+    async deleteMyAvatar(): Promise<User> {
+      const user = currentUser()
+      user.avatar_data = null
+      syncMemberAvatars(db, user)
+      persist()
+      return publicUser(user)
+    },
+
+    async getUserAvatar(userId: string): Promise<Blob> {
+      const caller = currentUser()
+      const target = db.users.find((item) => item.id === userId)
+      if (!target?.avatar_data) throw new ApiError(404, "Not found.")
+      if (caller.id !== target.id) {
+        const callerCouple = coupleFor(caller.id)
+        const targetCouple = coupleFor(target.id)
+        if (!callerCouple || !targetCouple || callerCouple.id !== targetCouple.id) {
+          throw new ApiError(404, "Not found.")
+        }
+      }
+      const response = await fetch(target.avatar_data)
+      return response.blob()
     },
 
     async createCouple(): Promise<Couple> {
@@ -567,6 +619,16 @@ export function createMockClient(options: Options = {}) {
       return listed
     },
 
+    async createDateNightIdea(input: DateNightIdeaRequest = {}): Promise<DateNightIdea> {
+      const couple = requireCouple()
+      if (!couple.ai_opt_in) throw new ApiError(403, "Turn on AI ideas in settings first.")
+      const vibe = input.vibe?.trim()
+      const idea = vibe
+        ? `Plan a slow ${vibe} evening together: cook something simple, put phones away, and take a short walk after.`
+        : "Plan a picnic at a quiet park, pack a shared playlist, and leave the afternoon free for wandering."
+      return { idea }
+    },
+
     subscribe(listener: (event: LiveEvent) => void) {
       listeners.add(listener)
       return () => {
@@ -655,6 +717,7 @@ function memberFrom(user: StoredUser, now: () => Date): Member {
     display_name: user.display_name,
     timezone: user.timezone,
     joined_at: now().toISOString(),
+    avatar_url: user.avatar_data ? `/users/${user.id}/avatar` : null,
   }
 }
 

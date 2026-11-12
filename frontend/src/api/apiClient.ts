@@ -8,6 +8,8 @@ import type {
   Countdown,
   Couple,
   CouplePatch,
+  DateNightIdea,
+  DateNightIdeaRequest,
   EventItem,
   EventWrite,
   InviteCreated,
@@ -79,6 +81,43 @@ export function createApiClient(baseUrl = "http://localhost:8000"): Api {
 
     updateMe(input: UserPatch) {
       return unwrap<User>(api.PATCH("/me", { body: input }))
+    },
+
+    async uploadMyAvatar(file: File) {
+      const form = new FormData()
+      form.append("file", file)
+      const headers = new Headers()
+      if (token) headers.set("Authorization", `Bearer ${token}`)
+      const response = await fetch(new URL("/me/avatar", baseUrl), {
+        method: "POST",
+        headers,
+        body: form,
+      })
+      if (!response.ok) {
+        let detail = response.statusText
+        try {
+          const payload = (await response.json()) as { detail?: string }
+          if (payload.detail) detail = payload.detail
+        } catch {
+          /* keep status text */
+        }
+        throw new ApiError(response.status, detail || "Request failed.")
+      }
+      return (await response.json()) as User
+    },
+
+    async deleteMyAvatar() {
+      return unwrap<User>(api.DELETE("/me/avatar"))
+    },
+
+    async getUserAvatar(userId: string) {
+      const headers = new Headers()
+      if (token) headers.set("Authorization", `Bearer ${token}`)
+      const response = await fetch(new URL(`/users/${userId}/avatar`, baseUrl), { headers })
+      if (!response.ok) {
+        throw new ApiError(response.status, "Not found.")
+      }
+      return response.blob()
     },
 
     createCouple() {
@@ -202,6 +241,10 @@ export function createApiClient(baseUrl = "http://localhost:8000"): Api {
 
     setPresence(freeToTalk) {
       return unwrap<PresenceList>(api.PUT("/presence", { body: { free_to_talk: freeToTalk } }))
+    },
+
+    createDateNightIdea(input: DateNightIdeaRequest = {}) {
+      return unwrap<DateNightIdea>(api.POST("/ideas", { body: input }))
     },
 
     subscribe(listener) {

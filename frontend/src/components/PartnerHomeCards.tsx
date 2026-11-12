@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import type { CheckIn, Member, Presence } from "../types"
+import { UserAvatar } from "./UserAvatar"
 
 function cityFromTimezone(timezone: string): string {
   const leaf = timezone.split("/").pop() ?? timezone
@@ -19,12 +20,14 @@ export function PartnerHomeCards({
   presence,
   checkIns,
   viewerId,
+  loadAvatar,
   onTogglePresence,
 }: {
   members: Member[]
   presence: Presence[]
   checkIns: CheckIn[]
   viewerId: string
+  loadAvatar?: (userId: string) => Promise<Blob>
   onTogglePresence: (freeToTalk: boolean) => void
 }) {
   const [now, setNow] = useState(() => new Date())
@@ -47,9 +50,13 @@ export function PartnerHomeCards({
         return (
           <article key={member.user_id} className={`card partner-card ${accent}`}>
             <div className="partner-head">
-              <span className={`avatar partner-avatar ${accent}`} aria-hidden>
-                {member.display_name.slice(0, 1).toUpperCase()}
-              </span>
+              <UserAvatar
+                userId={member.user_id}
+                name={member.display_name}
+                avatarUrl={member.avatar_url}
+                loadBlob={loadAvatar}
+                className={`avatar partner-avatar ${accent}`}
+              />
               <div>
                 <h2>{member.display_name}</h2>
                 <p className="muted">{cityFromTimezone(member.timezone)}</p>

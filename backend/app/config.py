@@ -10,6 +10,9 @@ class Settings(BaseSettings):
         "http://localhost:5173,http://localhost,http://127.0.0.1:5173,http://127.0.0.1"
     )
     media_root: str = "./media"
+    llm_api_key: str = ""
+    llm_base_url: str = "https://api.openai.com/v1"
+    llm_model: str = "gpt-4o-mini"
 
 
 def get_settings() -> Settings:

@@ -1,11 +1,23 @@
 import { useEffect, useId, useRef, useState } from "react"
 import { Link } from "react-router-dom"
+import { UserAvatar } from "./UserAvatar"
 
-export function AvatarMenu({ name, onSignOut }: { name: string; onSignOut: () => void }) {
+export function AvatarMenu({
+  userId,
+  name,
+  avatarUrl,
+  loadAvatar,
+  onSignOut,
+}: {
+  userId: string
+  name: string
+  avatarUrl: string | null
+  loadAvatar: (userId: string) => Promise<Blob>
+  onSignOut: () => void
+}) {
   const [open, setOpen] = useState(false)
   const menuId = useId()
   const root = useRef<HTMLDivElement>(null)
-  const initial = name.trim().charAt(0).toUpperCase() || "?"
 
   useEffect(() => {
     if (!open) return
@@ -33,9 +45,7 @@ export function AvatarMenu({ name, onSignOut }: { name: string; onSignOut: () =>
         aria-controls={menuId}
         onClick={() => setOpen((value) => !value)}
       >
-        <span className="avatar" aria-hidden>
-          {initial}
-        </span>
+        <UserAvatar userId={userId} name={name} avatarUrl={avatarUrl} loadBlob={loadAvatar} />
         <span className="sr-only">Account menu</span>
       </button>
       {open ? (

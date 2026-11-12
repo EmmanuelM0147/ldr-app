@@ -14,6 +14,12 @@ from app.schemas.api import (
 )
 
 
+def avatar_url_for(user_id: object, path: str | None) -> str | None:
+    if not path:
+        return None
+    return f"/users/{user_id}/avatar"
+
+
 def user_out(user: User) -> UserOut:
     return UserOut(
         id=user.id,
@@ -21,6 +27,7 @@ def user_out(user: User) -> UserOut:
         display_name=user.display_name,
         timezone=user.timezone,
         created_at=user.created_at,
+        avatar_url=avatar_url_for(user.id, user.avatar_path),
     )
 
 
@@ -31,6 +38,7 @@ def couple_out(couple: Couple) -> CoupleOut:
             display_name=item.user.display_name,
             timezone=item.user.timezone,
             joined_at=item.joined_at,
+            avatar_url=avatar_url_for(item.user_id, item.user.avatar_path),
         )
         for item in sorted(couple.memberships, key=lambda item: item.joined_at)
     ]

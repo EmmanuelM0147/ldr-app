@@ -100,6 +100,11 @@ button, input, textarea, select {
   width: auto;
 }
 
+.brand-logo--auth {
+  height: 2.5rem;
+  margin-bottom: var(--space-3);
+}
+
 .muted { color: var(--color-muted); }
 
 .kicker {
@@ -463,6 +468,14 @@ input, textarea, select {
   color: var(--color-muted);
 }
 
+.idea {
+  margin: 0;
+  padding: var(--space-3);
+  background: var(--color-bg-muted);
+  border-radius: var(--radius-md, 12px);
+  line-height: 1.45;
+}
+
 .error {
   color: var(--color-danger);
   margin: var(--space-2) 0;
@@ -653,6 +666,31 @@ a.button-link {
   color: var(--color-partner-a);
   font-family: var(--font-serif);
   font-size: var(--text-lg);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+img.avatar-photo {
+  object-fit: cover;
+  padding: 0;
+  color: transparent;
+  background: var(--color-bg-muted);
+}
+
+.profile-photo-row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.profile-avatar {
+  width: 4.5rem;
+  height: 4.5rem;
+  font-size: var(--text-2xl);
+}
+
+.stack.tight {
+  gap: var(--space-2);
 }
 
 .avatar-panel {

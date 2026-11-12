@@ -73,6 +73,41 @@ export interface paths {
         patch: operations["updateMe"];
         trace?: never;
     };
+    "/me/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload or replace the caller's profile photo */
+        post: operations["uploadMyAvatar"];
+        /** Remove the caller's profile photo */
+        delete: operations["deleteMyAvatar"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{user_id}/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Profile photo for the caller or their couple partner */
+        get: operations["getUserAvatar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/couples": {
         parameters: {
             query?: never;
@@ -383,6 +418,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/ideas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Suggest a date-night idea
+         * @description Requires the couple's `ai_opt_in` to be true. The model API key comes from the environment. Prompt and reply text are never written to logs. No personal couple content is sent unless the optional vibe field is set.
+         */
+        post: operations["createDateNightIdea"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -404,6 +459,8 @@ export interface components {
             timezone: string;
             /** Format: date-time */
             created_at: string;
+            /** @description Path to GET /users/{id}/avatar when a photo is set */
+            avatar_url: string | null;
         };
         RegisterRequest: {
             /** Format: email */
@@ -427,6 +484,13 @@ export interface components {
         CouplePatch: {
             ai_opt_in?: boolean;
         };
+        DateNightIdeaRequest: {
+            /** @description Optional short mood for the suggestion. Not logged. */
+            vibe?: string;
+        };
+        DateNightIdea: {
+            idea: string;
+        };
         LoginRequest: {
             /** Format: email */
             email: string;
@@ -447,6 +511,8 @@ export interface components {
             timezone: string;
             /** Format: date-time */
             joined_at: string;
+            /** @description Path to GET /users/{id}/avatar when a photo is set */
+            avatar_url: string | null;
         };
         Couple: {
             /** Format: uuid */
@@ -667,6 +733,15 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
+        /** @description Couple has not opted into AI features */
+        Forbidden: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
         /** @description Not found for this caller */
         Missing: {
             headers: {
@@ -708,6 +783,7 @@ export interface components {
         EventId: string;
         VisitId: string;
         MemoryId: string;
+        UserId: string;
     };
     requestBodies: never;
     headers: never;
@@ -832,6 +908,85 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             422: components["responses"]["Invalid"];
+        };
+    };
+    uploadMyAvatar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description JPEG, PNG, or WebP up to 5 MiB
+                     */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated user with avatar_url */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            422: components["responses"]["Invalid"];
+        };
+    };
+    deleteMyAvatar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Updated user without avatar */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getUserAvatar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: components["parameters"]["UserId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Image bytes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                    "image/png": string;
+                    "image/webp": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["Missing"];
         };
     };
     createCouple: {
@@ -1531,6 +1686,43 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    createDateNightIdea: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["DateNightIdeaRequest"];
+            };
+        };
+        responses: {
+            /** @description One date-night suggestion */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DateNightIdea"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Missing"];
+            422: components["responses"]["Invalid"];
+            /** @description Model provider is not configured */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
             };
         };
     };

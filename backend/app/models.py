@@ -18,6 +18,9 @@ class User(Base):
     display_name: Mapped[str] = mapped_column(String(40))
     timezone: Mapped[str] = mapped_column(String(64))
     created_at: Mapped[datetime] = mapped_column(UtcDateTime)
+    avatar_content_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    avatar_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    avatar_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
     membership: Mapped[Membership | None] = relationship(back_populates="user")
 

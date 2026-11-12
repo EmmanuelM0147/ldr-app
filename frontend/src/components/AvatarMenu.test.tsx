@@ -9,7 +9,13 @@ describe("AvatarMenu", () => {
     const onSignOut = vi.fn()
     render(
       <MemoryRouter>
-        <AvatarMenu name="Ada" onSignOut={onSignOut} />
+        <AvatarMenu
+          userId="ada"
+          name="Ada"
+          avatarUrl={null}
+          loadAvatar={async () => new Blob()}
+          onSignOut={onSignOut}
+        />
       </MemoryRouter>,
     )
     await user.click(screen.getByRole("button", { name: "Account menu" }))

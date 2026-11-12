@@ -8,6 +8,7 @@ export type User = {
   display_name: string
   timezone: string
   created_at: string
+  avatar_url: string | null
 }
 
 export type UserPatch = {
@@ -19,6 +20,14 @@ export type UserPatch = {
 
 export type CouplePatch = {
   ai_opt_in?: boolean
+}
+
+export type DateNightIdeaRequest = {
+  vibe?: string
+}
+
+export type DateNightIdea = {
+  idea: string
 }
 
 export type AuthResponse = {
@@ -33,6 +42,7 @@ export type Member = {
   display_name: string
   timezone: string
   joined_at: string
+  avatar_url: string | null
 }
 
 export type Couple = {

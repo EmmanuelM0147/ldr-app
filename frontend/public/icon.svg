@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Closer">
+  <title>Closer</title>
+  <defs>
+    <clipPath id="icon-squircle">
+      <rect width="256" height="256" rx="56" ry="56"/>
+    </clipPath>
+    <clipPath id="icon-overlap">
+      <circle cx="100" cy="150" r="58"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#icon-squircle)">
+    <rect width="256" height="256" fill="#F3EBDD"/>
+    <circle cx="100" cy="150" r="58" fill="#1D5A48"/>
+    <circle cx="156" cy="150" r="58" fill="#B8402A"/>
+    <circle cx="156" cy="150" r="58" fill="#1F1710" clip-path="url(#icon-overlap)"/>
+    <g fill="#1F1710">
+      <circle cx="69.12" cy="94.60" r="3.2"/>
+      <circle cx="77.53" cy="87.91" r="3.2"/>
+      <circle cx="86.69" cy="82.30" r="3.2"/>
+      <circle cx="96.46" cy="77.84" r="3.2"/>
+      <circle cx="106.71" cy="74.61" r="3.2"/>
+      <circle cx="117.28" cy="72.66" r="3.2"/>
+      <circle cx="128" cy="72" r="3.2"/>
+      <circle cx="138.72" cy="72.66" r="3.2"/>
+      <circle cx="149.29" cy="74.61" r="3.2"/>
+      <circle cx="159.54" cy="77.84" r="3.2"/>
+      <circle cx="169.31" cy="82.30" r="3.2"/>
+      <circle cx="178.47" cy="87.91" r="3.2"/>
+      <circle cx="186.88" cy="94.60" r="3.2"/>
+    </g>
+  </g>
+</svg>

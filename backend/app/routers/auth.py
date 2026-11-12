@@ -1,14 +1,26 @@
-from fastapi import APIRouter, Depends, HTTPException
+import uuid
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.deps import get_clock, get_current_user, get_db
-from app.models import User
+from app.media import absolute_media_path, delete_media_file, save_avatar_file
+from app.models import Membership, User
 from app.schemas.api import AuthResponse, LoginRequest, RegisterRequest, UserOut, UserPatch
 from app.security import create_access_token, hash_password, verify_password
 from app.serialize import user_out
 
 router = APIRouter()
+
+
+def _same_couple(db: Session, left: uuid.UUID, right: uuid.UUID) -> bool:
+    if left == right:
+        return True
+    left_couple = db.scalar(select(Membership.couple_id).where(Membership.user_id == left))
+    right_couple = db.scalar(select(Membership.couple_id).where(Membership.user_id == right))
+    return left_couple is not None and left_couple == right_couple
 
 
 @router.post("/auth/register", response_model=AuthResponse, status_code=201, operation_id="register")
@@ -71,3 +83,52 @@ def update_me(
     db.commit()
     db.refresh(user)
     return user_out(user)
+
+
+@router.post("/me/avatar", response_model=UserOut, operation_id="uploadMyAvatar")
+async def upload_my_avatar(
+    file: UploadFile = File(...),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> UserOut:
+    content_type, filename, relative = await save_avatar_file(user.id, file)
+    delete_media_file(user.avatar_path)
+    user.avatar_content_type = content_type
+    user.avatar_filename = filename
+    user.avatar_path = relative
+    db.commit()
+    db.refresh(user)
+    return user_out(user)
+
+
+@router.delete("/me/avatar", response_model=UserOut, operation_id="deleteMyAvatar")
+def delete_my_avatar(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> UserOut:
+    delete_media_file(user.avatar_path)
+    user.avatar_content_type = None
+    user.avatar_filename = None
+    user.avatar_path = None
+    db.commit()
+    db.refresh(user)
+    return user_out(user)
+
+
+@router.get("/users/{user_id}/avatar", operation_id="getUserAvatar")
+def get_user_avatar(
+    user_id: uuid.UUID,
+    caller: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> FileResponse:
+    if not _same_couple(db, caller.id, user_id):
+        raise HTTPException(status_code=404, detail="Not found.")
+    target = db.get(User, user_id)
+    if target is None or not target.avatar_path or not target.avatar_content_type:
+        raise HTTPException(status_code=404, detail="Not found.")
+    path = absolute_media_path(target.avatar_path)
+    return FileResponse(
+        path,
+        media_type=target.avatar_content_type,
+        filename=target.avatar_filename or path.name,
+    )

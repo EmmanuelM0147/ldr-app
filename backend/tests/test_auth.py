@@ -91,3 +91,42 @@ def test_update_me_profile_and_password(client) -> None:
     assert changed.status_code == 200
     assert client.post("/auth/login", json={"email": "ada@example.com", "password": "password456"}).status_code == 200
     assert client.post("/auth/login", json={"email": "ada@example.com", "password": "password123"}).status_code == 401
+
+
+def test_avatar_upload_partner_and_cross_couple_denial(client) -> None:
+    from tests.conftest import auth
+
+    owner = register(client, "ada@example.com")
+    partner = register(client, "bello@example.com", name="Bello")
+    other = register(client, "other@example.com", name="Other")
+    assert client.post("/couples", headers=auth(owner)).status_code == 201
+    invite = client.post("/couples/current/invites", headers=auth(owner)).json()["code"]
+    assert client.post("/couples/join", json={"code": invite}, headers=auth(partner)).status_code == 200
+    assert client.post("/couples", headers=auth(other)).status_code == 201
+
+    png = (
+        b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00"
+        b"\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+    uploaded = client.post(
+        "/me/avatar",
+        files={"file": ("ada.png", png, "image/png")},
+        headers=auth(owner),
+    )
+    assert uploaded.status_code == 200, uploaded.text
+    me = uploaded.json()
+    assert me["avatar_url"] == f"/users/{me['id']}/avatar"
+    assert client.get(me["avatar_url"], headers=auth(owner)).status_code == 200
+    assert client.get(me["avatar_url"], headers=auth(partner)).content.startswith(b"\x89PNG")
+    assert client.get(me["avatar_url"], headers=auth(other)).status_code == 404
+    bad = client.post(
+        "/me/avatar",
+        files={"file": ("clip.mp4", b"not-an-image", "video/mp4")},
+        headers=auth(owner),
+    )
+    assert bad.status_code == 422
+    removed = client.delete("/me/avatar", headers=auth(owner))
+    assert removed.status_code == 200
+    assert removed.json()["avatar_url"] is None
+    assert client.get(me["avatar_url"], headers=auth(partner)).status_code == 404

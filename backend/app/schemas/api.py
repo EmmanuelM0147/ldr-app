@@ -31,6 +31,7 @@ class UserOut(ApiModel):
     display_name: str
     timezone: str
     created_at: datetime
+    avatar_url: str | None = None
 
 
 class RegisterRequest(ApiModel):
@@ -112,6 +113,7 @@ class MemberOut(ApiModel):
     display_name: str
     timezone: str
     joined_at: datetime
+    avatar_url: str | None = None
 
 
 class CoupleOut(ApiModel):
@@ -123,6 +125,19 @@ class CoupleOut(ApiModel):
 
 class CouplePatch(ApiModel):
     ai_opt_in: bool | None = None
+
+
+class DateNightIdeaRequest(ApiModel):
+    vibe: str | None = Field(default=None, max_length=80)
+
+    @field_validator("vibe")
+    @classmethod
+    def clean_vibe(cls, value: str | None) -> str | None:
+        return _blank(value)
+
+
+class DateNightIdea(ApiModel):
+    idea: str = Field(min_length=1, max_length=1000)
 
 
 class InviteCreated(ApiModel):
