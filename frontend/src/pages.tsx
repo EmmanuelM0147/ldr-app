@@ -3,8 +3,10 @@ import { Link, Navigate, Outlet, useNavigate } from "react-router-dom"
 import { ApiError } from "./api/errors"
 import { AvatarMenu } from "./components/AvatarMenu"
 import { BottomNav } from "./components/BottomNav"
+import { BottomSheet } from "./components/BottomSheet"
 import { DeleteSpaceForm } from "./components/DeleteSpaceForm"
 import { HomeHero } from "./components/HomeHero"
+import { eventsByDay, MonthCalendar } from "./components/MonthCalendar"
 import { PartnerHomeCards } from "./components/PartnerHomeCards"
 import { PartnerTodayCards } from "./components/PartnerTodayCards"
 import { QuickActions } from "./components/QuickActions"
@@ -243,6 +245,10 @@ export function CalendarPage() {
   const { client, user } = useSession()
   const [events, setEvents] = useState<EventItem[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const today = new Date()
+  const [cursor, setCursor] = useState({ year: today.getFullYear(), monthIndex: today.getMonth() })
+  const [selectedKey, setSelectedKey] = useState(() => localDate(user?.timezone ?? "UTC"))
 
   async function reload() {
     if (!client) return
@@ -254,29 +260,83 @@ export function CalendarPage() {
   }, [client])
 
   if (!user) return null
+
+  const byDay = eventsByDay(events, user.timezone)
+  const markedKeys = new Set(byDay.keys())
+  const dayEvents = byDay.get(selectedKey) ?? []
+  const selectedLabel = new Intl.DateTimeFormat("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(`${selectedKey}T12:00:00`))
+
   return (
-    <main className="sheet">
+    <main className="sheet calendar-page">
       <h1>Calendar</h1>
-      <EventForm
-        onCreate={(input) => {
-          void client?.createEvent(input).then(reload).catch((caught: unknown) => {
-            setError(caught instanceof ApiError ? caught.detail : "Could not add that event.")
+      <MonthCalendar
+        year={cursor.year}
+        monthIndex={cursor.monthIndex}
+        selectedKey={selectedKey}
+        markedKeys={markedKeys}
+        onSelect={setSelectedKey}
+        onPrev={() =>
+          setCursor((value) => {
+            const monthIndex = value.monthIndex - 1
+            if (monthIndex < 0) return { year: value.year - 1, monthIndex: 11 }
+            return { ...value, monthIndex }
           })
-        }}
+        }
+        onNext={() =>
+          setCursor((value) => {
+            const monthIndex = value.monthIndex + 1
+            if (monthIndex > 11) return { year: value.year + 1, monthIndex: 0 }
+            return { ...value, monthIndex }
+          })
+        }
       />
+      <section className="card day-detail" aria-label={`Events on ${selectedLabel}`}>
+        <h2>{selectedLabel}</h2>
+        {dayEvents.length === 0 ? (
+          <p className="muted">No events on this day.</p>
+        ) : (
+          <ul className="list compact">
+            {dayEvents.map((event) => (
+              <li key={event.id}>
+                <strong>{event.title}</strong>
+                <p className="muted">{formatWhen(event.starts_at, user.timezone)}</p>
+                {event.location ? <p>{event.location}</p> : null}
+                <button
+                  className="textish"
+                  type="button"
+                  onClick={() => void client?.deleteEvent(event.id).then(reload)}
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
       {error ? <p className="error">{error}</p> : null}
-      <ul className="list">
-        {events.map((event) => (
-          <li key={event.id} className="card">
-            <h2>{event.title}</h2>
-            <p className="muted">{formatWhen(event.starts_at, user.timezone)}</p>
-            {event.location ? <p>{event.location}</p> : null}
-            <button className="textish" type="button" onClick={() => void client?.deleteEvent(event.id).then(reload)}>
-              Remove
-            </button>
-          </li>
-        ))}
-      </ul>
+      <button className="fab" type="button" aria-label="Add event" onClick={() => setSheetOpen(true)}>
+        +
+      </button>
+      <BottomSheet open={sheetOpen} title="Add event" onClose={() => setSheetOpen(false)}>
+        <EventForm
+          onCreate={(input) => {
+            void client
+              ?.createEvent(input)
+              .then(async () => {
+                await reload()
+                setSheetOpen(false)
+              })
+              .catch((caught: unknown) => {
+                setError(caught instanceof ApiError ? caught.detail : "Could not add that event.")
+              })
+          }}
+        />
+      </BottomSheet>
     </main>
   )
 }

@@ -90,9 +90,10 @@ export function EventForm({ onCreate }: { onCreate: (input: EventWrite) => void 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const data = new FormData(event.currentTarget)
-    const starts = localToIso(String(data.get("starts_at") ?? ""))
-    const endRaw = String(data.get("ends_at") ?? "")
-    const ends = endRaw ? localToIso(endRaw) : null
+    const starts = combineLocalDateTime(String(data.get("starts_date") ?? ""), String(data.get("starts_time") ?? ""))
+    const endDate = String(data.get("ends_date") ?? "").trim()
+    const endTime = String(data.get("ends_time") ?? "").trim()
+    const ends = endDate ? combineLocalDateTime(endDate, endTime || "00:00") : null
     if (ends && new Date(ends).getTime() <= new Date(starts).getTime()) {
       setError("End must be after the start.")
       return
@@ -111,8 +112,17 @@ export function EventForm({ onCreate }: { onCreate: (input: EventWrite) => void 
   return (
     <form onSubmit={handleSubmit} className="stack">
       <Field label="Title" name="title" required />
-      <Field label="Starts" name="starts_at" type="datetime-local" required />
-      <Field label="Ends" name="ends_at" type="datetime-local" />
+      <fieldset className="date-pair">
+        <legend>Starts (en-GB)</legend>
+        <Field label="Date" name="starts_date" type="date" required />
+        <Field label="Time" name="starts_time" type="time" required defaultValue="09:00" />
+      </fieldset>
+      <fieldset className="date-pair">
+        <legend>Ends (optional)</legend>
+        <Field label="Date" name="ends_date" type="date" />
+        <Field label="Time" name="ends_time" type="time" />
+      </fieldset>
+      <p className="muted hint">Dates use day/month/year order when shown in en-GB.</p>
       <Field label="Place" name="location" />
       <Field label="Notes" name="notes" />
       {error ? <p className="error">{error}</p> : null}
@@ -336,6 +346,6 @@ function Field({
   )
 }
 
-function localToIso(value: string): string {
-  return new Date(value).toISOString()
+function combineLocalDateTime(date: string, time: string): string {
+  return new Date(`${date}T${time}`).toISOString()
 }

@@ -148,3 +148,9 @@ Prompt: same redesign prompt as step 1 (item 2).
 Home now has a hero countdown (or plan-visit CTA), partner cards with initial/city/local time/status/mood, quick actions, and a this-week list of events and visits. Frontend 22 tests passed.
 
 Prompt: same redesign prompt as step 1 (item 3).
+
+## 2026-11-12 — UI redesign step 4: calendar
+
+Month grid marks event days, day detail lists that day's events, and a FAB opens a bottom-sheet event form with end-after-start checks and en-GB date framing. Frontend 23 tests passed.
+
+Prompt: same redesign prompt as step 1 (item 4).
