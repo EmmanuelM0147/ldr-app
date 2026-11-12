@@ -88,3 +88,9 @@ Act as an independent QA engineer. Read the spec and tests. Try to break: cross-
 ## 11. Fix + document
 Fix the QA findings one at a time with tests. Then write README.md: what it does, architecture, how to run, how AI tools were used (link ai-log.md), and a privacy section.
 ```
+
+## 2026-11-12 — Prompt pack step 1: spec
+
+Rewrote `docs/spec.md` after these answers: email and password with display name and IANA timezone; calendar events are separate from budgeted visits; one currency with two amounts that sum to the total; one mood plus an optional note per local day; either member can delete the space and both accounts stay.
+
+Prompt: same Cursor prompt pack logged in step 0.

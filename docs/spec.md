@@ -1,46 +1,165 @@
 # Closer spec
 
-Long-distance couples app. One couple space has exactly two members. MVP is a shared visit calendar with a countdown, a visit budget split, a daily check-in, a memory log, presence, and a small opt-in AI feature. Chat and video calls are out of scope.
+## Problem
 
-`docs/openapi.yaml` is the API contract. Implement a path only after it is described there.
+Couples living apart lose the small shared record of when they will next be together, what a visit will cost, and how the other person is doing today. Chat and calls already exist elsewhere. Closer is the private space for the plan and the daily pulse.
 
-## Couple space
+## Users
 
-- A user registers, then creates a couple space and becomes member one.
-- Member one receives a single-use invite code. Member two joins with that code.
-- A couple never has more than two members. A third join fails.
-- Either member may delete the couple space. That deletes the couple and every row owned by it (memberships, invites, visits, budgets, check-ins, memories, presence, AI settings). User accounts remain so each person can still sign in.
+Two adults in one long-distance relationship. Each has an account (email, password, display name, IANA timezone). A person belongs to at most one couple space. There is no public profile and no third member.
 
-## Auth
+## MVP user stories
 
-- Email and password. Store email lowercase. Password hashed with argon2id. Minimum length 8.
-- JWT access token, HMAC, expiry 60 minutes. No refresh token in the MVP; the client signs in again.
-- Validate every input. Unknown couple or resource ids return 404 so callers cannot tell other couples exist.
+### Register and sign in
 
-## Invites
+As a partner, I create an account with email, password, and display name so only we can open the space.
 
-- Code is unguessable (at least 128 bits) and shown once. Persist only a SHA-256 hash.
-- Single use. Expires 7 days after creation.
-- Rate limits: at most 5 codes created per user per hour, and at most 10 failed join attempts per client IP per hour.
+Acceptance criteria:
 
-## Features
+- Email is stored lowercase and must be unique.
+- Password is at least 8 characters and stored as an argon2id hash.
+- Display name is required, 1–40 characters.
+- Timezone is a valid IANA name, default `UTC`.
+- Sign-in returns a JWT that expires in 60 minutes. There is no refresh token.
+- Invalid email, short password, or bad timezone is rejected with a validation error.
 
-Dates and times are stored in UTC. Each user has an IANA timezone (default `UTC`). The UI converts for display and never assumes Africa/Lagos.
+### Create a space and invite
 
-- **Visits.** Both members can create, read, update, and delete visits in their couple. Fields: title, `starts_at`, optional `ends_at`, optional location, optional notes. Countdown is the soonest visit with `starts_at` in the future, including seconds until it starts.
-- **Budget.** A visit may have one plan: ISO currency, total in minor units, and two shares that sum to the total.
-- **Check-in.** One per member per local calendar date. Mood is `great`, `good`, `okay`, `low`, or `rough`. Optional note, max 280 characters. Both members can read the couple's check-ins.
-- **Memories.** Text (max 2000 characters) plus `created_at` and an optional title. Both members can list and add. The author can update or delete their own entry.
-- **Presence.** Each member sets `here`, `away`, `busy`, or `sleeping`. The partner can read it. `updated_at` is UTC.
-- **AI.** Off unless the couple opts in. The only MVP AI call is a short visit-idea suggestion. If opt-in is false the API returns 403 and makes no outbound model call. Logs must not contain visit text, check-in notes, memories, or model prompts and responses.
+As a partner, I create our space and get an invite code so my partner can join.
 
-## Access control
+Acceptance criteria:
 
-Every data query includes the caller's couple membership. A member of couple A cannot read or write couple B. Each data endpoint has a test that proves this.
+- The creator becomes member one.
+- The code is unguessable (at least 128 bits), shown once, and only its SHA-256 hash is stored.
+- The code expires 7 days after creation, is single-use, and at most 5 codes can be created per user per hour.
+- A user who is already in a couple cannot create another space.
 
-## Stack notes
+### Join with a code
 
-- API: FastAPI, SQLAlchemy, Alembic, Pydantic models aligned with the OpenAPI schemas.
-- Database: Postgres via Docker Compose. Tests may use SQLite until a task needs Postgres-specific behavior. Do not use SQLite in production.
-- Web: React, Vite, TypeScript strict, installable PWA. API client generated from `docs/openapi.yaml`. Playwright covers end-to-end flows once pages exist.
-- Secrets live in the environment. `.env.example` lists keys with placeholders only.
+As the partner, I submit the code and become member two.
+
+Acceptance criteria:
+
+- A valid unused, unexpired code adds the caller as member two and marks the code used.
+- Reuse, expiry, or a couple that already has two members fails.
+- More than 10 failed join attempts from one client IP in an hour are rejected.
+- The plaintext code is never stored or logged.
+
+### Delete the couple space
+
+As either member, I delete the space so our shared data is gone.
+
+Acceptance criteria:
+
+- Either member can delete it.
+- The delete removes the couple and every couple-owned row: memberships, invites, events, visits, budgets, check-ins, memories, and presence.
+- Both user accounts remain and can sign in.
+- A non-member receives 404.
+
+### Shared calendar
+
+As a member, I add and edit events so we share one calendar.
+
+Acceptance criteria:
+
+- An event has a title, `starts_at`, optional `ends_at`, optional location, and optional notes.
+- Both members can create, list, update, and delete events in their couple.
+- `ends_at`, when set, is after `starts_at`.
+- A member of another couple gets 404.
+
+### Visit and countdown
+
+As a member, I plan a visit and see how long until the next one.
+
+Acceptance criteria:
+
+- A visit has a title, `starts_at`, `ends_at`, optional location, and optional notes. `ends_at` is after `starts_at`.
+- Both members can create, list, update, and delete visits in their couple.
+- The countdown is the visit with the soonest `starts_at` still in the future, plus the number of seconds until then. If none, the countdown is empty.
+- Times are stored in UTC.
+
+### Budget split
+
+As a member, I attach one budget to a visit so we agree who covers what.
+
+Acceptance criteria:
+
+- One budget per visit: ISO 4217 currency, total in minor units, and exactly two amounts.
+- The two amounts are non-negative integers and their sum equals the total.
+- Both members can read and replace the budget. Deleting the visit deletes its budget.
+- A budget for another couple's visit returns 404.
+
+### Daily check-in
+
+As a member, I record today's mood and an optional note, and I can read my partner's.
+
+Acceptance criteria:
+
+- One check-in per member per local calendar date in that member's timezone.
+- Mood is `great`, `good`, `okay`, `low`, or `rough`. The note is optional and at most 280 characters.
+- A second check-in on the same local date updates the existing one.
+- Both members can list check-ins for their couple. Another couple's check-ins return 404.
+
+### Memory log
+
+As a member, I save a memory and edit or delete only my own.
+
+Acceptance criteria:
+
+- A memory has an optional title (max 80 characters) and a body (1–2000 characters).
+- Both members can list and add memories in the couple.
+- Only the author can update or delete that memory. The partner receives 404.
+- Another couple's memory returns 404.
+
+### Presence
+
+As a member, I mark myself free to talk, and my partner sees it change live.
+
+Acceptance criteria:
+
+- Presence is a boolean, `free_to_talk`, with `updated_at` in UTC.
+- Either member can set their own flag and read both flags.
+- A WebSocket authenticated with the same JWT pushes presence changes and new or updated check-ins to the other member.
+- A socket without a valid JWT is closed. Events are never sent to another couple.
+
+### Date night ideas
+
+As a couple, we turn on ideas and ask for a date-night suggestion.
+
+Acceptance criteria:
+
+- AI is off until either member opts the couple in. Either member can turn it off.
+- The ideas endpoint returns 403 and makes no outbound model call when opt-in is false.
+- The model API key comes from the environment only.
+- Request and response text are not written to logs.
+
+## Non-goals
+
+- Chat, voice, and video calls.
+- More than two members, multiple spaces per user, or a public directory.
+- Payments, photo or file upload, and push notifications.
+- Refresh tokens and third-party login.
+
+## Data model
+
+All ids are UUIDs. All timestamps are UTC.
+
+- **User.** `email` unique, `password_hash`, `display_name`, `timezone`, `created_at`.
+- **Couple.** `ai_opt_in` default false, `created_at`.
+- **Membership.** `couple_id`, `user_id`, `joined_at`. Unique on `user_id`. At most two rows per couple.
+- **Invite.** `couple_id`, `code_hash`, `created_by`, `expires_at`, `used_at` nullable, `created_at`.
+- **Event.** `couple_id`, `created_by`, `title`, `starts_at`, `ends_at` nullable, `location` nullable, `notes` nullable, `created_at`, `updated_at`.
+- **Visit.** `couple_id`, `created_by`, `title`, `starts_at`, `ends_at`, `location` nullable, `notes` nullable, `created_at`, `updated_at`.
+- **Budget.** `visit_id` unique, `currency`, `total_minor`, and two shares (`user_id`, `amount_minor`).
+- **CheckIn.** `couple_id`, `user_id`, `local_date`, `mood`, `note` nullable, `created_at`, `updated_at`. Unique on (`user_id`, `local_date`).
+- **Memory.** `couple_id`, `author_id`, `title` nullable, `body`, `created_at`, `updated_at`.
+- **Presence.** `user_id`, `couple_id`, `free_to_talk`, `updated_at`.
+
+## Privacy
+
+- Every data query is scoped by the caller's couple membership. Unknown ids return 404.
+- Passwords are hashed. Invite codes are hashed. JWTs expire in 60 minutes.
+- Invite creation and failed joins are rate-limited.
+- Personal content (notes, memories, visit text, model prompts and replies) is not logged.
+- No model call runs unless that couple's `ai_opt_in` is true.
+- Deleting the couple space deletes all couple-owned data. Both user accounts remain.
