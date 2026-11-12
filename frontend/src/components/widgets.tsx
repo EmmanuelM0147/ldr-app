@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react"
 import { countdownParts, formatWhen } from "../format"
 import { MOOD_CHIPS } from "../mood"
 import type { Budget, CheckIn, CheckInWrite, Countdown, EventWrite, Mood } from "../types"
+import { CURRENCY_OPTIONS } from "../visitHints"
 
 export function RegisterForm({
   onSubmit,
@@ -172,10 +173,19 @@ export function budgetFromForm(
   }
 }
 
-export function BudgetFields() {
+export function BudgetFields({ defaultCurrency = "NGN" }: { defaultCurrency?: string } = {}) {
   return (
     <>
-      <Field label="Currency" name="currency" defaultValue="USD" />
+      <label className="field">
+        <span>Currency</span>
+        <select name="currency" defaultValue={defaultCurrency}>
+          {CURRENCY_OPTIONS.map((option) => (
+            <option key={option.code} value={option.code}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
       <Field label="Total" name="total" type="number" step="0.01" min="0" />
       <Field label="Your share" name="first" type="number" step="0.01" min="0" />
       <Field label="Their share" name="second" type="number" step="0.01" min="0" />

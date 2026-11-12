@@ -178,3 +178,9 @@ Prompt: same redesign prompt as step 1 (item 7).
 Shared loading/empty/error states on home, calendar, visits, check-in, and memories. Playwright covers home countdown/partner cards and visit create with traveler/route against `VITE_USE_MOCK=1`. Frontend 29 unit tests and 2 e2e tests passed.
 
 Prompt: same redesign prompt as step 1 (item 8).
+
+## 2026-11-12 — Visit form hints
+
+Currency is a select (NGN/USD/GBP/EUR). Route/city uses a datalist of past visit locations plus starters; free typing remains allowed.
+
+Prompt: proceed (after recommending currency options and soft city suggestions).

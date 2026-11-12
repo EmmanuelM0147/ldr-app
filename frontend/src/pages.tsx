@@ -12,8 +12,10 @@ import { PartnerTodayCards } from "./components/PartnerTodayCards"
 import { QuickActions } from "./components/QuickActions"
 import { itemsThisWeek, ThisWeekList } from "./components/ThisWeekList"
 import { MemoryTimeline, OnThisDay, onThisDay } from "./components/MemoryTimeline"
+import { RouteCityField } from "./components/RouteCityField"
 import { EmptyState, ErrorState, LoadingState } from "./components/ScreenState"
 import { VisitCard } from "./components/VisitCard"
+import { routeSuggestions } from "./visitHints"
 import {
   BudgetFields,
   BudgetForm,
@@ -465,10 +467,7 @@ export function VisitsPage() {
           <span>Leaves</span>
           <input name="ends_at" type="datetime-local" required />
         </label>
-        <label className="field">
-          <span>Route / city</span>
-          <input name="location" />
-        </label>
+        <RouteCityField suggestions={routeSuggestions(visits.map((visit) => visit.location))} />
         <label className="field">
           <span>Traveler</span>
           <select name="traveler_user_id" defaultValue="">
