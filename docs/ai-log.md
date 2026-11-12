@@ -112,3 +112,9 @@ Prompt: same Cursor prompt pack logged in step 0.
 Implemented the FastAPI API on SQLite with Alembic revision `0001_initial`. Auth uses argon2id and a 60-minute JWT. Invite codes are stored as SHA-256, expire in 7 days, and are rate-limited. Events, visits, budgets, check-ins, and memories are scoped by couple. Pytest covers cross-couple denial (15 passed) and ruff is clean.
 
 Prompt: proceed
+
+## 2026-11-12 — Prompt pack step 5: connect and real-time
+
+The React app now calls the API through a client generated from `docs/openapi.yaml`. Presence is `GET`/`PUT /presence`, and `/ws` pushes presence and check-in changes to that couple only. The socket takes the JWT in the first frame, not the URL. Backend tests: 19 passed. Frontend tests: 10 passed.
+
+Prompt: proceed

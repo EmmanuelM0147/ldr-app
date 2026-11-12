@@ -8,9 +8,11 @@ import type {
   EventItem,
   EventWrite,
   InviteCreated,
+  LiveEvent,
   Memory,
   MemoryWrite,
   Member,
+  Presence,
   RegisterRequest,
   User,
   Visit,
@@ -36,6 +38,7 @@ export type Database = {
   visits: Visit[]
   checkIns: CheckIn[]
   memories: Memory[]
+  presence: Presence[]
   inviteCreates: { user_id: string; at: string }[]
   joinFailures: string[]
 }
@@ -65,6 +68,7 @@ export function emptyDatabase(): Database {
     visits: [],
     checkIns: [],
     memories: [],
+    presence: [],
     inviteCreates: [],
     joinFailures: [],
   }
@@ -108,6 +112,11 @@ export function createMockClient(options: Options = {}) {
   const now = options.now ?? (() => new Date())
   const db = options.db ?? emptyDatabase()
   let token: string | null = null
+  const listeners = new Set<(event: LiveEvent) => void>()
+
+  const emit = (event: LiveEvent) => {
+    for (const listener of listeners) listener(event)
+  }
 
   const persist = () => {
     if (!options.storage || !options.storageKey) return
@@ -198,6 +207,7 @@ export function createMockClient(options: Options = {}) {
         members: [memberFrom(user, now)],
       }
       db.couples.push(couple)
+      db.presence.push({ user_id: user.id, free_to_talk: false, updated_at: now().toISOString() })
       persist()
       return clone(couple)
     },
@@ -215,6 +225,7 @@ export function createMockClient(options: Options = {}) {
       db.visits = db.visits.filter((item) => item.couple_id !== id)
       db.checkIns = db.checkIns.filter((item) => item.couple_id !== id)
       db.memories = db.memories.filter((item) => item.couple_id !== id)
+      db.presence = db.presence.filter((item) => !couple.members.some((member) => member.user_id === item.user_id))
       persist()
     },
 
@@ -262,6 +273,7 @@ export function createMockClient(options: Options = {}) {
       if (couple.members.length >= 2) throw new ApiError(409, "This space already has two people.")
       invite.used_at = now().toISOString()
       couple.members.push(memberFrom(user, now))
+      db.presence.push({ user_id: user.id, free_to_talk: false, updated_at: now().toISOString() })
       persist()
       return clone(couple)
     },
@@ -403,6 +415,7 @@ export function createMockClient(options: Options = {}) {
         existing.note = note
         existing.updated_at = stamp
         persist()
+        emit({ type: "check_in", check_in: clone(existing) })
         return clone(existing)
       }
       const created: CheckIn = {
@@ -417,6 +430,7 @@ export function createMockClient(options: Options = {}) {
       }
       db.checkIns.push(created)
       persist()
+      emit({ type: "check_in", check_in: clone(created) })
       return clone(created)
     },
 
@@ -453,6 +467,38 @@ export function createMockClient(options: Options = {}) {
       if (!memory || memory.author_id !== user.id) throw new ApiError(404, "Memory not found.")
       db.memories = db.memories.filter((item) => item.id !== memoryId)
       persist()
+    },
+
+    async getPresence() {
+      const couple = requireCouple()
+      const ids = new Set(couple.members.map((member) => member.user_id))
+      return {
+        members: db.presence.filter((item) => ids.has(item.user_id)).map((item) => clone(item)),
+      }
+    },
+
+    async setPresence(freeToTalk: boolean) {
+      const user = currentUser()
+      requireCouple()
+      const stamp = now().toISOString()
+      const row = db.presence.find((item) => item.user_id === user.id)
+      if (row) {
+        row.free_to_talk = freeToTalk
+        row.updated_at = stamp
+      } else {
+        db.presence.push({ user_id: user.id, free_to_talk: freeToTalk, updated_at: stamp })
+      }
+      persist()
+      const listed = await this.getPresence()
+      emit({ type: "presence", members: listed.members })
+      return listed
+    },
+
+    subscribe(listener: (event: LiveEvent) => void) {
+      listeners.add(listener)
+      return () => {
+        listeners.delete(listener)
+      }
     },
   }
 }

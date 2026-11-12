@@ -88,11 +88,11 @@ Done already: repo layout, Cursor rules, `GET /health`, draft Compose file.
 
 ## Presence
 
-- [ ] 19. Replace mocks with a client generated from `docs/openapi.yaml`.
+- [x] 19. Replace mocks with a client generated from `docs/openapi.yaml`.
   - Acceptance: screens call the API. Auth token is sent on data requests. The UI formats UTC times in the user's timezone.
   - Tests: one client test that a data call includes the bearer token.
 
-- [ ] 20. Presence REST and WebSocket.
+- [x] 20. Presence REST and WebSocket.
   - Acceptance: a member can set `free_to_talk` and read both flags. The socket requires a valid JWT and pushes presence and check-in changes only to that couple.
   - Tests: missing JWT is rejected. Couple A does not receive couple B's events.
 

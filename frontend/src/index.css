@@ -83,6 +83,26 @@ button, input, textarea {
 
 .hero { margin-bottom: 1rem; }
 
+.presence {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.7rem 0 0;
+}
+
+.dot {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-right: 0.45rem;
+  border-radius: 999px;
+  background: var(--muted);
+  vertical-align: middle;
+}
+
+.dot.on { background: var(--pine); }
+
 .countdown-num {
   font-size: 5rem;
   line-height: 0.85;

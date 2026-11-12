@@ -126,6 +126,20 @@ export type MemoryWrite = {
   body: string
 }
 
+export type Presence = {
+  user_id: string
+  free_to_talk: boolean
+  updated_at: string
+}
+
+export type PresenceList = {
+  members: Presence[]
+}
+
+export type LiveEvent =
+  | { type: "presence"; members: Presence[] }
+  | { type: "check_in"; check_in: CheckIn }
+
 export type RegisterRequest = {
   email: string
   password: string

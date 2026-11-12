@@ -1,41 +1,48 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
-import { createDemoClient, type MockClient } from "./api/mockClient"
+import { createApiClient } from "./api/apiClient"
 import { ApiError } from "./api/errors"
-import type { Couple, User } from "./types"
+import type { MockClient } from "./api/mockClient"
+import type { Couple, Presence, User } from "./types"
 
 const TOKEN_KEY = "closer-token"
+type Client = Omit<MockClient, "database">
 
 type SessionValue = {
-  client: MockClient | null
+  client: Client | null
   user: User | null
   couple: Couple | null
+  presence: Presence[]
+  liveTick: number
   ready: boolean
   signIn: (token: string, user: User) => Promise<void>
   signOut: () => void
   refreshCouple: () => Promise<void>
+  updatePresence: (freeToTalk: boolean) => Promise<void>
 }
 
 const SessionContext = createContext<SessionValue | null>(null)
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [client, setClient] = useState<MockClient | null>(null)
+  const [client, setClient] = useState<Client | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const [couple, setCouple] = useState<Couple | null>(null)
+  const [presence, setPresence] = useState<Presence[]>([])
+  const [liveTick, setLiveTick] = useState(0)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
     let cancelled = false
-    void createDemoClient(window.sessionStorage).then(async (next) => {
-      if (cancelled) return
-      setClient(next)
-      const token = window.sessionStorage.getItem(TOKEN_KEY)
-      if (!token) {
-        setReady(true)
-        return
-      }
-      next.useToken(token)
-      try {
-        const me = await next.getMe()
+    const next = createApiClient(import.meta.env.VITE_API_URL ?? "http://localhost:8000")
+    setClient(next)
+    const token = window.sessionStorage.getItem(TOKEN_KEY)
+    if (!token) {
+      setReady(true)
+      return
+    }
+    next.useToken(token)
+    void next
+      .getMe()
+      .then(async (me) => {
         if (cancelled) return
         setUser(me)
         try {
@@ -43,17 +50,42 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         } catch (error) {
           if (!(error instanceof ApiError) || error.status !== 404) throw error
         }
-      } catch {
+      })
+      .catch(() => {
         window.sessionStorage.removeItem(TOKEN_KEY)
         next.useToken(null)
-      } finally {
+      })
+      .finally(() => {
         if (!cancelled) setReady(true)
-      }
-    })
+      })
     return () => {
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+    if (!client || !couple) return
+    let ignore = false
+    void client.getPresence().then((list) => {
+      if (!ignore) setPresence(list.members)
+    }).catch(() => {
+      if (!ignore) setPresence([])
+    })
+    const known = new Set(couple.members.map((member) => member.user_id))
+    const stop = client.subscribe((event) => {
+      if (event.type === "presence") {
+        setPresence(event.members)
+        if (event.members.some((member) => !known.has(member.user_id))) {
+          void client.getCurrentCouple().then(setCouple).catch(() => undefined)
+        }
+      }
+      if (event.type === "check_in") setLiveTick((value) => value + 1)
+    })
+    return () => {
+      ignore = true
+      stop()
+    }
+  }, [client, couple])
 
   async function signIn(token: string, nextUser: User) {
     if (!client) return
@@ -73,6 +105,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     client?.useToken(null)
     setUser(null)
     setCouple(null)
+    setPresence([])
+  }
+
+  async function updatePresence(freeToTalk: boolean) {
+    if (!client) return
+    const list = await client.setPresence(freeToTalk)
+    setPresence(list.members)
   }
 
   async function refreshCouple() {
@@ -86,7 +125,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <SessionContext.Provider value={{ client, user, couple, ready, signIn, signOut, refreshCouple }}>
+    <SessionContext.Provider
+      value={{ client, user, couple, presence, liveTick, ready, signIn, signOut, refreshCouple, updatePresence }}
+    >
       {children}
     </SessionContext.Provider>
   )

@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.deps import get_db
+from app.deps import get_db, reset_engine
 from app.main import app
 
 
@@ -25,6 +25,7 @@ def database_url(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> str:
 
 @pytest.fixture
 def db_factory(database_url: str) -> Iterator[sessionmaker[Session]]:
+    reset_engine()
     engine = create_engine(database_url, connect_args={"check_same_thread": False})
     factory = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
@@ -39,6 +40,7 @@ def db_factory(database_url: str) -> Iterator[sessionmaker[Session]]:
     yield factory
     app.dependency_overrides.clear()
     engine.dispose()
+    reset_engine()
 
 
 @pytest.fixture

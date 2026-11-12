@@ -343,3 +343,17 @@ class MemoryPatch(ApiModel):
 
 class ErrorOut(ApiModel):
     detail: str
+
+
+class PresenceOut(ApiModel):
+    user_id: uuid.UUID
+    free_to_talk: bool
+    updated_at: datetime
+
+
+class PresenceList(ApiModel):
+    members: list[PresenceOut]
+
+
+class PresenceWrite(ApiModel):
+    free_to_talk: bool

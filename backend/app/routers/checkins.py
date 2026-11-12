@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.deps import get_clock, get_current_couple, get_current_user, get_db
 from app.models import CheckIn, Couple, User
+from app.realtime import hub
 from app.schemas.api import CheckInOut, CheckInWrite
 from app.serialize import check_in_out
 
@@ -26,7 +27,7 @@ def list_check_ins(
 
 
 @router.put("/check-ins/today", response_model=CheckInOut, operation_id="upsertTodayCheckIn")
-def upsert_today(
+async def upsert_today(
     body: CheckInWrite,
     user: User = Depends(get_current_user),
     couple: Couple = Depends(get_current_couple),
@@ -56,4 +57,6 @@ def upsert_today(
         existing.updated_at = now
     db.commit()
     db.refresh(existing)
-    return check_in_out(existing)
+    saved = check_in_out(existing)
+    await hub.publish(couple.id, {"type": "check_in", "check_in": saved.model_dump(mode="json")})
+    return saved

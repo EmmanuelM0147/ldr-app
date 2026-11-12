@@ -150,6 +150,15 @@ class Memory(Base):
     couple: Mapped[Couple] = relationship(back_populates="memories")
 
 
+class Presence(Base):
+    __tablename__ = "presence"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    couple_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("couples.id", ondelete="CASCADE"), index=True)
+    free_to_talk: Mapped[bool] = mapped_column(default=False)
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime)
+
+
 class JoinFailure(Base):
     __tablename__ = "join_failures"
 

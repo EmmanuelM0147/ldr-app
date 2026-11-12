@@ -13,6 +13,7 @@ tags:
   - name: visits
   - name: check-ins
   - name: memories
+  - name: presence
 security:
   - bearerAuth: []
 paths:
@@ -512,6 +513,58 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/Missing"
+  /presence:
+    get:
+      tags: [presence]
+      operationId: getPresence
+      summary: Both members' free-to-talk flags
+      responses:
+        "200":
+          description: Presence for this couple
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PresenceList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+    put:
+      tags: [presence]
+      operationId: setPresence
+      summary: Set the caller's free-to-talk flag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PresenceWrite"
+      responses:
+        "200":
+          description: Updated presence for this couple
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PresenceList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+        "422":
+          $ref: "#/components/responses/Invalid"
+  /ws:
+    get:
+      tags: [presence]
+      operationId: coupleEvents
+      summary: WebSocket for presence and check-in changes
+      description: >
+        After the upgrade, the first text frame is JSON `{"token":"<access token>"}`.
+        The server closes the socket with code 1008 when that token is missing
+        or invalid, or when the caller has no couple space. Later frames from
+        the server are LiveEvent values, sent only to sockets in that couple.
+      responses:
+        "101":
+          description: Switching protocols
 components:
   securitySchemes:
     bearerAuth:
@@ -1029,3 +1082,54 @@ components:
           type: string
           minLength: 1
           maxLength: 2000
+    Presence:
+      type: object
+      additionalProperties: false
+      required: [user_id, free_to_talk, updated_at]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        free_to_talk:
+          type: boolean
+        updated_at:
+          type: string
+          format: date-time
+    PresenceList:
+      type: object
+      additionalProperties: false
+      required: [members]
+      properties:
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/Presence"
+    PresenceWrite:
+      type: object
+      additionalProperties: false
+      required: [free_to_talk]
+      properties:
+        free_to_talk:
+          type: boolean
+    LiveEvent:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [type, members]
+          properties:
+            type:
+              type: string
+              enum: [presence]
+            members:
+              type: array
+              items:
+                $ref: "#/components/schemas/Presence"
+        - type: object
+          additionalProperties: false
+          required: [type, check_in]
+          properties:
+            type:
+              type: string
+              enum: [check_in]
+            check_in:
+              $ref: "#/components/schemas/CheckIn"

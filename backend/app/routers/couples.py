@@ -17,6 +17,7 @@ from app.models import (
     JoinFailure,
     Membership,
     Memory,
+    Presence,
     User,
     Visit,
 )
@@ -52,6 +53,7 @@ def create_couple(
     db.add(couple)
     db.flush()
     db.add(Membership(couple_id=couple.id, user_id=user.id, joined_at=now))
+    db.add(Presence(user_id=user.id, couple_id=couple.id, free_to_talk=False, updated_at=now))
     db.commit()
     return couple_out(_load_couple(db, couple.id))
 
@@ -73,6 +75,7 @@ def delete_current_couple(
     db.execute(delete(Event).where(Event.couple_id == couple.id))
     db.execute(delete(CheckIn).where(CheckIn.couple_id == couple.id))
     db.execute(delete(Memory).where(Memory.couple_id == couple.id))
+    db.execute(delete(Presence).where(Presence.couple_id == couple.id))
     db.execute(delete(Invite).where(Invite.couple_id == couple.id))
     db.execute(delete(Membership).where(Membership.couple_id == couple.id))
     db.execute(delete(Couple).where(Couple.id == couple.id))
@@ -152,6 +155,7 @@ def join_couple(
 
     invite.used_at = now
     db.add(Membership(couple_id=invite.couple_id, user_id=user.id, joined_at=now))
+    db.add(Presence(user_id=user.id, couple_id=invite.couple_id, free_to_talk=False, updated_at=now))
     db.commit()
     return couple_out(_load_couple(db, invite.couple_id))
 

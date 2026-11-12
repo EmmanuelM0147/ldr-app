@@ -1,4 +1,4 @@
-from app.models import Budget, CheckIn, Couple, Event, Memory, User, Visit
+from app.models import Budget, CheckIn, Couple, Event, Memory, Presence, User, Visit
 from app.schemas.api import (
     BudgetOut,
     BudgetShareIn,
@@ -7,6 +7,7 @@ from app.schemas.api import (
     EventOut,
     MemberOut,
     MemoryOut,
+    PresenceOut,
     UserOut,
     VisitOut,
 )
@@ -78,6 +79,10 @@ def visit_out(visit: Visit) -> VisitOut:
         created_at=visit.created_at,
         updated_at=visit.updated_at,
     )
+
+
+def presence_out(item: Presence) -> PresenceOut:
+    return PresenceOut(user_id=item.user_id, free_to_talk=item.free_to_talk, updated_at=item.updated_at)
 
 
 def check_in_out(item: CheckIn) -> CheckInOut:

@@ -31,18 +31,6 @@ export function LoginPage() {
           navigate("/")
         }}
       />
-      <button
-        className="secondary"
-        type="button"
-        onClick={async () => {
-          if (!client) return
-          const auth = await client.login("ada@example.com", "password123")
-          await signIn(auth.access_token, auth.user)
-          navigate("/")
-        }}
-      >
-        Enter the sample space
-      </button>
       <p className="muted">
         New here? <Link to="/register">Create an account</Link>
       </p>
@@ -123,7 +111,7 @@ export function Shell() {
 }
 
 export function HomePage() {
-  const { client, user, couple, refreshCouple } = useSession()
+  const { client, user, couple, presence, refreshCouple, updatePresence } = useSession()
   const [code, setCode] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [countdown, setCountdown] = useState<Awaited<ReturnType<NonNullable<typeof client>["getNextVisit"]>> | null>(
@@ -204,6 +192,27 @@ export function HomePage() {
   return (
     <main className="sheet">
       {countdown ? <CountdownCard countdown={countdown} timeZone={user.timezone} /> : null}
+      <section className="card">
+        <h2>Free to talk</h2>
+        {couple.members.map((member) => {
+          const flag = presence.find((item) => item.user_id === member.user_id)
+          const free = flag?.free_to_talk ?? false
+          const mine = member.user_id === user.id
+          return (
+            <p key={member.user_id} className="presence">
+              <span>
+                <i className={free ? "dot on" : "dot"} />
+                {member.display_name} is {free ? "free" : "not free"}
+              </span>
+              {mine ? (
+                <button className="secondary" type="button" onClick={() => void updatePresence(!free)}>
+                  {free ? "Mark busy" : "I'm free"}
+                </button>
+              ) : null}
+            </p>
+          )
+        })}
+      </section>
       {couple.members.length < 2 ? (
         <section className="card">
           <h2>Invite your partner</h2>
@@ -383,7 +392,7 @@ export function VisitsPage() {
 }
 
 export function CheckInsPage() {
-  const { client, user, couple } = useSession()
+  const { client, user, couple, liveTick } = useSession()
   const [items, setItems] = useState<CheckIn[]>([])
 
   async function reload() {
@@ -393,7 +402,7 @@ export function CheckInsPage() {
 
   useEffect(() => {
     void reload()
-  }, [client])
+  }, [client, liveTick])
 
   if (!user || !couple) return null
   const today = localDate(user.timezone)
