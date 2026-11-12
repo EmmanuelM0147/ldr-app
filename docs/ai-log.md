@@ -94,3 +94,9 @@ Fix the QA findings one at a time with tests. Then write README.md: what it does
 Rewrote `docs/spec.md` after these answers: email and password with display name and IANA timezone; calendar events are separate from budgeted visits; one currency with two amounts that sum to the total; one mood plus an optional note per local day; either member can delete the space and both accounts stay.
 
 Prompt: same Cursor prompt pack logged in step 0.
+
+## 2026-11-12 — Prompt pack step 2: backlog
+
+Replaced `docs/backlog.md` with 25 ordered tasks in the requested groups. Each task has acceptance criteria and test notes.
+
+Prompt: same Cursor prompt pack logged in step 0.
