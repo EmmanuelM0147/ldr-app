@@ -234,3 +234,9 @@ Prompt: proceed
 Added a Show/Hide control on login, register, and settings password fields.
 
 Prompt: need fix: the users should be able to see their password
+
+## 2026-11-13 — Clearer brand lockup
+
+Replaced the tiny scaled SVG wordmark with a mark + HTML “Closer” lockup on auth and in the shell header so the name reads clearly.
+
+Prompt: need fix: the brand name isn't glaring

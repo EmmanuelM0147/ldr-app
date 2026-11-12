@@ -94,6 +94,63 @@ button, input, textarea, select {
   font-size: var(--text-sm);
 }
 
+.brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  text-decoration: none;
+  color: var(--color-ink);
+  min-width: 0;
+}
+
+.brand-mark {
+  display: block;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+}
+
+.brand-word {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+  line-height: 1;
+}
+
+.brand-lockup--header .brand-mark {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.brand-lockup--header .brand-word {
+  font-size: clamp(1.35rem, 4vw, 1.75rem);
+}
+
+.brand-lockup--auth {
+  margin: 0 0 var(--space-5);
+}
+
+.brand-lockup--auth .brand-mark {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: var(--radius-lg);
+}
+
+.brand-lockup--auth .brand-word {
+  font-size: clamp(2.4rem, 9vw, 3.5rem);
+  letter-spacing: 0.1em;
+}
+
+.auth-sheet .auth-lede {
+  margin: 0 0 var(--space-5);
+  max-width: 22rem;
+  font-size: var(--text-lg);
+  line-height: var(--leading-snug);
+  color: var(--color-muted);
+}
+
 .brand-logo {
   display: block;
   height: 1.75rem;

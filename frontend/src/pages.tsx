@@ -3,6 +3,7 @@ import { Link, Navigate, Outlet, useNavigate } from "react-router-dom"
 import { ApiError } from "./api/errors"
 import { AvatarMenu } from "./components/AvatarMenu"
 import { BottomNav } from "./components/BottomNav"
+import { BrandLockup } from "./components/BrandLockup"
 import { BottomSheet } from "./components/BottomSheet"
 import { DeleteSpaceForm } from "./components/DeleteSpaceForm"
 import { HomeHero } from "./components/HomeHero"
@@ -40,9 +41,9 @@ export function LoginPage() {
   if (!ready || !client) return <p className="sheet muted">Opening your space…</p>
   if (user) return <Navigate to="/" replace />
   return (
-    <main className="sheet">
-      <img className="brand-logo brand-logo--auth" src="/logo.svg" alt="Closer" width={200} height={60} />
-      <h1>The plan for the next time you are in the same place.</h1>
+    <main className="sheet auth-sheet">
+      <BrandLockup size="auth" />
+      <p className="auth-lede">The plan for the next time you are in the same place.</p>
       <LoginForm
         onSubmit={async (email, password) => {
           if (!client) return
@@ -65,9 +66,9 @@ export function RegisterPage() {
   if (!ready || !client) return <p className="sheet muted">Opening your space…</p>
   if (user) return <Navigate to="/" replace />
   return (
-    <main className="sheet">
-      <img className="brand-logo brand-logo--auth" src="/logo.svg" alt="Closer" width={200} height={60} />
-      <h1>Open a space for the two of you.</h1>
+    <main className="sheet auth-sheet">
+      <BrandLockup size="auth" />
+      <p className="auth-lede">Open a space for the two of you.</p>
       <RegisterForm
         onSubmit={async (values) => {
           if (!client) return
@@ -103,7 +104,7 @@ export function Shell() {
     <div className="shell">
       <header className="top">
         <div className="top-copy">
-          <img className="brand-logo" src="/logo.svg" alt="Closer" width={160} height={48} />
+          <BrandLockup size="header" to="/" />
           <p className="muted names">
             {user?.display_name}
             {partner ? ` and ${partner.display_name}` : ""}
