@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react"
+import { PasswordField } from "./PasswordField"
 
 export function PasswordSettingsForm({
   onSave,
@@ -36,18 +37,27 @@ export function PasswordSettingsForm({
 
   return (
     <form onSubmit={(event) => void handleSubmit(event)} className="stack">
-      <label className="field">
-        <span>Current password</span>
-        <input name="current_password" type="password" required minLength={8} autoComplete="current-password" />
-      </label>
-      <label className="field">
-        <span>New password</span>
-        <input name="new_password" type="password" required minLength={8} autoComplete="new-password" />
-      </label>
-      <label className="field">
-        <span>Confirm new password</span>
-        <input name="confirm_password" type="password" required minLength={8} autoComplete="new-password" />
-      </label>
+      <PasswordField
+        label="Current password"
+        name="current_password"
+        required
+        minLength={8}
+        autoComplete="current-password"
+      />
+      <PasswordField
+        label="New password"
+        name="new_password"
+        required
+        minLength={8}
+        autoComplete="new-password"
+      />
+      <PasswordField
+        label="Confirm new password"
+        name="confirm_password"
+        required
+        minLength={8}
+        autoComplete="new-password"
+      />
       {error ? <p className="error">{error}</p> : null}
       {saved ? <p className="muted">Password updated.</p> : null}
       <button className="secondary" type="submit">

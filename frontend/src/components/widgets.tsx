@@ -3,6 +3,7 @@ import { countdownParts, formatWhen } from "../format"
 import { MOOD_CHIPS } from "../mood"
 import type { Budget, CheckIn, CheckInWrite, Countdown, EventWrite, Mood } from "../types"
 import { CURRENCY_OPTIONS } from "../visitHints"
+import { PasswordField } from "./PasswordField"
 
 export function RegisterForm({
   onSubmit,
@@ -44,7 +45,7 @@ export function RegisterForm({
     <form onSubmit={handleSubmit} className="stack">
       <Field label="Display name" name="display_name" required />
       <Field label="Email" name="email" type="email" required />
-      <Field label="Password" name="password" type="password" required />
+      <PasswordField label="Password" name="password" required autoComplete="new-password" />
       <Field label="Timezone" name="timezone" defaultValue="UTC" required />
       {error ? <p className="error">{error}</p> : null}
       <button className="primary" type="submit">
@@ -75,7 +76,7 @@ export function LoginForm({
   return (
     <form onSubmit={handleSubmit} className="stack">
       <Field label="Email" name="email" type="email" required />
-      <Field label="Password" name="password" type="password" required />
+      <PasswordField label="Password" name="password" required autoComplete="current-password" />
       {error ? <p className="error">{error}</p> : null}
       <button className="primary" type="submit">
         Sign in

@@ -211,6 +211,12 @@ Added `POST /ideas` (contract-first). Opt-in gated (403, no model call when off)
 
 Prompt: next slice (backlog task 21)
 
+## 2026-11-12 — Task 23: Compose Playwright pairing
+
+Hardened `e2e/pairing.spec.ts` (Arrives/Leaves, traveler, exact Check-in heading, visit article scope). Ran `npm run test:e2e:compose` against Compose Postgres/frontend with the current API on :8000 after Docker Hub blocked image rebuild. Spec passed.
+
+Prompt: proceed (backlog task 23)
+
 ## 2026-11-12 — Profile photo upload
 
 Added `POST/DELETE /me/avatar` and couple-scoped `GET /users/{id}/avatar`. Settings can upload or remove a JPEG/PNG/WebP photo; Home and the avatar menu show it. Cross-couple fetch returns 404.
@@ -222,3 +228,9 @@ Prompt: users can't upload their photos to the profile
 Added `e2e/pairing.spec.ts` and `playwright.compose.config.ts` (`npm run test:e2e:compose`). Two browser contexts: A creates a space and invite, B joins, A adds a visit and check-in, B sees both. Mock e2e specs stay on the default Playwright config.
 
 Prompt: proceed
+
+## 2026-11-12 — Show password toggle
+
+Added a Show/Hide control on login, register, and settings password fields.
+
+Prompt: need fix: the users should be able to see their password
