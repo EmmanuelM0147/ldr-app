@@ -11,6 +11,7 @@ import { PartnerHomeCards } from "./components/PartnerHomeCards"
 import { PartnerTodayCards } from "./components/PartnerTodayCards"
 import { QuickActions } from "./components/QuickActions"
 import { itemsThisWeek, ThisWeekList } from "./components/ThisWeekList"
+import { MemoryTimeline, OnThisDay, onThisDay } from "./components/MemoryTimeline"
 import { VisitCard } from "./components/VisitCard"
 import {
   BudgetFields,
@@ -20,7 +21,6 @@ import {
   CountdownCard,
   EventForm,
   LoginForm,
-  MemoryList,
   RegisterForm,
 } from "./components/widgets"
 import { formatWhen, localDate } from "./format"
@@ -567,10 +567,13 @@ export function MemoriesPage() {
       })
   }
 
+  const todayMemories = onThisDay(memories)
+
   return (
     <main className="sheet">
       <h1>Memories</h1>
-      <form onSubmit={addMemory} className="stack">
+      <OnThisDay memories={todayMemories} timeZone={user.timezone} />
+      <form onSubmit={addMemory} className="stack card">
         <label className="field">
           <span>Title</span>
           <input name="title" maxLength={80} />
@@ -579,14 +582,17 @@ export function MemoriesPage() {
           <span>What you want to keep</span>
           <textarea name="body" required rows={4} />
         </label>
+        <p className="muted">Photo upload comes later.</p>
         <button className="primary" type="submit">
           Save memory
         </button>
       </form>
       {error ? <p className="error">{error}</p> : null}
-      <MemoryList
+      <h2>Timeline</h2>
+      <MemoryTimeline
         memories={memories}
         currentUserId={user.id}
+        timeZone={user.timezone}
         onDelete={(id) => void client.deleteMemory(id).then(reload)}
       />
     </main>

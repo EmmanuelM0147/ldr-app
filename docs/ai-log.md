@@ -166,3 +166,9 @@ Prompt: same redesign prompt as step 1 (item 5).
 Emoji mood chips, side-by-side partner check-ins, streak counter, and a daily prompt placeholder. Frontend 26 tests passed.
 
 Prompt: same redesign prompt as step 1 (item 6).
+
+## 2026-11-12 — UI redesign step 7: memories
+
+Timeline cards plus an On this day section; photo upload deferred with a note in the form. Frontend 28 tests passed.
+
+Prompt: same redesign prompt as step 1 (item 7).

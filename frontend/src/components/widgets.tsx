@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react"
 import { countdownParts, formatWhen } from "../format"
 import { MOOD_CHIPS } from "../mood"
-import type { Budget, CheckIn, CheckInWrite, Countdown, EventWrite, Memory, Mood } from "../types"
+import type { Budget, CheckIn, CheckInWrite, Countdown, EventWrite, Mood } from "../types"
 
 export function RegisterForm({
   onSubmit,
@@ -291,33 +291,6 @@ export function CheckInForm({
         {existing ? "Update today's check-in" : "Save today's check-in"}
       </button>
     </form>
-  )
-}
-
-export function MemoryList({
-  memories,
-  currentUserId,
-  onDelete,
-}: {
-  memories: Memory[]
-  currentUserId: string
-  onDelete: (id: string) => void
-}) {
-  if (memories.length === 0) return <p className="muted">Nothing saved yet.</p>
-  return (
-    <ul className="list">
-      {memories.map((memory) => (
-        <li key={memory.id} className="card">
-          {memory.title ? <h3>{memory.title}</h3> : null}
-          <p>{memory.body}</p>
-          {memory.author_id === currentUserId ? (
-            <button type="button" className="textish" onClick={() => onDelete(memory.id)}>
-              Delete memory
-            </button>
-          ) : null}
-        </li>
-      ))}
-    </ul>
   )
 }
 

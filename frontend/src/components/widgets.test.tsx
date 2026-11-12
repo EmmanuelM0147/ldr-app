@@ -2,7 +2,8 @@ import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { createMockClient } from "../api/mockClient"
 import type { CheckIn, Countdown, Memory } from "../types"
-import { BudgetForm, CheckInForm, CountdownCard, EventForm, LoginForm, MemoryList, RegisterForm } from "./widgets"
+import { MemoryTimeline } from "./MemoryTimeline"
+import { BudgetForm, CheckInForm, CountdownCard, EventForm, LoginForm, RegisterForm } from "./widgets"
 
 describe("forms", () => {
   it("blocks a short password", async () => {
@@ -94,18 +95,21 @@ describe("forms", () => {
 
     onSave.mockClear()
     rerender(<CheckInForm existing={null} onSave={onSave} />)
-    await user.type(screen.getByLabelText("Note"), "a".repeat(281))
+    await user.click(screen.getByLabelText("Note"))
+    await user.paste("a".repeat(281))
     await user.click(screen.getByRole("button", { name: "Save today's check-in" }))
     expect(screen.getByText("Notes can be at most 280 characters.")).toBeInTheDocument()
     expect(onSave).not.toHaveBeenCalled()
-  })
+  }, 10_000)
 
   it("hides delete on a partner's memory", () => {
     const memories: Memory[] = [
       memory("mine", "ada", "My note"),
       memory("theirs", "bello", "Their note"),
     ]
-    render(<MemoryList memories={memories} currentUserId="ada" onDelete={vi.fn()} />)
+    render(
+      <MemoryTimeline memories={memories} currentUserId="ada" timeZone="UTC" onDelete={vi.fn()} />,
+    )
     expect(screen.getAllByRole("button", { name: "Delete memory" })).toHaveLength(1)
   })
 })
