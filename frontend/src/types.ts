@@ -88,6 +88,7 @@ export type VisitWrite = {
   ends_at: string
   location?: string | null
   notes?: string | null
+  budget?: Budget | null
 }
 
 export type Countdown = {

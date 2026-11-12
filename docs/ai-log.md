@@ -124,3 +124,21 @@ Prompt: proceed
 Added `psycopg`, Dockerfiles for api and frontend, and Compose services for db/api/frontend. Host Postgres is on port 5433 to avoid a local Postgres on 5432. SQLite unit tests remain the default. Migration tests cover SQLite and Postgres. Backend tests: 20 passed. `docker compose up` serves the stack.
 
 Prompt: proceed
+
+## 2026-11-12 — Frontend UX against the spec
+
+Moved delete to Settings with typed `DELETE` confirmation, fixed the header, showed home events plus countdown, added optional budget fields on visit create (OpenAPI `VisitWrite.budget`), put the timezone line in the shared shell footer, and showed both partners' today check-ins. Frontend 12 tests and backend 20 tests passed.
+
+Prompt: Review the frontend against /docs/spec.md and list gaps. Then fix in this order: (1) move "Delete space" to a settings page with typed confirmation, (2) fix header layout, (3) show events list and visit countdown, (4) add budget/cost fields to visits, (5) put timezone footer in the shared layout, (6) show both partners' check-ins. Update openapi.yaml first where fields change. Add tests.
+
+## 2026-11-12 — UI redesign step 1: design tokens
+
+Added `frontend/src/tokens.css` with warm palette, partner accent colors, type scale, 8px spacing, radii, shadows, and dark mode (`prefers-color-scheme` / `data-theme`). Raised muted text contrast to WCAG AA. Frontend tokens tests passed.
+
+Prompt: Redesign the frontend UI for Closer without changing the API. Mobile-first PWA, keep the warm palette and serif headings. Do these in order, one commit each: (1) Design tokens…
+
+## 2026-11-12 — UI redesign step 2: layout shell
+
+Icon + label bottom nav (44px targets), avatar menu with Settings and Sign out, `/settings` with typed `DELETE` for space removal, and Check-in label on `/check-ins`. Frontend 17 tests and backend suite passed.
+
+Prompt: same redesign prompt as step 1 (item 2).

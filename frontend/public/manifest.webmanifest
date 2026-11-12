@@ -3,7 +3,7 @@
   "short_name": "Closer",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f4efe4",
+  "background_color": "#f3ecdf",
   "theme_color": "#241910",
   "description": "A private space for a long-distance couple."
 }

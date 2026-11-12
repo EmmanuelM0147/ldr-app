@@ -497,6 +497,8 @@ export interface components {
             ends_at: string;
             location?: string | null;
             notes?: string | null;
+            /** @description Optional split set when both partners are in the space */
+            budget?: components["schemas"]["BudgetWrite"] | null;
         };
         VisitPatch: {
             title?: string;
@@ -1001,6 +1003,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["Missing"];
+            409: components["responses"]["Conflict"];
             422: components["responses"]["Invalid"];
         };
     };

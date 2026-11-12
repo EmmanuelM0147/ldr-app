@@ -114,6 +114,29 @@ def test_visits_countdown_and_budget(client) -> None:
     assert client.delete(f"/visits/{visit_id}", headers=auth(owner)).status_code == 204
     assert client.get(f"/visits/{visit_id}/budget", headers=auth(partner)).status_code == 404
 
+    with_budget = client.post(
+        "/visits",
+        json={
+            "title": "Split on create",
+            "starts_at": "2026-12-20T00:00:00Z",
+            "ends_at": "2026-12-27T00:00:00Z",
+            "budget": {
+                "currency": "USD",
+                "total_minor": 200,
+                "shares": [
+                    {"user_id": members[0]["user_id"], "amount_minor": 120},
+                    {"user_id": members[1]["user_id"], "amount_minor": 80},
+                ],
+            },
+        },
+        headers=auth(owner),
+    )
+    assert with_budget.status_code == 201
+    assert with_budget.json()["budget"]["total_minor"] == 200
+    assert with_budget.json()["budget"]["shares"][0]["amount_minor"] + with_budget.json()["budget"]["shares"][1][
+        "amount_minor"
+    ] == 200
+
 
 def test_check_in_uses_local_date_and_hides_other_couples(client) -> None:
     owner, partner, other = _pair(client)

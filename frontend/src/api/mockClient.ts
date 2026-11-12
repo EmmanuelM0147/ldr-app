@@ -329,6 +329,15 @@ export function createMockClient(options: Options = {}) {
       const couple = requireCouple()
       assertSpan(input.starts_at, input.ends_at, true)
       const stamp = now().toISOString()
+      let budget = null
+      if (input.budget) {
+        if (couple.members.length < 2) throw new ApiError(409, "Both partners need to join before a budget.")
+        const [first, second] = input.budget.shares
+        if (!first || !second || first.amount_minor + second.amount_minor !== input.budget.total_minor) {
+          throw new ApiError(422, "The two shares must add up to the total.")
+        }
+        budget = clone(input.budget)
+      }
       const visit: Visit = {
         id: newId(),
         couple_id: couple.id,
@@ -338,7 +347,7 @@ export function createMockClient(options: Options = {}) {
         ends_at: input.ends_at,
         location: blankToNull(input.location),
         notes: blankToNull(input.notes),
-        budget: null,
+        budget,
         created_at: stamp,
         updated_at: stamp,
       }

@@ -1,8 +1,14 @@
 import { useEffect, useState, type FormEvent } from "react"
-import { Link, Navigate, NavLink, Outlet, useNavigate } from "react-router-dom"
+import { Link, Navigate, Outlet, useNavigate } from "react-router-dom"
 import { ApiError } from "./api/errors"
+import { AvatarMenu } from "./components/AvatarMenu"
+import { BottomNav } from "./components/BottomNav"
+import { DeleteSpaceForm } from "./components/DeleteSpaceForm"
+import { PartnerTodayCards } from "./components/PartnerTodayCards"
 import {
+  BudgetFields,
   BudgetForm,
+  budgetFromForm,
   CheckInForm,
   CountdownCard,
   EventForm,
@@ -80,33 +86,23 @@ export function Shell() {
   const { user, couple, signOut } = useSession()
   const partner = couple?.members.find((member) => member.user_id !== user?.id)
   return (
-    <>
+    <div className="shell">
       <header className="top">
-        <div>
+        <div className="top-copy">
           <p className="brand">Closer</p>
-          <p className="muted">
+          <p className="muted names">
             {user?.display_name}
             {partner ? ` and ${partner.display_name}` : ""}
           </p>
         </div>
-        <button className="textish" type="button" onClick={signOut}>
-          Sign out
-        </button>
+        {user ? (
+          <AvatarMenu name={user.display_name} showSettings={Boolean(couple)} onSignOut={signOut} />
+        ) : null}
       </header>
       <Outlet />
-      {couple ? (
-        <nav className="tabs">
-          <NavLink to="/" end>
-            Home
-          </NavLink>
-          <NavLink to="/calendar">Calendar</NavLink>
-          <NavLink to="/visits">Visits</NavLink>
-          <NavLink to="/check-ins">Today</NavLink>
-          <NavLink to="/memories">Memories</NavLink>
-        </nav>
-      ) : null}
-      {user ? <p className="zone">Times shown in {user.timezone}</p> : null}
-    </>
+      <footer className="zone">Times shown in {user?.timezone ?? "UTC"}</footer>
+      {couple ? <BottomNav /> : null}
+    </div>
   )
 }
 
@@ -117,10 +113,12 @@ export function HomePage() {
   const [countdown, setCountdown] = useState<Awaited<ReturnType<NonNullable<typeof client>["getNextVisit"]>> | null>(
     null,
   )
+  const [events, setEvents] = useState<EventItem[]>([])
 
   useEffect(() => {
     if (!client || !couple) return
     void client.getNextVisit().then(setCountdown)
+    void client.listEvents().then(setEvents)
   }, [client, couple])
 
   if (!client || !user) return null
@@ -161,13 +159,6 @@ export function HomePage() {
     }
   }
 
-  async function removeSpace() {
-    if (!window.confirm("Delete this space and everything in it?")) return
-    await client?.deleteCurrentCouple()
-    setCode(null)
-    await refreshCouple()
-  }
-
   if (!couple) {
     return (
       <main className="sheet">
@@ -192,6 +183,24 @@ export function HomePage() {
   return (
     <main className="sheet">
       {countdown ? <CountdownCard countdown={countdown} timeZone={user.timezone} /> : null}
+      <section className="card">
+        <h2>Calendar</h2>
+        {events.length === 0 ? (
+          <p className="muted">No shared events yet.</p>
+        ) : (
+          <ul className="list compact">
+            {events.slice(0, 5).map((event) => (
+              <li key={event.id}>
+                <strong>{event.title}</strong>
+                <p className="muted">{formatWhen(event.starts_at, user.timezone)}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p>
+          <Link to="/calendar">Open the calendar</Link>
+        </p>
+      </section>
       <section className="card">
         <h2>Free to talk</h2>
         {couple.members.map((member) => {
@@ -225,9 +234,27 @@ export function HomePage() {
         </section>
       ) : null}
       {error ? <p className="error">{error}</p> : null}
-      <button className="textish danger" type="button" onClick={() => void removeSpace()}>
-        Delete this space
-      </button>
+    </main>
+  )
+}
+
+export function SettingsPage() {
+  const { client, couple, refreshCouple } = useSession()
+  const navigate = useNavigate()
+  if (!client || !couple) return null
+  return (
+    <main className="sheet">
+      <h1>Settings</h1>
+      <section className="card">
+        <h2>Delete this space</h2>
+        <DeleteSpaceForm
+          onConfirm={async () => {
+            await client.deleteCurrentCouple()
+            await refreshCouple()
+            navigate("/", { replace: true })
+          }}
+        />
+      </section>
     </main>
   )
 }
@@ -307,6 +334,14 @@ export function VisitsPage() {
       setError("End must be after the start.")
       return
     }
+    const memberPair: [string, string] | null = me && them ? [me.user_id, them.user_id] : null
+    const parsed = memberPair
+      ? budgetFromForm(data, memberPair)
+      : { budget: null, error: null as string | null }
+    if (parsed.error) {
+      setError(parsed.error)
+      return
+    }
     setError(null)
     void client
       ?.createVisit({
@@ -314,6 +349,7 @@ export function VisitsPage() {
         starts_at: starts,
         ends_at: ends,
         location: String(data.get("location") ?? ""),
+        budget: parsed.budget,
       })
       .then(() => {
         form.reset()
@@ -345,6 +381,14 @@ export function VisitsPage() {
           <span>City</span>
           <input name="location" />
         </label>
+        {me && them ? (
+          <>
+            <p className="muted">Optional cost split for this visit.</p>
+            <BudgetFields />
+          </>
+        ) : (
+          <p className="muted">The split opens when you are both here.</p>
+        )}
         <button className="primary" type="submit">
           Add visit
         </button>
@@ -409,7 +453,8 @@ export function CheckInsPage() {
   const mine = items.find((item) => item.user_id === user.id && item.local_date === today) ?? null
   return (
     <main className="sheet">
-      <h1>Today</h1>
+      <h1>Check-in</h1>
+      <PartnerTodayCards members={couple.members} items={items} today={today} />
       <CheckInForm
         key={mine?.id ?? "new"}
         existing={mine}
@@ -417,19 +462,22 @@ export function CheckInsPage() {
           void client?.upsertTodayCheckIn(input).then(reload)
         }}
       />
+      <h2>Earlier</h2>
       <ul className="list">
-        {items.map((item) => {
-          const name = couple.members.find((member) => member.user_id === item.user_id)?.display_name
-          return (
-            <li key={item.id} className="card">
-              <p className="kicker">
-                {name} · {item.local_date}
-              </p>
-              <h2>{item.mood}</h2>
-              {item.note ? <p>{item.note}</p> : null}
-            </li>
-          )
-        })}
+        {items
+          .filter((item) => item.local_date !== today)
+          .map((item) => {
+            const name = couple.members.find((member) => member.user_id === item.user_id)?.display_name
+            return (
+              <li key={item.id} className="card">
+                <p className="kicker">
+                  {name} · {item.local_date}
+                </p>
+                <h2>{item.mood}</h2>
+                {item.note ? <p>{item.note}</p> : null}
+              </li>
+            )
+          })}
       </ul>
     </main>
   )

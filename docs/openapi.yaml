@@ -298,6 +298,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/Missing"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "422":
           $ref: "#/components/responses/Invalid"
   /visits/next:
@@ -953,6 +955,11 @@ components:
           type: string
           maxLength: 2000
           nullable: true
+        budget:
+          allOf:
+            - $ref: "#/components/schemas/BudgetWrite"
+          nullable: true
+          description: Optional split set when both partners are in the space
     VisitPatch:
       type: object
       additionalProperties: false

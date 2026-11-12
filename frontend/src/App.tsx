@@ -7,6 +7,7 @@ import {
   MemoriesPage,
   RegisterPage,
   RequireAuth,
+  SettingsPage,
   Shell,
   VisitsPage,
 } from "./pages"
@@ -25,6 +26,7 @@ export function App() {
             <Route path="/visits" element={<VisitsPage />} />
             <Route path="/check-ins" element={<CheckInsPage />} />
             <Route path="/memories" element={<MemoriesPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Route>
       </Route>

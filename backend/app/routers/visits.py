@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.deps import get_clock, get_current_couple, get_current_user, get_db
 from app.models import Budget, BudgetShare, Couple, User, Visit
-from app.schemas.api import BudgetOut, CountdownOut, VisitOut, VisitPatch, VisitWrite
+from app.schemas.api import BudgetIn, BudgetOut, CountdownOut, VisitOut, VisitPatch, VisitWrite
 from app.serialize import budget_out, visit_out
 
 router = APIRouter()
@@ -29,6 +29,23 @@ def _visit_for_couple(db: Session, couple_id: uuid.UUID, visit_id: uuid.UUID) ->
     if visit is None:
         raise HTTPException(status_code=404, detail="Visit not found.")
     return visit
+
+
+def _apply_budget(db: Session, couple: Couple, visit: Visit, body: BudgetIn) -> None:
+    if len(couple.memberships) < 2:
+        raise HTTPException(status_code=409, detail="Both partners need to join before a budget.")
+    first, second = body.shares
+    if first.amount_minor + second.amount_minor != body.total_minor:
+        raise HTTPException(status_code=422, detail="The two shares must add up to the total.")
+    member_ids = {item.user_id for item in couple.memberships}
+    share_ids = {first.user_id, second.user_id}
+    if len(share_ids) != 2 or not share_ids <= member_ids:
+        raise HTTPException(status_code=422, detail="Shares must belong to the two partners.")
+    db.execute(delete(BudgetShare).where(BudgetShare.visit_id == visit.id))
+    db.execute(delete(Budget).where(Budget.visit_id == visit.id))
+    db.add(Budget(visit_id=visit.id, currency=body.currency, total_minor=body.total_minor))
+    db.add(BudgetShare(visit_id=visit.id, user_id=first.user_id, amount_minor=first.amount_minor))
+    db.add(BudgetShare(visit_id=visit.id, user_id=second.user_id, amount_minor=second.amount_minor))
 
 
 @router.get("/visits/next", response_model=CountdownOut, operation_id="getNextVisit")
@@ -82,6 +99,9 @@ def create_visit(
         updated_at=now,
     )
     db.add(visit)
+    db.flush()
+    if body.budget is not None:
+        _apply_budget(db, couple, visit, body.budget)
     db.commit()
     return visit_out(_visit_for_couple(db, couple.id, visit.id))
 
@@ -142,20 +162,7 @@ def put_budget(
     db: Session = Depends(get_db),
 ) -> BudgetOut:
     visit = _visit_for_couple(db, couple.id, visit_id)
-    if len(couple.memberships) < 2:
-        raise HTTPException(status_code=409, detail="Both partners need to join before a budget.")
-    first, second = body.shares
-    if first.amount_minor + second.amount_minor != body.total_minor:
-        raise HTTPException(status_code=422, detail="The two shares must add up to the total.")
-    member_ids = {item.user_id for item in couple.memberships}
-    share_ids = {first.user_id, second.user_id}
-    if len(share_ids) != 2 or not share_ids <= member_ids:
-        raise HTTPException(status_code=422, detail="Shares must belong to the two partners.")
-    db.execute(delete(BudgetShare).where(BudgetShare.visit_id == visit.id))
-    db.execute(delete(Budget).where(Budget.visit_id == visit.id))
-    db.add(Budget(visit_id=visit.id, currency=body.currency, total_minor=body.total_minor))
-    db.add(BudgetShare(visit_id=visit.id, user_id=first.user_id, amount_minor=first.amount_minor))
-    db.add(BudgetShare(visit_id=visit.id, user_id=second.user_id, amount_minor=second.amount_minor))
+    _apply_budget(db, couple, visit, body)
     db.commit()
     db.expire_all()
     saved = _visit_for_couple(db, couple.id, visit.id).budget

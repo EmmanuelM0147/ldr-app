@@ -123,6 +123,57 @@ export function EventForm({ onCreate }: { onCreate: (input: EventWrite) => void 
   )
 }
 
+export function budgetFromForm(
+  data: FormData,
+  memberIds: [string, string],
+  { required = false }: { required?: boolean } = {},
+): { budget: Budget | null; error: string | null } {
+  const currency = String(data.get("currency") ?? "").trim().toUpperCase()
+  const totalRaw = String(data.get("total") ?? "").trim()
+  const firstRaw = String(data.get("first") ?? "").trim()
+  const secondRaw = String(data.get("second") ?? "").trim()
+  const blank = !currency && !totalRaw && !firstRaw && !secondRaw
+  if (blank) {
+    return required
+      ? { budget: null, error: "Enter the total and both shares." }
+      : { budget: null, error: null }
+  }
+  if (!/^[A-Z]{3}$/.test(currency)) {
+    return { budget: null, error: "Currency must be a 3-letter code." }
+  }
+  const total = Math.round(Number(totalRaw) * 100)
+  const first = Math.round(Number(firstRaw) * 100)
+  const second = Math.round(Number(secondRaw) * 100)
+  if ([total, first, second].some((value) => Number.isNaN(value) || value < 0)) {
+    return { budget: null, error: "Amounts cannot be negative." }
+  }
+  if (first + second !== total) {
+    return { budget: null, error: "The two shares must add up to the total." }
+  }
+  return {
+    budget: {
+      currency,
+      total_minor: total,
+      shares: [
+        { user_id: memberIds[0], amount_minor: first },
+        { user_id: memberIds[1], amount_minor: second },
+      ],
+    },
+    error: null,
+  }
+}
+
+export function BudgetFields() {
+  return (
+    <>
+      <Field label="Currency" name="currency" defaultValue="USD" />
+      <Field label="Total" name="total" type="number" step="0.01" min="0" />
+      <Field label="Your share" name="first" type="number" step="0.01" min="0" />
+      <Field label="Their share" name="second" type="number" step="0.01" min="0" />
+    </>
+  )
+}
+
 export function BudgetForm({
   memberIds,
   onSave,
@@ -134,31 +185,18 @@ export function BudgetForm({
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const data = new FormData(event.currentTarget)
-    const total = Math.round(Number(data.get("total")) * 100)
-    const first = Math.round(Number(data.get("first")) * 100)
-    const second = Math.round(Number(data.get("second")) * 100)
-    if (first + second !== total) {
-      setError("The two shares must add up to the total.")
+    const parsed = budgetFromForm(new FormData(event.currentTarget), memberIds, { required: true })
+    if (parsed.error || !parsed.budget) {
+      setError(parsed.error ?? "Enter the total and both shares.")
       return
     }
     setError(null)
-    onSave({
-      currency: String(data.get("currency") ?? "USD").toUpperCase(),
-      total_minor: total,
-      shares: [
-        { user_id: memberIds[0], amount_minor: first },
-        { user_id: memberIds[1], amount_minor: second },
-      ],
-    })
+    onSave(parsed.budget)
   }
 
   return (
     <form onSubmit={handleSubmit} className="stack">
-      <Field label="Currency" name="currency" defaultValue="USD" required />
-      <Field label="Total" name="total" type="number" step="0.01" min="0" required />
-      <Field label="Your share" name="first" type="number" step="0.01" min="0" required />
-      <Field label="Their share" name="second" type="number" step="0.01" min="0" required />
+      <BudgetFields />
       {error ? <p className="error">{error}</p> : null}
       <button className="primary" type="submit">
         Save split

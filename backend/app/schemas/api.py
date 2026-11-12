@@ -208,6 +208,7 @@ class VisitWrite(ApiModel):
     ends_at: datetime
     location: str | None = Field(default=None, max_length=120)
     notes: str | None = Field(default=None, max_length=2000)
+    budget: BudgetIn | None = None
 
     @field_validator("starts_at", "ends_at")
     @classmethod
