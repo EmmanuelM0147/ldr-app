@@ -17,6 +17,15 @@ export function formatWhen(iso: string, timeZone: string): string {
   }).format(new Date(iso))
 }
 
+export function formatDay(iso: string, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(iso))
+}
+
 export function formatMoney(minor: number, currency: string): string {
   return new Intl.NumberFormat("en-GB", {
     style: "currency",

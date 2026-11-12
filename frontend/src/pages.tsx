@@ -12,6 +12,8 @@ import { PartnerTodayCards } from "./components/PartnerTodayCards"
 import { QuickActions } from "./components/QuickActions"
 import { itemsThisWeek, ThisWeekList } from "./components/ThisWeekList"
 import { MemoryTimeline, OnThisDay, onThisDay } from "./components/MemoryTimeline"
+import { PasswordSettingsForm } from "./components/PasswordSettingsForm"
+import { ProfileSettingsForm } from "./components/ProfileSettingsForm"
 import { RouteCityField } from "./components/RouteCityField"
 import { EmptyState, ErrorState, LoadingState } from "./components/ScreenState"
 import { VisitCard } from "./components/VisitCard"
@@ -26,7 +28,7 @@ import {
   LoginForm,
   RegisterForm,
 } from "./components/widgets"
-import { formatWhen, localDate } from "./format"
+import { formatDay, formatWhen, localDate } from "./format"
 import { checkInStreak, DAILY_PROMPT, moodLabel } from "./mood"
 import { useSession } from "./session"
 import type { CheckIn, EventItem, Memory, Visit } from "./types"
@@ -100,15 +102,13 @@ export function Shell() {
     <div className="shell">
       <header className="top">
         <div className="top-copy">
-          <p className="brand">Closer</p>
+          <img className="brand-logo" src="/logo.svg" alt="Closer" width={160} height={48} />
           <p className="muted names">
             {user?.display_name}
             {partner ? ` and ${partner.display_name}` : ""}
           </p>
         </div>
-        {user ? (
-          <AvatarMenu name={user.display_name} showSettings={Boolean(couple)} onSignOut={signOut} />
-        ) : null}
+        {user ? <AvatarMenu name={user.display_name} onSignOut={signOut} /> : null}
       </header>
       <Outlet />
       <footer className="zone">Times shown in {user?.timezone ?? "UTC"}</footer>
@@ -245,22 +245,211 @@ export function HomePage() {
 }
 
 export function SettingsPage() {
-  const { client, couple, refreshCouple } = useSession()
+  const { client, user, couple, signOut, refreshCouple, refreshUser } = useSession()
   const navigate = useNavigate()
-  if (!client || !couple) return null
+  const [invite, setInvite] = useState<{ code: string; expires_at: string } | null>(null)
+  const [copied, setCopied] = useState(false)
+  const [spaceError, setSpaceError] = useState<string | null>(null)
+  const [aiBusy, setAiBusy] = useState(false)
+  if (!client || !user) return null
+
+  async function issueInvite() {
+    if (!client) return
+    setSpaceError(null)
+    setCopied(false)
+    try {
+      const created = await client.createInvite()
+      setInvite({ code: created.code, expires_at: created.expires_at })
+    } catch (caught) {
+      setSpaceError(caught instanceof ApiError ? caught.detail : "Could not create a code.")
+    }
+  }
+
+  async function copyInvite() {
+    if (!invite) return
+    try {
+      await navigator.clipboard.writeText(invite.code)
+      setCopied(true)
+    } catch {
+      setSpaceError("Could not copy the code. Select it manually.")
+    }
+  }
+
   return (
     <main className="sheet">
       <h1>Settings</h1>
+      <p className="lede">Your account, how you appear to your partner, and this couple space.</p>
+
       <section className="card">
-        <h2>Delete this space</h2>
-        <DeleteSpaceForm
-          onConfirm={async () => {
-            await client.deleteCurrentCouple()
-            await refreshCouple()
-            navigate("/", { replace: true })
+        <h2>Account</h2>
+        <ul className="list compact">
+          <li>
+            <strong>{user.email}</strong>
+            <p className="muted">Sign-in email — not shared as a public profile.</p>
+          </li>
+          <li>
+            <strong>Member since</strong>
+            <p className="muted">{formatDay(user.created_at, user.timezone)}</p>
+          </li>
+        </ul>
+      </section>
+
+      <section className="card">
+        <h2>Profile</h2>
+        <p className="muted">Display name and timezone. Partners see these in the shared space.</p>
+        <ProfileSettingsForm
+          user={user}
+          onSave={async (values) => {
+            try {
+              await client.updateMe(values)
+              await refreshUser()
+            } catch (caught) {
+              throw new Error(caught instanceof ApiError ? caught.detail : "Could not save profile.")
+            }
           }}
         />
       </section>
+
+      <section className="card">
+        <h2>Password</h2>
+        <p className="muted">Change with your current password. New password must be at least 8 characters.</p>
+        <PasswordSettingsForm
+          onSave={async (values) => {
+            try {
+              await client.updateMe(values)
+            } catch (caught) {
+              throw new Error(caught instanceof ApiError ? caught.detail : "Could not change password.")
+            }
+          }}
+        />
+      </section>
+
+      {couple ? (
+        <section className="card">
+          <h2>Your space</h2>
+          <p className="muted">
+            Shared since {formatDay(couple.created_at, user.timezone)}. Only the two of you can see this data.
+          </p>
+          <ul className="list compact">
+            {couple.members.map((member) => {
+              const isYou = member.user_id === user.id
+              return (
+                <li key={member.user_id}>
+                  <strong>
+                    {member.display_name}
+                    {isYou ? " (you)" : ""}
+                  </strong>
+                  <p className="muted">
+                    {member.timezone} · joined {formatDay(member.joined_at, user.timezone)}
+                  </p>
+                </li>
+              )
+            })}
+          </ul>
+
+          <h3 className="settings-subhead">Privacy and AI</h3>
+          <label className="field switch-field">
+            <span>AI date-night ideas</span>
+            <input
+              type="checkbox"
+              checked={couple.ai_opt_in}
+              disabled={aiBusy}
+              onChange={(event) => {
+                const next = event.target.checked
+                setAiBusy(true)
+                setSpaceError(null)
+                void client
+                  .updateCurrentCouple({ ai_opt_in: next })
+                  .then(() => refreshCouple())
+                  .catch((caught: unknown) => {
+                    setSpaceError(caught instanceof ApiError ? caught.detail : "Could not update AI preference.")
+                  })
+                  .finally(() => setAiBusy(false))
+              }}
+            />
+          </label>
+          <p className="muted">
+            Off by default. When on, either of you can ask for ideas. We never send personal content without this
+            switch, and prompts are not logged.
+          </p>
+
+          {couple.members.length < 2 ? (
+            <>
+              <h3 className="settings-subhead">Invite partner</h3>
+              <p className="muted">One-time code, expires in seven days. Share it only with your partner.</p>
+              {invite ? (
+                <>
+                  <p className="code">{invite.code}</p>
+                  <p className="muted">Expires {formatWhen(invite.expires_at, user.timezone)}</p>
+                  <div className="row-actions">
+                    <button className="secondary" type="button" onClick={() => void copyInvite()}>
+                      {copied ? "Copied" : "Copy code"}
+                    </button>
+                    <button className="secondary" type="button" onClick={() => void issueInvite()}>
+                      New code
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <button className="secondary" type="button" onClick={() => void issueInvite()}>
+                  Create invite code
+                </button>
+              )}
+            </>
+          ) : null}
+          {spaceError ? <ErrorState message={spaceError} /> : null}
+        </section>
+      ) : (
+        <section className="card">
+          <h2>Your space</h2>
+          <p className="muted">
+            You are not in a couple space yet. Create or join one from Home to invite a partner and manage AI
+            preferences.
+          </p>
+          <Link className="secondary button-link" to="/">
+            Go to Home
+          </Link>
+        </section>
+      )}
+
+      <section className="card">
+        <h2>About Closer</h2>
+        <p className="muted">
+          A private space for two. No chat, no video calls, no public profiles. Shared visits, check-ins, and
+          memories stay inside your couple space until you delete it.
+        </p>
+      </section>
+
+      <section className="card">
+        <h2>Session</h2>
+        <p className="muted">Sign out on this device. Your account and space stay intact.</p>
+        <button
+          className="secondary"
+          type="button"
+          onClick={() => {
+            signOut()
+            navigate("/login", { replace: true })
+          }}
+        >
+          Sign out
+        </button>
+      </section>
+
+      {couple ? (
+        <section className="card danger-zone">
+          <h2>Delete this space</h2>
+          <p className="muted">
+            Removes shared visits, events, check-ins, memories, and presence. Both accounts remain and can sign in.
+          </p>
+          <DeleteSpaceForm
+            onConfirm={async () => {
+              await client.deleteCurrentCouple()
+              await refreshCouple()
+              navigate("/", { replace: true })
+            }}
+          />
+        </section>
+      ) : null}
     </main>
   )
 }

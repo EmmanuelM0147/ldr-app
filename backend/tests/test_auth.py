@@ -64,3 +64,30 @@ def test_register_rejects_bad_input(client) -> None:
 def test_me_requires_token(client) -> None:
     assert client.get("/me").status_code == 401
     assert isinstance(client.get("/me").json()["detail"], str)
+
+
+def test_update_me_profile_and_password(client) -> None:
+    token = register(client, "ada@example.com", timezone="UTC")
+    headers = {"Authorization": f"Bearer {token}"}
+    updated = client.patch(
+        "/me",
+        json={"display_name": "Ada Love", "timezone": "Africa/Lagos"},
+        headers=headers,
+    )
+    assert updated.status_code == 200
+    assert updated.json()["display_name"] == "Ada Love"
+    assert updated.json()["timezone"] == "Africa/Lagos"
+    bad_pw = client.patch(
+        "/me",
+        json={"current_password": "password999", "new_password": "password456"},
+        headers=headers,
+    )
+    assert bad_pw.status_code == 422
+    changed = client.patch(
+        "/me",
+        json={"current_password": "password123", "new_password": "password456"},
+        headers=headers,
+    )
+    assert changed.status_code == 200
+    assert client.post("/auth/login", json={"email": "ada@example.com", "password": "password456"}).status_code == 200
+    assert client.post("/auth/login", json={"email": "ada@example.com", "password": "password123"}).status_code == 401

@@ -190,3 +190,15 @@ Prompt: proceed (after recommending currency options and soft city suggestions).
 Updated spec/OpenAPI for `POST /memories/upload` and `GET /memories/{id}/media`. Backend stores files under `MEDIA_ROOT` with couple scoping and cross-couple denial tests. Memories UI accepts JPEG/PNG/WebP and MP4/WebM.
 
 Prompt: proceed then implement upload photos/videos for memories
+
+## 2026-11-12 — Comprehensive settings / profile
+
+Added `PATCH /me` (display name, timezone, password) and `PATCH /couples/current` (AI opt-in). Settings now covers profile, password, space members, AI toggle, invite, session sign-out, and delete space.
+
+Prompt: proceed then make the settings/profile more comprehensive
+
+## 2026-11-12 — Logo + PWA icons
+
+Added `logo.svg` (mark + CLOSER wordmark) and `icon.svg` from the existing mark. Shell header uses the logo; favicon points at `icon.svg`; manifest lists `icon-192.png` and `icon-512.png`.
+
+Prompt: Use the existing Closer mark. Add /frontend/public/logo.svg (mark + “Closer” wordmark in ink #1F1710) and rename/adapt the app icon to /frontend/public/icon.svg. Use logo.svg in the header (replace text brand), set icon.svg as favicon in index.html, and add 192/512 PWA icons to manifest.webmanifest. Keep colors: green #1D5A48, terracotta #B8402A, ink #1F1710, cream #F3EBDD. Flat, no gradients.

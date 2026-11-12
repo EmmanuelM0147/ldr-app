@@ -10,6 +10,17 @@ export type User = {
   created_at: string
 }
 
+export type UserPatch = {
+  display_name?: string
+  timezone?: string
+  current_password?: string
+  new_password?: string
+}
+
+export type CouplePatch = {
+  ai_opt_in?: boolean
+}
+
 export type AuthResponse = {
   access_token: string
   token_type: "bearer"

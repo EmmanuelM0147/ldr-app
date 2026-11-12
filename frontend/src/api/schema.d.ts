@@ -69,7 +69,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update profile or password */
+        patch: operations["updateMe"];
         trace?: never;
     };
     "/couples": {
@@ -104,7 +105,8 @@ export interface paths {
         delete: operations["deleteCurrentCouple"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update couple preferences */
+        patch: operations["updateCurrentCouple"];
         trace?: never;
     };
     "/couples/current/invites": {
@@ -293,6 +295,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/memories/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a memory with an optional photo or video */
+        post: operations["createMemoryWithMedia"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/memories/{memory_id}": {
         parameters: {
             query?: never;
@@ -307,6 +326,23 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["updateMemory"];
+        trace?: never;
+    };
+    "/memories/{memory_id}/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download media for a memory in the caller's couple */
+        get: operations["getMemoryMedia"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/presence": {
@@ -379,6 +415,17 @@ export interface components {
              * @default UTC
              */
             timezone: string;
+        };
+        UserPatch: {
+            display_name?: string;
+            /** @description IANA timezone name */
+            timezone?: string;
+            /** @description Required when setting a new password */
+            current_password?: string;
+            new_password?: string;
+        };
+        CouplePatch: {
+            ai_opt_in?: boolean;
         };
         LoginRequest: {
             /** Format: email */
@@ -483,7 +530,10 @@ export interface components {
             ends_at: string;
             location: string | null;
             notes: string | null;
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Couple member who is traveling for this visit
+             */
             traveler_user_id: string | null;
             budget: components["schemas"]["Budget"] | null;
             /** Format: date-time */
@@ -499,7 +549,10 @@ export interface components {
             ends_at: string;
             location?: string | null;
             notes?: string | null;
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Optional couple member who is traveling
+             */
             traveler_user_id?: string | null;
             /** @description Optional split set when both partners are in the space */
             budget?: components["schemas"]["BudgetWrite"] | null;
@@ -542,10 +595,11 @@ export interface components {
         /** @enum {string} */
         Mood: "great" | "good" | "okay" | "low" | "rough";
         MemoryMedia: {
+            /** @enum {string} */
             kind: "image" | "video";
             content_type: string;
             filename: string;
-            /** Authenticated path to download the file */
+            /** @description Authenticated path to download the file */
             url: string;
         };
         Memory: {
@@ -754,6 +808,32 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
         };
     };
+    updateMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserPatch"];
+            };
+        };
+        responses: {
+            /** @description Updated user */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            422: components["responses"]["Invalid"];
+        };
+    };
     createCouple: {
         parameters: {
             query?: never;
@@ -816,6 +896,33 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["Missing"];
+        };
+    };
+    updateCurrentCouple: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CouplePatch"];
+            };
+        };
+        responses: {
+            /** @description Updated couple */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Couple"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["Missing"];
+            422: components["responses"]["Invalid"];
         };
     };
     createInvite: {
@@ -1245,6 +1352,42 @@ export interface operations {
             422: components["responses"]["Invalid"];
         };
     };
+    createMemoryWithMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    title?: string | null;
+                    /** @description Optional when a file is attached */
+                    body?: string;
+                    /**
+                     * Format: binary
+                     * @description JPEG, PNG, WebP (10 MiB) or MP4, WebM (40 MiB)
+                     */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Memory saved with media */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Memory"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["Missing"];
+            422: components["responses"]["Invalid"];
+        };
+    };
     deleteMemory: {
         parameters: {
             query?: never;
@@ -1294,6 +1437,34 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["Missing"];
             422: components["responses"]["Invalid"];
+        };
+    };
+    getMemoryMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                memory_id: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Media bytes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                    "image/png": string;
+                    "image/webp": string;
+                    "video/mp4": string;
+                    "video/webm": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["Missing"];
         };
     };
     getPresence: {

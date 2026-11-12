@@ -45,6 +45,18 @@ Acceptance criteria:
 - More than 10 failed join attempts from one client IP in an hour are rejected.
 - The plaintext code is never stored or logged.
 
+### Account and space settings
+
+As a partner, I update my profile and our space preferences.
+
+Acceptance criteria:
+
+- I can change my display name and IANA timezone.
+- I can change my password with the current password plus a new password (min 8 characters).
+- Email is shown but not changed here.
+- Either member can turn couple AI opt-in on or off.
+- Either member can delete the couple space from settings with typed confirmation.
+
 ### Delete the couple space
 
 As either member, I delete the space so our shared data is gone.

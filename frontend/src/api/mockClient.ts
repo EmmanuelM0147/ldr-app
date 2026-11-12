@@ -16,6 +16,8 @@ import type {
   RegisterRequest,
   User,
   Visit,
+  CouplePatch,
+  UserPatch,
   VisitWrite,
 } from "../types"
 import { localDate } from "../format"
@@ -197,6 +199,38 @@ export function createMockClient(options: Options = {}) {
       return publicUser(currentUser())
     },
 
+    async updateMe(input: UserPatch): Promise<User> {
+      const user = currentUser()
+      if (input.display_name !== undefined) {
+        const name = input.display_name.trim()
+        if (name.length < 1 || name.length > 40) throw new ApiError(422, "Display name must be 1 to 40 characters.")
+        user.display_name = name
+      }
+      if (input.timezone !== undefined) {
+        assertTimezone(input.timezone)
+        user.timezone = input.timezone
+      }
+      if (input.new_password !== undefined) {
+        if (!input.current_password || user.password_mark !== `mock:${input.current_password}`) {
+          throw new ApiError(422, "Current password is wrong.")
+        }
+        if (input.new_password.length < 8) throw new ApiError(422, "Password must be 8 to 72 characters.")
+        user.password_mark = `mock:${input.new_password}`
+      } else if (input.current_password !== undefined) {
+        throw new ApiError(422, "Provide a new password to change it.")
+      }
+      for (const couple of db.couples) {
+        for (const member of couple.members) {
+          if (member.user_id === user.id) {
+            member.display_name = user.display_name
+            member.timezone = user.timezone
+          }
+        }
+      }
+      persist()
+      return publicUser(user)
+    },
+
     async createCouple(): Promise<Couple> {
       const user = currentUser()
       if (coupleFor(user.id)) throw new ApiError(409, "You already have a couple space.")
@@ -214,6 +248,14 @@ export function createMockClient(options: Options = {}) {
 
     async getCurrentCouple(): Promise<Couple> {
       return clone(requireCouple())
+    },
+
+    async updateCurrentCouple(input: CouplePatch): Promise<Couple> {
+      const couple = requireCouple()
+      if (input.ai_opt_in === undefined) throw new ApiError(422, "Nothing to update.")
+      couple.ai_opt_in = input.ai_opt_in
+      persist()
+      return clone(couple)
     },
 
     async deleteCurrentCouple(): Promise<void> {

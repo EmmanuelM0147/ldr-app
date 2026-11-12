@@ -22,7 +22,7 @@ from app.models import (
     User,
     Visit,
 )
-from app.schemas.api import CoupleOut, InviteCreated, JoinRequest
+from app.schemas.api import CoupleOut, CouplePatch, InviteCreated, JoinRequest
 from app.security import hash_invite_code
 from app.serialize import couple_out
 
@@ -62,6 +62,27 @@ def create_couple(
 @router.get("/couples/current", response_model=CoupleOut, operation_id="getCurrentCouple")
 def get_current_couple(couple: Couple = Depends(load_couple)) -> CoupleOut:
     return couple_out(couple)
+
+
+@router.patch("/couples/current", response_model=CoupleOut, operation_id="updateCurrentCouple")
+def update_current_couple(
+    body: CouplePatch,
+    couple: Couple = Depends(load_couple),
+    db: Session = Depends(get_db),
+) -> CoupleOut:
+    changes = body.model_dump(exclude_unset=True)
+    if not changes:
+        raise HTTPException(status_code=422, detail="Nothing to update.")
+    for key, value in changes.items():
+        setattr(couple, key, value)
+    db.commit()
+    saved = db.scalar(
+        select(Couple)
+        .where(Couple.id == couple.id)
+        .options(selectinload(Couple.memberships).selectinload(Membership.user))
+    )
+    assert saved is not None
+    return couple_out(saved)
 
 
 @router.delete("/couples/current", status_code=204, operation_id="deleteCurrentCouple")

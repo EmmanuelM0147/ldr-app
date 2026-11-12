@@ -7,6 +7,7 @@ import type {
   CheckInWrite,
   Countdown,
   Couple,
+  CouplePatch,
   EventItem,
   EventWrite,
   InviteCreated,
@@ -15,6 +16,7 @@ import type {
   MemoryWrite,
   PresenceList,
   User,
+  UserPatch,
   Visit,
   VisitWrite,
 } from "../types"
@@ -75,12 +77,20 @@ export function createApiClient(baseUrl = "http://localhost:8000"): Api {
       return unwrap<User>(api.GET("/me"))
     },
 
+    updateMe(input: UserPatch) {
+      return unwrap<User>(api.PATCH("/me", { body: input }))
+    },
+
     createCouple() {
       return unwrap<Couple>(api.POST("/couples"))
     },
 
     getCurrentCouple() {
       return unwrap<Couple>(api.GET("/couples/current"))
+    },
+
+    updateCurrentCouple(input: CouplePatch) {
+      return unwrap<Couple>(api.PATCH("/couples/current", { body: input }))
     },
 
     async deleteCurrentCouple() {

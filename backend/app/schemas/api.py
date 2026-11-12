@@ -72,6 +72,34 @@ class LoginRequest(ApiModel):
         return value.lower()
 
 
+class UserPatch(ApiModel):
+    display_name: str | None = Field(default=None, min_length=1, max_length=40)
+    timezone: str | None = None
+    current_password: str | None = Field(default=None, min_length=8, max_length=72)
+    new_password: str | None = Field(default=None, min_length=8, max_length=72)
+
+    @field_validator("display_name")
+    @classmethod
+    def strip_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        if not cleaned or len(cleaned) > 40:
+            raise ValueError("Display name must be 1 to 40 characters.")
+        return cleaned
+
+    @field_validator("timezone")
+    @classmethod
+    def iana_timezone(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        try:
+            ZoneInfo(value)
+        except ZoneInfoNotFoundError as exc:
+            raise ValueError("Timezone must be a valid IANA name.") from exc
+        return value
+
+
 class AuthResponse(ApiModel):
     access_token: str
     token_type: Literal["bearer"] = "bearer"
@@ -91,6 +119,10 @@ class CoupleOut(ApiModel):
     ai_opt_in: bool
     created_at: datetime
     members: list[MemberOut]
+
+
+class CouplePatch(ApiModel):
+    ai_opt_in: bool | None = None
 
 
 class InviteCreated(ApiModel):

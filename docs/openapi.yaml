@@ -90,6 +90,27 @@ paths:
                 $ref: "#/components/schemas/User"
         "401":
           $ref: "#/components/responses/Unauthorized"
+    patch:
+      tags: [auth]
+      operationId: updateMe
+      summary: Update profile or password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserPatch"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/Invalid"
   /couples:
     post:
       tags: [pairing]
@@ -133,6 +154,29 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/Missing"
+    patch:
+      tags: [pairing]
+      operationId: updateCurrentCouple
+      summary: Update couple preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CouplePatch"
+      responses:
+        "200":
+          description: Updated couple
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Couple"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+        "422":
+          $ref: "#/components/responses/Invalid"
   /couples/current/invites:
     post:
       tags: [pairing]
@@ -762,6 +806,32 @@ components:
           type: string
           default: UTC
           description: IANA timezone name. Defaults to UTC.
+    UserPatch:
+      type: object
+      additionalProperties: false
+      properties:
+        display_name:
+          type: string
+          minLength: 1
+          maxLength: 40
+        timezone:
+          type: string
+          description: IANA timezone name
+        current_password:
+          type: string
+          minLength: 8
+          maxLength: 72
+          description: Required when setting a new password
+        new_password:
+          type: string
+          minLength: 8
+          maxLength: 72
+    CouplePatch:
+      type: object
+      additionalProperties: false
+      properties:
+        ai_opt_in:
+          type: boolean
     LoginRequest:
       type: object
       additionalProperties: false

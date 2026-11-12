@@ -94,6 +94,12 @@ button, input, textarea, select {
   font-size: var(--text-sm);
 }
 
+.brand-logo {
+  display: block;
+  height: 1.75rem;
+  width: auto;
+}
+
 .muted { color: var(--color-muted); }
 
 .kicker {
@@ -532,6 +538,49 @@ input, textarea, select {
   border-radius: var(--radius-md);
   margin: var(--space-2) 0;
   background: var(--color-bg-muted);
+}
+
+.lede {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-muted);
+  max-width: 36rem;
+}
+
+.settings-subhead {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+a.button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  margin-top: var(--space-2);
+}
+
+.switch-field {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.switch-field input[type="checkbox"] {
+  width: 1.25rem;
+  min-height: 1.25rem;
+  accent-color: var(--color-accent);
+}
+
+.danger-zone {
+  border-color: color-mix(in srgb, var(--color-danger) 35%, var(--color-line));
 }
 
 .state {

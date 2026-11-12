@@ -17,6 +17,7 @@ type SessionValue = {
   signIn: (token: string, user: User) => Promise<void>
   signOut: () => void
   refreshCouple: () => Promise<void>
+  refreshUser: () => Promise<void>
   updatePresence: (freeToTalk: boolean) => Promise<void>
 }
 
@@ -127,9 +128,27 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function refreshUser() {
+    if (!client) return
+    setUser(await client.getMe())
+    await refreshCouple()
+  }
+
   return (
     <SessionContext.Provider
-      value={{ client, user, couple, presence, liveTick, ready, signIn, signOut, refreshCouple, updatePresence }}
+      value={{
+        client,
+        user,
+        couple,
+        presence,
+        liveTick,
+        ready,
+        signIn,
+        signOut,
+        refreshCouple,
+        refreshUser,
+        updatePresence,
+      }}
     >
       {children}
     </SessionContext.Provider>

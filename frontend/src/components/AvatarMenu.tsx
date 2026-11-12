@@ -1,15 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 
-export function AvatarMenu({
-  name,
-  showSettings,
-  onSignOut,
-}: {
-  name: string
-  showSettings: boolean
-  onSignOut: () => void
-}) {
+export function AvatarMenu({ name, onSignOut }: { name: string; onSignOut: () => void }) {
   const [open, setOpen] = useState(false)
   const menuId = useId()
   const root = useRef<HTMLDivElement>(null)
@@ -49,11 +41,9 @@ export function AvatarMenu({
       {open ? (
         <div className="avatar-panel" role="menu" id={menuId}>
           <p className="avatar-name">{name}</p>
-          {showSettings ? (
-            <Link role="menuitem" to="/settings" className="avatar-item" onClick={() => setOpen(false)}>
-              Settings
-            </Link>
-          ) : null}
+          <Link role="menuitem" to="/settings" className="avatar-item" onClick={() => setOpen(false)}>
+            Settings
+          </Link>
           <button role="menuitem" type="button" className="avatar-item" onClick={onSignOut}>
             Sign out
           </button>

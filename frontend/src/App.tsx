@@ -21,12 +21,12 @@ export function App() {
       <Route element={<RequireAuth />}>
         <Route element={<Shell />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route element={<RequireCouple />}>
             <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/visits" element={<VisitsPage />} />
             <Route path="/check-ins" element={<CheckInsPage />} />
             <Route path="/memories" element={<MemoriesPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Route>
       </Route>

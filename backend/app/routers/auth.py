@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.deps import get_clock, get_current_user, get_db
 from app.models import User
-from app.schemas.api import AuthResponse, LoginRequest, RegisterRequest, UserOut
+from app.schemas.api import AuthResponse, LoginRequest, RegisterRequest, UserOut, UserPatch
 from app.security import create_access_token, hash_password, verify_password
 from app.serialize import user_out
 
@@ -46,4 +46,28 @@ def login(
 
 @router.get("/me", response_model=UserOut, operation_id="getMe")
 def get_me(user: User = Depends(get_current_user)) -> UserOut:
+    return user_out(user)
+
+
+@router.patch("/me", response_model=UserOut, operation_id="updateMe")
+def update_me(
+    body: UserPatch,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> UserOut:
+    changes = body.model_dump(exclude_unset=True)
+    if not changes:
+        raise HTTPException(status_code=422, detail="Nothing to update.")
+    new_password = changes.pop("new_password", None)
+    current_password = changes.pop("current_password", None)
+    if new_password is not None:
+        if current_password is None or not verify_password(current_password, user.password_hash):
+            raise HTTPException(status_code=422, detail="Current password is wrong.")
+        user.password_hash = hash_password(new_password)
+    elif current_password is not None:
+        raise HTTPException(status_code=422, detail="Provide a new password to change it.")
+    for key, value in changes.items():
+        setattr(user, key, value)
+    db.commit()
+    db.refresh(user)
     return user_out(user)
