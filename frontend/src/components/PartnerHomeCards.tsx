@@ -1,0 +1,78 @@
+import { useEffect, useState } from "react"
+import type { CheckIn, Member, Presence } from "../types"
+
+function cityFromTimezone(timezone: string): string {
+  const leaf = timezone.split("/").pop() ?? timezone
+  return leaf.replaceAll("_", " ")
+}
+
+function localTime(timezone: string, now: Date): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: timezone,
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(now)
+}
+
+export function PartnerHomeCards({
+  members,
+  presence,
+  checkIns,
+  viewerId,
+  onTogglePresence,
+}: {
+  members: Member[]
+  presence: Presence[]
+  checkIns: CheckIn[]
+  viewerId: string
+  onTogglePresence: (freeToTalk: boolean) => void
+}) {
+  const [now, setNow] = useState(() => new Date())
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 30_000)
+    return () => window.clearInterval(id)
+  }, [])
+
+  return (
+    <section className="pair" aria-label="You and your partner">
+      {members.map((member, index) => {
+        const free = presence.find((item) => item.user_id === member.user_id)?.free_to_talk ?? false
+        const mood =
+          [...checkIns]
+            .filter((item) => item.user_id === member.user_id)
+            .sort((a, b) => b.local_date.localeCompare(a.local_date))[0]?.mood ?? null
+        const mine = member.user_id === viewerId
+        const accent = index % 2 === 0 ? "partner-a" : "partner-b"
+        return (
+          <article key={member.user_id} className={`card partner-card ${accent}`}>
+            <div className="partner-head">
+              <span className={`avatar partner-avatar ${accent}`} aria-hidden>
+                {member.display_name.slice(0, 1).toUpperCase()}
+              </span>
+              <div>
+                <h2>{member.display_name}</h2>
+                <p className="muted">{cityFromTimezone(member.timezone)}</p>
+              </div>
+            </div>
+            <p className="partner-time" aria-live="polite">
+              {localTime(member.timezone, now)}
+            </p>
+            <p className="presence">
+              <span>
+                <i className={free ? "dot on" : "dot"} />
+                {free ? "Free to talk" : "Busy"}
+              </span>
+              {mine ? (
+                <button className="secondary" type="button" onClick={() => onTogglePresence(!free)}>
+                  {free ? "Mark busy" : "I'm free"}
+                </button>
+              ) : null}
+            </p>
+            <p className="muted">Latest mood: {mood ?? "none yet"}</p>
+          </article>
+        )
+      })}
+    </section>
+  )
+}

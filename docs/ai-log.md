@@ -142,3 +142,9 @@ Prompt: Redesign the frontend UI for Closer without changing the API. Mobile-fir
 Icon + label bottom nav (44px targets), avatar menu with Settings and Sign out, `/settings` with typed `DELETE` for space removal, and Check-in label on `/check-ins`. Frontend 17 tests and backend suite passed.
 
 Prompt: same redesign prompt as step 1 (item 2).
+
+## 2026-11-12 — UI redesign step 3: home
+
+Home now has a hero countdown (or plan-visit CTA), partner cards with initial/city/local time/status/mood, quick actions, and a this-week list of events and visits. Frontend 22 tests passed.
+
+Prompt: same redesign prompt as step 1 (item 3).

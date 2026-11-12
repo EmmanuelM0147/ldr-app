@@ -4,7 +4,11 @@ import { ApiError } from "./api/errors"
 import { AvatarMenu } from "./components/AvatarMenu"
 import { BottomNav } from "./components/BottomNav"
 import { DeleteSpaceForm } from "./components/DeleteSpaceForm"
+import { HomeHero } from "./components/HomeHero"
+import { PartnerHomeCards } from "./components/PartnerHomeCards"
 import { PartnerTodayCards } from "./components/PartnerTodayCards"
+import { QuickActions } from "./components/QuickActions"
+import { itemsThisWeek, ThisWeekList } from "./components/ThisWeekList"
 import {
   BudgetFields,
   BudgetForm,
@@ -107,19 +111,23 @@ export function Shell() {
 }
 
 export function HomePage() {
-  const { client, user, couple, presence, refreshCouple, updatePresence } = useSession()
+  const { client, user, couple, presence, liveTick, refreshCouple, updatePresence } = useSession()
   const [code, setCode] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [countdown, setCountdown] = useState<Awaited<ReturnType<NonNullable<typeof client>["getNextVisit"]>> | null>(
     null,
   )
   const [events, setEvents] = useState<EventItem[]>([])
+  const [visits, setVisits] = useState<Visit[]>([])
+  const [checkIns, setCheckIns] = useState<CheckIn[]>([])
 
   useEffect(() => {
     if (!client || !couple) return
     void client.getNextVisit().then(setCountdown)
     void client.listEvents().then(setEvents)
-  }, [client, couple])
+    void client.listVisits().then(setVisits)
+    void client.listCheckIns().then(setCheckIns)
+  }, [client, couple, liveTick])
 
   if (!client || !user) return null
 
@@ -180,48 +188,20 @@ export function HomePage() {
     )
   }
 
+  const week = itemsThisWeek(events, visits)
+
   return (
     <main className="sheet">
-      {countdown ? <CountdownCard countdown={countdown} timeZone={user.timezone} /> : null}
-      <section className="card">
-        <h2>Calendar</h2>
-        {events.length === 0 ? (
-          <p className="muted">No shared events yet.</p>
-        ) : (
-          <ul className="list compact">
-            {events.slice(0, 5).map((event) => (
-              <li key={event.id}>
-                <strong>{event.title}</strong>
-                <p className="muted">{formatWhen(event.starts_at, user.timezone)}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-        <p>
-          <Link to="/calendar">Open the calendar</Link>
-        </p>
-      </section>
-      <section className="card">
-        <h2>Free to talk</h2>
-        {couple.members.map((member) => {
-          const flag = presence.find((item) => item.user_id === member.user_id)
-          const free = flag?.free_to_talk ?? false
-          const mine = member.user_id === user.id
-          return (
-            <p key={member.user_id} className="presence">
-              <span>
-                <i className={free ? "dot on" : "dot"} />
-                {member.display_name} is {free ? "free" : "not free"}
-              </span>
-              {mine ? (
-                <button className="secondary" type="button" onClick={() => void updatePresence(!free)}>
-                  {free ? "Mark busy" : "I'm free"}
-                </button>
-              ) : null}
-            </p>
-          )
-        })}
-      </section>
+      <HomeHero countdown={countdown} timeZone={user.timezone} />
+      <PartnerHomeCards
+        members={couple.members}
+        presence={presence}
+        checkIns={checkIns}
+        viewerId={user.id}
+        onTogglePresence={(free) => void updatePresence(free)}
+      />
+      <QuickActions />
+      <ThisWeekList items={week} timeZone={user.timezone} />
       {couple.members.length < 2 ? (
         <section className="card">
           <h2>Invite your partner</h2>
