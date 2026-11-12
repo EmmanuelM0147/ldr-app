@@ -13,5 +13,7 @@ frontend/playwright-report/
 frontend/blob-report/
 *.sqlite
 *.db
+media/
+backend/media/
 .coverage
 htmlcov/

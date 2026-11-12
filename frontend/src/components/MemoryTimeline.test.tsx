@@ -9,6 +9,7 @@ function memory(id: string, created_at: string, body: string): Memory {
     author_id: "ada",
     title: null,
     body,
+    media: null,
     created_at,
     updated_at: created_at,
   }

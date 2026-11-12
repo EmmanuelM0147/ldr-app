@@ -144,8 +144,42 @@ export function createApiClient(baseUrl = "http://localhost:8000"): Api {
       return unwrap<Memory[]>(api.GET("/memories"))
     },
 
-    createMemory(input: MemoryWrite) {
-      return unwrap<Memory>(api.POST("/memories", { body: input }))
+    async createMemory(input: MemoryWrite) {
+      if (input.file) {
+        const form = new FormData()
+        if (input.title) form.append("title", input.title)
+        form.append("body", input.body ?? "")
+        form.append("file", input.file)
+        const headers = new Headers()
+        if (token) headers.set("Authorization", `Bearer ${token}`)
+        const response = await fetch(new URL("/memories/upload", baseUrl), {
+          method: "POST",
+          headers,
+          body: form,
+        })
+        if (!response.ok) {
+          let detail = response.statusText
+          try {
+            const payload = (await response.json()) as { detail?: string }
+            if (payload.detail) detail = payload.detail
+          } catch {
+            /* keep status text */
+          }
+          throw new ApiError(response.status, detail || "Request failed.")
+        }
+        return (await response.json()) as Memory
+      }
+      return unwrap<Memory>(api.POST("/memories", { body: { title: input.title, body: input.body } }))
+    },
+
+    async getMemoryMedia(memoryId: string) {
+      const headers = new Headers()
+      if (token) headers.set("Authorization", `Bearer ${token}`)
+      const response = await fetch(new URL(`/memories/${memoryId}/media`, baseUrl), { headers })
+      if (!response.ok) {
+        throw new ApiError(response.status, "Media not found.")
+      }
+      return response.blob()
     },
 
     async deleteMemory(memoryId) {

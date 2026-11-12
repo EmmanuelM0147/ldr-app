@@ -22,7 +22,9 @@ REQUIRED: dict[str, set[str]] = {
     "/check-ins": {"get"},
     "/check-ins/today": {"put"},
     "/memories": {"get", "post"},
+    "/memories/upload": {"post"},
     "/memories/{memory_id}": {"patch", "delete"},
+    "/memories/{memory_id}/media": {"get"},
     "/presence": {"get", "put"},
     "/ws": {"get"},
 }

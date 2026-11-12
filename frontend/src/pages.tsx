@@ -628,15 +628,27 @@ export function MemoriesPage() {
 
   function addMemory(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const data = new FormData(event.currentTarget)
+    const form = event.currentTarget
+    const data = new FormData(form)
+    const fileInput = form.elements.namedItem("media")
+    const file =
+      fileInput instanceof HTMLInputElement && fileInput.files && fileInput.files[0]
+        ? fileInput.files[0]
+        : undefined
+    const body = String(data.get("body") ?? "")
+    if (!file && !body.trim()) {
+      setError("Add a note or choose a photo or video.")
+      return
+    }
     setError(null)
     void client
       ?.createMemory({
         title: String(data.get("title") ?? ""),
-        body: String(data.get("body") ?? ""),
+        body,
+        file,
       })
       .then(() => {
-        event.currentTarget.reset()
+        form.reset()
         return reload()
       })
       .catch((caught: unknown) => {
@@ -645,11 +657,12 @@ export function MemoriesPage() {
   }
 
   const todayMemories = onThisDay(memories)
+  const loadMedia = (memoryId: string) => client.getMemoryMedia(memoryId)
 
   return (
     <main className="sheet">
       <h1>Memories</h1>
-      <OnThisDay memories={todayMemories} timeZone={user.timezone} />
+      <OnThisDay memories={todayMemories} timeZone={user.timezone} loadMedia={loadMedia} />
       <form onSubmit={addMemory} className="stack card">
         <label className="field">
           <span>Title</span>
@@ -657,9 +670,13 @@ export function MemoriesPage() {
         </label>
         <label className="field">
           <span>What you want to keep</span>
-          <textarea name="body" required rows={4} />
+          <textarea name="body" rows={4} />
         </label>
-        <p className="muted">Photo upload comes later.</p>
+        <label className="field">
+          <span>Photo or video</span>
+          <input name="media" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" />
+        </label>
+        <p className="muted">Photos up to 10 MiB. Videos up to 40 MiB (MP4 or WebM).</p>
         <button className="primary" type="submit">
           Save memory
         </button>
@@ -673,6 +690,7 @@ export function MemoriesPage() {
           memories={memories}
           currentUserId={user.id}
           timeZone={user.timezone}
+          loadMedia={loadMedia}
           onDelete={(id) => void client.deleteMemory(id).then(reload)}
         />
       )}

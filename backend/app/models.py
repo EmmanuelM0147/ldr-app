@@ -145,6 +145,10 @@ class Memory(Base):
     author_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     title: Mapped[str | None] = mapped_column(String(80), nullable=True)
     body: Mapped[str] = mapped_column(String(2000))
+    media_kind: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    media_content_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    media_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    media_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
     created_at: Mapped[datetime] = mapped_column(UtcDateTime)
     updated_at: Mapped[datetime] = mapped_column(UtcDateTime)
 

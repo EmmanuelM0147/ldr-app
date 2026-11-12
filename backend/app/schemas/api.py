@@ -291,12 +291,20 @@ class CheckInWrite(ApiModel):
         return _blank(value)
 
 
+class MemoryMediaOut(ApiModel):
+    kind: str
+    content_type: str
+    filename: str
+    url: str
+
+
 class MemoryOut(ApiModel):
     id: uuid.UUID
     couple_id: uuid.UUID
     author_id: uuid.UUID
     title: str | None
     body: str
+    media: MemoryMediaOut | None
     created_at: datetime
     updated_at: datetime
 

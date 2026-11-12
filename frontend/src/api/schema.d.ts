@@ -541,6 +541,13 @@ export interface components {
         };
         /** @enum {string} */
         Mood: "great" | "good" | "okay" | "low" | "rough";
+        MemoryMedia: {
+            kind: "image" | "video";
+            content_type: string;
+            filename: string;
+            /** Authenticated path to download the file */
+            url: string;
+        };
         Memory: {
             /** Format: uuid */
             id: string;
@@ -550,6 +557,7 @@ export interface components {
             author_id: string;
             title: string | null;
             body: string;
+            media: components["schemas"]["MemoryMedia"] | null;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */

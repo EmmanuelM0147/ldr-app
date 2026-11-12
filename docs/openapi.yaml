@@ -478,6 +478,44 @@ paths:
           $ref: "#/components/responses/Missing"
         "422":
           $ref: "#/components/responses/Invalid"
+  /memories/upload:
+    post:
+      tags: [memories]
+      operationId: createMemoryWithMedia
+      summary: Create a memory with an optional photo or video
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                title:
+                  type: string
+                  maxLength: 80
+                  nullable: true
+                body:
+                  type: string
+                  maxLength: 2000
+                  description: Optional when a file is attached
+                file:
+                  type: string
+                  format: binary
+                  description: JPEG, PNG, WebP (10 MiB) or MP4, WebM (40 MiB)
+      responses:
+        "201":
+          description: Memory saved with media
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Memory"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+        "422":
+          $ref: "#/components/responses/Invalid"
   /memories/{memory_id}:
     patch:
       tags: [memories]
@@ -511,6 +549,41 @@ paths:
       responses:
         "204":
           description: Memory deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+  /memories/{memory_id}/media:
+    get:
+      tags: [memories]
+      operationId: getMemoryMedia
+      summary: Download media for a memory in the caller's couple
+      parameters:
+        - $ref: "#/components/parameters/MemoryId"
+      responses:
+        "200":
+          description: Media bytes
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+            video/mp4:
+              schema:
+                type: string
+                format: binary
+            video/webm:
+              schema:
+                type: string
+                format: binary
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -1052,10 +1125,25 @@ components:
     Mood:
       type: string
       enum: [great, good, okay, low, rough]
+    MemoryMedia:
+      type: object
+      additionalProperties: false
+      required: [kind, content_type, filename, url]
+      properties:
+        kind:
+          type: string
+          enum: [image, video]
+        content_type:
+          type: string
+        filename:
+          type: string
+        url:
+          type: string
+          description: Authenticated path to download the file
     Memory:
       type: object
       additionalProperties: false
-      required: [id, couple_id, author_id, title, body, created_at, updated_at]
+      required: [id, couple_id, author_id, title, body, media, created_at, updated_at]
       properties:
         id:
           type: string
@@ -1072,6 +1160,10 @@ components:
           maxLength: 80
         body:
           type: string
+        media:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/MemoryMedia"
         created_at:
           type: string
           format: date-time

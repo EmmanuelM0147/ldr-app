@@ -460,18 +460,35 @@ export function createMockClient(options: Options = {}) {
       const user = currentUser()
       const couple = requireCouple()
       const stamp = now().toISOString()
+      const id = newId()
+      let media = null
+      if (input.file) {
+        media = await fileToMedia(input.file, id)
+      }
+      const bodyText = input.body?.trim() ?? ""
+      if (!media && !bodyText) throw new ApiError(422, "A memory needs 1 to 2000 characters.")
+      if (bodyText.length > 2000) throw new ApiError(422, "A memory needs 1 to 2000 characters.")
       const memory: Memory = {
-        id: newId(),
+        id,
         couple_id: couple.id,
         author_id: user.id,
         title: cleanTitle(input.title),
-        body: requiredBody(input.body),
+        body: media ? bodyText : requiredBody(input.body),
+        media,
         created_at: stamp,
         updated_at: stamp,
       }
       db.memories.push(memory)
       persist()
       return clone(memory)
+    },
+
+    async getMemoryMedia(memoryId: string): Promise<Blob> {
+      const couple = requireCouple()
+      const memory = db.memories.find((item) => item.id === memoryId && item.couple_id === couple.id)
+      if (!memory?.media) throw new ApiError(404, "Media not found.")
+      const response = await fetch(memory.media.url)
+      return response.blob()
     },
 
     async deleteMemory(memoryId: string): Promise<void> {
@@ -617,6 +634,30 @@ function cleanTitle(title: string | null | undefined): string | null {
   if (!title?.trim()) return null
   if (title.trim().length > 80) throw new ApiError(422, "Title must be at most 80 characters.")
   return title.trim()
+}
+
+async function fileToMedia(file: File, memoryId: string) {
+  const type = file.type
+  const kind = type.startsWith("image/") ? "image" : type.startsWith("video/") ? "video" : null
+  if (!kind || !["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm"].includes(type)) {
+    throw new ApiError(422, "Use a JPEG, PNG, WebP photo or an MP4/WebM video.")
+  }
+  const max = kind === "image" ? 10 * 1024 * 1024 : 40 * 1024 * 1024
+  if (file.size === 0 || file.size > max) {
+    throw new ApiError(422, kind === "image" ? "That file is too large (max 10 MiB)." : "That file is too large (max 40 MiB).")
+  }
+  const url = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = () => reject(new ApiError(422, "Could not read that file."))
+    reader.readAsDataURL(file)
+  })
+  return {
+    kind: kind as "image" | "video",
+    content_type: type,
+    filename: file.name || `memory-${memoryId}`,
+    url,
+  }
 }
 
 function cleanNote(note: string | null | undefined): string | null {

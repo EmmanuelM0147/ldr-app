@@ -114,12 +114,20 @@ export type CheckInWrite = {
   note?: string | null
 }
 
+export type MemoryMedia = {
+  kind: "image" | "video"
+  content_type: string
+  filename: string
+  url: string
+}
+
 export type Memory = {
   id: string
   couple_id: string
   author_id: string
   title: string | null
   body: string
+  media: MemoryMedia | null
   created_at: string
   updated_at: string
 }
@@ -127,6 +135,7 @@ export type Memory = {
 export type MemoryWrite = {
   title?: string | null
   body: string
+  file?: File
 }
 
 export type Presence = {

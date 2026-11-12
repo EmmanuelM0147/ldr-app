@@ -6,6 +6,7 @@ from app.schemas.api import (
     CoupleOut,
     EventOut,
     MemberOut,
+    MemoryMediaOut,
     MemoryOut,
     PresenceOut,
     UserOut,
@@ -100,12 +101,21 @@ def check_in_out(item: CheckIn) -> CheckInOut:
 
 
 def memory_out(item: Memory) -> MemoryOut:
+    media = None
+    if item.media_kind and item.media_content_type and item.media_filename and item.media_path:
+        media = MemoryMediaOut(
+            kind=item.media_kind,
+            content_type=item.media_content_type,
+            filename=item.media_filename,
+            url=f"/memories/{item.id}/media",
+        )
     return MemoryOut(
         id=item.id,
         couple_id=item.couple_id,
         author_id=item.author_id,
         title=item.title,
         body=item.body,
+        media=media,
         created_at=item.created_at,
         updated_at=item.updated_at,
     )

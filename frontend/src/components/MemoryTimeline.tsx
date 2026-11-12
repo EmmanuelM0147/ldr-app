@@ -1,5 +1,6 @@
 import { formatWhen } from "../format"
 import type { Memory } from "../types"
+import { MemoryMediaView } from "./MemoryMedia"
 
 export function onThisDay(memories: Memory[], now = new Date()): Memory[] {
   const month = now.getUTCMonth()
@@ -17,11 +18,13 @@ export function MemoryTimeline({
   currentUserId,
   timeZone,
   onDelete,
+  loadMedia,
 }: {
   memories: Memory[]
   currentUserId: string
   timeZone: string
   onDelete: (id: string) => void
+  loadMedia?: (memoryId: string) => Promise<Blob>
 }) {
   const sorted = [...memories].sort((a, b) => b.created_at.localeCompare(a.created_at))
   if (sorted.length === 0) return <p className="muted">Nothing saved yet.</p>
@@ -32,7 +35,10 @@ export function MemoryTimeline({
           <article className="card timeline-card">
             <p className="kicker">{formatWhen(memory.created_at, timeZone)}</p>
             {memory.title ? <h3>{memory.title}</h3> : null}
-            <p>{memory.body}</p>
+            {memory.media ? (
+              <MemoryMediaView media={memory.media} memoryId={memory.id} loadBlob={loadMedia} />
+            ) : null}
+            {memory.body ? <p>{memory.body}</p> : null}
             {memory.author_id === currentUserId ? (
               <button type="button" className="textish" onClick={() => onDelete(memory.id)}>
                 Delete memory
@@ -45,7 +51,15 @@ export function MemoryTimeline({
   )
 }
 
-export function OnThisDay({ memories, timeZone }: { memories: Memory[]; timeZone: string }) {
+export function OnThisDay({
+  memories,
+  timeZone,
+  loadMedia,
+}: {
+  memories: Memory[]
+  timeZone: string
+  loadMedia?: (memoryId: string) => Promise<Blob>
+}) {
   if (memories.length === 0) {
     return (
       <section className="card" aria-label="On this day">
@@ -61,7 +75,10 @@ export function OnThisDay({ memories, timeZone }: { memories: Memory[]; timeZone
         {memories.map((memory) => (
           <li key={memory.id}>
             {memory.title ? <strong>{memory.title}</strong> : null}
-            <p>{memory.body}</p>
+            {memory.media ? (
+              <MemoryMediaView media={memory.media} memoryId={memory.id} loadBlob={loadMedia} />
+            ) : null}
+            {memory.body ? <p>{memory.body}</p> : null}
             <p className="muted">{formatWhen(memory.created_at, timeZone)}</p>
           </li>
         ))}

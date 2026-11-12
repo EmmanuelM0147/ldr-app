@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.deps import get_clock, get_current_user, get_db
 from app.deps import get_current_couple as load_couple
+from app.media import delete_media_file
 from app.models import (
     Budget,
     BudgetShare,
@@ -74,6 +75,9 @@ def delete_current_couple(
     db.execute(delete(Visit).where(Visit.couple_id == couple.id))
     db.execute(delete(Event).where(Event.couple_id == couple.id))
     db.execute(delete(CheckIn).where(CheckIn.couple_id == couple.id))
+    memories = db.scalars(select(Memory).where(Memory.couple_id == couple.id)).all()
+    for memory in memories:
+        delete_media_file(memory.media_path)
     db.execute(delete(Memory).where(Memory.couple_id == couple.id))
     db.execute(delete(Presence).where(Presence.couple_id == couple.id))
     db.execute(delete(Invite).where(Invite.couple_id == couple.id))

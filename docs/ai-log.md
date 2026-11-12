@@ -184,3 +184,9 @@ Prompt: same redesign prompt as step 1 (item 8).
 Currency is a select (NGN/USD/GBP/EUR). Route/city uses a datalist of past visit locations plus starters; free typing remains allowed.
 
 Prompt: proceed (after recommending currency options and soft city suggestions).
+
+## 2026-11-12 — Memory photo and video upload
+
+Updated spec/OpenAPI for `POST /memories/upload` and `GET /memories/{id}/media`. Backend stores files under `MEDIA_ROOT` with couple scoping and cross-couple denial tests. Memories UI accepts JPEG/PNG/WebP and MP4/WebM.
+
+Prompt: proceed then implement upload photos/videos for memories

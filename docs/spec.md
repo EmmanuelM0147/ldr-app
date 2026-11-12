@@ -107,7 +107,8 @@ As a member, I save a memory and edit or delete only my own.
 Acceptance criteria:
 
 - A memory has an optional title (max 80 characters) and a body (1–2000 characters).
-- Both members can list and add memories in the couple.
+- A memory may include one photo (JPEG/PNG/WebP, max 10 MiB) or one video (MP4/WebM, max 40 MiB). Text-only memories still require a body; media memories may use an empty body.
+- Both members can list and add memories in the couple, and both can download that couple's media.
 - Only the author can update or delete that memory. The partner receives 404.
 - Another couple's memory returns 404.
 
@@ -137,7 +138,7 @@ Acceptance criteria:
 
 - Chat, voice, and video calls.
 - More than two members, multiple spaces per user, or a public directory.
-- Payments, photo or file upload, and push notifications.
+- Payments, push notifications, and general file storage outside the memory log.
 - Refresh tokens and third-party login.
 
 ## Data model
@@ -152,7 +153,7 @@ All ids are UUIDs. All timestamps are UTC.
 - **Visit.** `couple_id`, `created_by`, `title`, `starts_at`, `ends_at`, `location` nullable, `notes` nullable, `created_at`, `updated_at`.
 - **Budget.** `visit_id` unique, `currency`, `total_minor`, and two shares (`user_id`, `amount_minor`).
 - **CheckIn.** `couple_id`, `user_id`, `local_date`, `mood`, `note` nullable, `created_at`, `updated_at`. Unique on (`user_id`, `local_date`).
-- **Memory.** `couple_id`, `author_id`, `title` nullable, `body`, `created_at`, `updated_at`.
+- **Memory.** `couple_id`, `author_id`, `title` nullable, `body`, optional media (`kind`, `content_type`, `filename`, stored path), `created_at`, `updated_at`.
 - **Presence.** `user_id`, `couple_id`, `free_to_talk`, `updated_at`.
 
 ## Privacy

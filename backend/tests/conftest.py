@@ -17,6 +17,7 @@ def database_url(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> str:
     url = f"sqlite:///{tmp_path / 'app.db'}"
     monkeypatch.setenv("DATABASE_URL", url)
     monkeypatch.setenv("JWT_SECRET", "test-secret-not-for-production-use")
+    monkeypatch.setenv("MEDIA_ROOT", str(tmp_path / "media"))
     config = Config("alembic.ini")
     config.set_main_option("sqlalchemy.url", url)
     command.upgrade(config, "head")

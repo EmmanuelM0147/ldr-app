@@ -178,6 +178,7 @@ def test_memories_are_author_scoped(client) -> None:
     owner, partner, other = _pair(client)
     created = client.post("/memories", json={"title": "Hall", "body": "You waved."}, headers=auth(owner))
     assert created.status_code == 201
+    assert created.json()["media"] is None
     memory_id = created.json()["id"]
     assert client.get("/memories", headers=auth(partner)).json()[0]["body"] == "You waved."
     denied = client.patch(f"/memories/{memory_id}", json={"body": "Changed"}, headers=auth(partner))
@@ -187,3 +188,36 @@ def test_memories_are_author_scoped(client) -> None:
     updated = client.patch(f"/memories/{memory_id}", json={"body": "You waved first."}, headers=auth(owner))
     assert updated.status_code == 200
     assert client.get("/memories", headers=auth(partner)).json()[0]["body"] == "You waved first."
+
+
+def test_memory_media_upload_and_cross_couple_denial(client) -> None:
+    owner, partner, other = _pair(client)
+    png = (
+        b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00"
+        b"\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+    uploaded = client.post(
+        "/memories/upload",
+        data={"title": "Gate", "body": ""},
+        files={"file": ("gate.png", png, "image/png")},
+        headers=auth(owner),
+    )
+    assert uploaded.status_code == 201, uploaded.text
+    body = uploaded.json()
+    assert body["media"]["kind"] == "image"
+    assert body["media"]["url"] == f"/memories/{body['id']}/media"
+    memory_id = body["id"]
+    media = client.get(f"/memories/{memory_id}/media", headers=auth(partner))
+    assert media.status_code == 200
+    assert media.content.startswith(b"\x89PNG")
+    assert client.get(f"/memories/{memory_id}/media", headers=auth(other)).status_code == 404
+    bad = client.post(
+        "/memories/upload",
+        data={"body": "nope"},
+        files={"file": ("note.txt", b"hello", "text/plain")},
+        headers=auth(owner),
+    )
+    assert bad.status_code == 422
+    assert client.delete(f"/memories/{memory_id}", headers=auth(owner)).status_code == 204
+    assert client.get(f"/memories/{memory_id}/media", headers=auth(partner)).status_code == 404

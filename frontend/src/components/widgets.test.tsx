@@ -121,6 +121,7 @@ function memory(id: string, authorId: string, body: string): Memory {
     author_id: authorId,
     title: null,
     body,
+    media: null,
     created_at: "2026-11-12T08:00:00.000Z",
     updated_at: "2026-11-12T08:00:00.000Z",
   }
