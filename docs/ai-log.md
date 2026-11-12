@@ -106,3 +106,9 @@ Prompt: same Cursor prompt pack logged in step 0.
 Wrote the OpenAPI paths for auth, pairing, events, visits, check-ins, and memories. The React app runs against an in-memory client with the same shapes. No new backend routes.
 
 Prompt: same Cursor prompt pack logged in step 0.
+
+## 2026-11-12 — Prompt pack step 4: backend
+
+Implemented the FastAPI API on SQLite with Alembic revision `0001_initial`. Auth uses argon2id and a 60-minute JWT. Invite codes are stored as SHA-256, expire in 7 days, and are rate-limited. Events, visits, budgets, check-ins, and memories are scoped by couple. Pytest covers cross-couple denial (15 passed) and ruff is clean.
+
+Prompt: proceed
