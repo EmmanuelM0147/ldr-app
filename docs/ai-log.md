@@ -100,3 +100,9 @@ Prompt: same Cursor prompt pack logged in step 0.
 Replaced `docs/backlog.md` with 25 ordered tasks in the requested groups. Each task has acceptance criteria and test notes.
 
 Prompt: same Cursor prompt pack logged in step 0.
+
+## 2026-11-12 — Prompt pack step 3: contract and mocked frontend
+
+Wrote the OpenAPI paths for auth, pairing, events, visits, check-ins, and memories. The React app runs against an in-memory client with the same shapes. No new backend routes.
+
+Prompt: same Cursor prompt pack logged in step 0.

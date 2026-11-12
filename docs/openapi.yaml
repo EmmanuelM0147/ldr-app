@@ -2,13 +2,25 @@ openapi: 3.0.3
 info:
   title: Closer API
   version: 0.1.0
-  description: API for Closer, a two-person space for long-distance couples.
+  description: Contract for Closer. Times are UTC. Clients convert with the user's IANA timezone.
 servers:
   - url: http://localhost:8000
+tags:
+  - name: meta
+  - name: auth
+  - name: pairing
+  - name: events
+  - name: visits
+  - name: check-ins
+  - name: memories
+security:
+  - bearerAuth: []
 paths:
   /health:
     get:
+      tags: [meta]
       operationId: getHealth
+      security: []
       summary: Service health
       responses:
         "200":
@@ -17,15 +29,1003 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Health"
+  /auth/register:
+    post:
+      tags: [auth]
+      operationId: register
+      security: []
+      summary: Create an account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Invalid"
+  /auth/login:
+    post:
+      tags: [auth]
+      operationId: login
+      security: []
+      summary: Sign in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Signed in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/Invalid"
+  /me:
+    get:
+      tags: [auth]
+      operationId: getMe
+      summary: Current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /couples:
+    post:
+      tags: [pairing]
+      operationId: createCouple
+      summary: Create a couple space
+      responses:
+        "201":
+          description: Space created. Caller is member one.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Couple"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /couples/current:
+    get:
+      tags: [pairing]
+      operationId: getCurrentCouple
+      summary: The caller's couple space
+      responses:
+        "200":
+          description: Current space
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Couple"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+    delete:
+      tags: [pairing]
+      operationId: deleteCurrentCouple
+      summary: Delete the couple space and its data
+      responses:
+        "204":
+          description: Space and couple-owned rows deleted. User accounts remain.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+  /couples/current/invites:
+    post:
+      tags: [pairing]
+      operationId: createInvite
+      summary: Create a single-use invite code
+      responses:
+        "201":
+          description: Code shown once. Only a hash is stored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteCreated"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/Limited"
+  /couples/join:
+    post:
+      tags: [pairing]
+      operationId: joinCouple
+      summary: Join a couple with an invite code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinRequest"
+      responses:
+        "200":
+          description: Caller is member two
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Couple"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Invalid"
+        "429":
+          $ref: "#/components/responses/Limited"
+  /events:
+    get:
+      tags: [events]
+      operationId: listEvents
+      summary: List calendar events for the caller's couple
+      responses:
+        "200":
+          description: Events ordered by starts_at
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Event"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+    post:
+      tags: [events]
+      operationId: createEvent
+      summary: Add a calendar event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventWrite"
+      responses:
+        "201":
+          description: Event created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+        "422":
+          $ref: "#/components/responses/Invalid"
+  /events/{event_id}:
+    patch:
+      tags: [events]
+      operationId: updateEvent
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventPatch"
+      responses:
+        "200":
+          description: Event updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+        "422":
+          $ref: "#/components/responses/Invalid"
+    delete:
+      tags: [events]
+      operationId: deleteEvent
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      responses:
+        "204":
+          description: Event deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+  /visits:
+    get:
+      tags: [visits]
+      operationId: listVisits
+      summary: List visits for the caller's couple
+      responses:
+        "200":
+          description: Visits ordered by starts_at
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Visit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+    post:
+      tags: [visits]
+      operationId: createVisit
+      summary: Plan a visit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VisitWrite"
+      responses:
+        "201":
+          description: Visit created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Visit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+        "422":
+          $ref: "#/components/responses/Invalid"
+  /visits/next:
+    get:
+      tags: [visits]
+      operationId: getNextVisit
+      summary: Soonest future visit and the countdown
+      responses:
+        "200":
+          description: Empty visit when nothing is upcoming
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Countdown"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+  /visits/{visit_id}:
+    patch:
+      tags: [visits]
+      operationId: updateVisit
+      parameters:
+        - $ref: "#/components/parameters/VisitId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VisitPatch"
+      responses:
+        "200":
+          description: Visit updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Visit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+        "422":
+          $ref: "#/components/responses/Invalid"
+    delete:
+      tags: [visits]
+      operationId: deleteVisit
+      parameters:
+        - $ref: "#/components/parameters/VisitId"
+      responses:
+        "204":
+          description: Visit and its budget deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+  /visits/{visit_id}/budget:
+    get:
+      tags: [visits]
+      operationId: getBudget
+      parameters:
+        - $ref: "#/components/parameters/VisitId"
+      responses:
+        "200":
+          description: Budget for the visit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Budget"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+    put:
+      tags: [visits]
+      operationId: putBudget
+      parameters:
+        - $ref: "#/components/parameters/VisitId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BudgetWrite"
+      responses:
+        "200":
+          description: Budget saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Budget"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+        "422":
+          $ref: "#/components/responses/Invalid"
+  /check-ins:
+    get:
+      tags: [check-ins]
+      operationId: listCheckIns
+      summary: Check-ins for the caller's couple
+      responses:
+        "200":
+          description: Newest local dates first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CheckIn"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+  /check-ins/today:
+    put:
+      tags: [check-ins]
+      operationId: upsertTodayCheckIn
+      summary: Create or update today's check-in in the caller's timezone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckInWrite"
+      responses:
+        "200":
+          description: Today's check-in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckIn"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+        "422":
+          $ref: "#/components/responses/Invalid"
+  /memories:
+    get:
+      tags: [memories]
+      operationId: listMemories
+      summary: Memories for the caller's couple
+      responses:
+        "200":
+          description: Newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Memory"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+    post:
+      tags: [memories]
+      operationId: createMemory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MemoryWrite"
+      responses:
+        "201":
+          description: Memory saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Memory"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+        "422":
+          $ref: "#/components/responses/Invalid"
+  /memories/{memory_id}:
+    patch:
+      tags: [memories]
+      operationId: updateMemory
+      parameters:
+        - $ref: "#/components/parameters/MemoryId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MemoryPatch"
+      responses:
+        "200":
+          description: Memory updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Memory"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+        "422":
+          $ref: "#/components/responses/Invalid"
+    delete:
+      tags: [memories]
+      operationId: deleteMemory
+      parameters:
+        - $ref: "#/components/parameters/MemoryId"
+      responses:
+        "204":
+          description: Memory deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    EventId:
+      name: event_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    VisitId:
+      name: visit_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    MemoryId:
+      name: memory_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    BadRequest:
+      description: Invite code is missing, used, or expired
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Missing or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Missing:
+      description: Not found for this caller
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Conflict:
+      description: The action conflicts with the current couple
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Invalid:
+      description: The body failed validation
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Limited:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
   schemas:
     Health:
       type: object
       additionalProperties: false
-      required:
-        - status
+      required: [status]
       properties:
         status:
           type: string
-          enum:
-            - ok
+          enum: [ok]
+    Error:
+      type: object
+      additionalProperties: false
+      required: [detail]
+      properties:
+        detail:
+          type: string
+    User:
+      type: object
+      additionalProperties: false
+      required: [id, email, display_name, timezone, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        display_name:
+          type: string
+          minLength: 1
+          maxLength: 40
+        timezone:
+          type: string
+          description: IANA timezone name
+        created_at:
+          type: string
+          format: date-time
+    RegisterRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password, display_name]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          maxLength: 72
+        display_name:
+          type: string
+          minLength: 1
+          maxLength: 40
+        timezone:
+          type: string
+          default: UTC
+          description: IANA timezone name. Defaults to UTC.
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          maxLength: 72
+    AuthResponse:
+      type: object
+      additionalProperties: false
+      required: [access_token, token_type, expires_in, user]
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          enum: [bearer]
+        expires_in:
+          type: integer
+          enum: [3600]
+        user:
+          $ref: "#/components/schemas/User"
+    Member:
+      type: object
+      additionalProperties: false
+      required: [user_id, display_name, timezone, joined_at]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+        timezone:
+          type: string
+        joined_at:
+          type: string
+          format: date-time
+    Couple:
+      type: object
+      additionalProperties: false
+      required: [id, ai_opt_in, created_at, members]
+      properties:
+        id:
+          type: string
+          format: uuid
+        ai_opt_in:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        members:
+          type: array
+          maxItems: 2
+          items:
+            $ref: "#/components/schemas/Member"
+    InviteCreated:
+      type: object
+      additionalProperties: false
+      required: [code, expires_at]
+      properties:
+        code:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+    JoinRequest:
+      type: object
+      additionalProperties: false
+      required: [code]
+      properties:
+        code:
+          type: string
+          minLength: 8
+    Event:
+      type: object
+      additionalProperties: false
+      required: [id, couple_id, created_by, title, starts_at, ends_at, location, notes, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        couple_id:
+          type: string
+          format: uuid
+        created_by:
+          type: string
+          format: uuid
+        title:
+          type: string
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    EventWrite:
+      type: object
+      additionalProperties: false
+      required: [title, starts_at]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+          nullable: true
+        location:
+          type: string
+          maxLength: 120
+          nullable: true
+        notes:
+          type: string
+          maxLength: 2000
+          nullable: true
+    EventPatch:
+      type: object
+      additionalProperties: false
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+          nullable: true
+        location:
+          type: string
+          maxLength: 120
+          nullable: true
+        notes:
+          type: string
+          maxLength: 2000
+          nullable: true
+    BudgetShare:
+      type: object
+      additionalProperties: false
+      required: [user_id, amount_minor]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        amount_minor:
+          type: integer
+          minimum: 0
+    Budget:
+      type: object
+      additionalProperties: false
+      required: [currency, total_minor, shares]
+      properties:
+        currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+        total_minor:
+          type: integer
+          minimum: 0
+        shares:
+          type: array
+          minItems: 2
+          maxItems: 2
+          items:
+            $ref: "#/components/schemas/BudgetShare"
+    BudgetWrite:
+      type: object
+      additionalProperties: false
+      required: [currency, total_minor, shares]
+      properties:
+        currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+        total_minor:
+          type: integer
+          minimum: 0
+        shares:
+          type: array
+          minItems: 2
+          maxItems: 2
+          items:
+            $ref: "#/components/schemas/BudgetShare"
+    Visit:
+      type: object
+      additionalProperties: false
+      required: [id, couple_id, created_by, title, starts_at, ends_at, location, notes, budget, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        couple_id:
+          type: string
+          format: uuid
+        created_by:
+          type: string
+          format: uuid
+        title:
+          type: string
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        location:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        budget:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Budget"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    VisitWrite:
+      type: object
+      additionalProperties: false
+      required: [title, starts_at, ends_at]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        location:
+          type: string
+          maxLength: 120
+          nullable: true
+        notes:
+          type: string
+          maxLength: 2000
+          nullable: true
+    VisitPatch:
+      type: object
+      additionalProperties: false
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        location:
+          type: string
+          maxLength: 120
+          nullable: true
+        notes:
+          type: string
+          maxLength: 2000
+          nullable: true
+    Countdown:
+      type: object
+      additionalProperties: false
+      required: [visit, seconds_until]
+      properties:
+        visit:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Visit"
+        seconds_until:
+          type: integer
+          minimum: 0
+          nullable: true
+    CheckIn:
+      type: object
+      additionalProperties: false
+      required: [id, couple_id, user_id, local_date, mood, note, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        couple_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        local_date:
+          type: string
+          format: date
+        mood:
+          $ref: "#/components/schemas/Mood"
+        note:
+          type: string
+          nullable: true
+          maxLength: 280
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CheckInWrite:
+      type: object
+      additionalProperties: false
+      required: [mood]
+      properties:
+        mood:
+          $ref: "#/components/schemas/Mood"
+        note:
+          type: string
+          nullable: true
+          maxLength: 280
+    Mood:
+      type: string
+      enum: [great, good, okay, low, rough]
+    Memory:
+      type: object
+      additionalProperties: false
+      required: [id, couple_id, author_id, title, body, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        couple_id:
+          type: string
+          format: uuid
+        author_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          nullable: true
+          maxLength: 80
+        body:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    MemoryWrite:
+      type: object
+      additionalProperties: false
+      required: [body]
+      properties:
+        title:
+          type: string
+          nullable: true
+          maxLength: 80
+        body:
+          type: string
+          minLength: 1
+          maxLength: 2000
+    MemoryPatch:
+      type: object
+      additionalProperties: false
+      properties:
+        title:
+          type: string
+          nullable: true
+          maxLength: 80
+        body:
+          type: string
+          minLength: 1
+          maxLength: 2000

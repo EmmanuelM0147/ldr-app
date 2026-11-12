@@ -6,15 +6,15 @@ Done already: repo layout, Cursor rules, `GET /health`, draft Compose file.
 
 ## Auth + pairing
 
-- [ ] 1. Write the OpenAPI contract for auth, pairing, events, visits (including budget and countdown), check-ins, and memories.
+- [x] 1. Write the OpenAPI contract for auth, pairing, events, visits (including budget and countdown), check-ins, and memories.
   - Acceptance: every story in the spec for those areas has a path, a schema, and error responses. `GET /health` stays.
   - Tests: a YAML load check that each required path exists. No app code yet.
 
-- [ ] 2. Scaffold the Vite + React + TypeScript app and a typed mock client that matches the contract.
+- [x] 2. Scaffold the Vite + React + TypeScript app and a typed mock client that matches the contract.
   - Acceptance: strict TypeScript, no `any`. Mock register, login, create space, and join return the contract shapes.
   - Tests: `tsc --noEmit`. A unit test that the mock join rejects a reused code.
 
-- [ ] 3. Register and login screens on mocked data.
+- [x] 3. Register and login screens on mocked data.
   - Acceptance: email, password (min 8), display name, and IANA timezone. Errors render from the mock.
   - Tests: component test for a short password and a successful mock login.
 
@@ -44,7 +44,7 @@ Done already: repo layout, Cursor rules, `GET /health`, draft Compose file.
 
 ## Calendar
 
-- [ ] 10. Mocked events list and create form.
+- [x] 10. Mocked events list and create form.
   - Acceptance: title, start, optional end, location, and notes. End before start shows an error.
   - Tests: component test for the end-before-start case.
 
@@ -54,7 +54,7 @@ Done already: repo layout, Cursor rules, `GET /health`, draft Compose file.
 
 ## Visit planner
 
-- [ ] 12. Mocked visit list, countdown, and budget form.
+- [x] 12. Mocked visit list, countdown, and budget form.
   - Acceptance: countdown shows the next future visit. Budget amounts must sum to the total.
   - Tests: component test for a bad split and an empty countdown.
 
@@ -68,7 +68,7 @@ Done already: repo layout, Cursor rules, `GET /health`, draft Compose file.
 
 ## Check-ins
 
-- [ ] 15. Mocked check-in form and list.
+- [x] 15. Mocked check-in form and list.
   - Acceptance: one mood and optional note (max 280) per local day. A second submit updates the same day.
   - Tests: component test for the update and for a too-long note.
 
@@ -78,7 +78,7 @@ Done already: repo layout, Cursor rules, `GET /health`, draft Compose file.
 
 ## Memories
 
-- [ ] 17. Mocked memory list and composer.
+- [x] 17. Mocked memory list and composer.
   - Acceptance: optional title (max 80) and body (1–2000). Edit and delete controls show only on the author's entries.
   - Tests: component test that a partner's entry has no delete control.
 
