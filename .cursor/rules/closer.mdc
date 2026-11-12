@@ -1,0 +1,19 @@
+---
+description: Closer product, contract, privacy, and delivery rules
+alwaysApply: true
+---
+
+# Closer
+
+Two-person long-distance couple space. No chat or video calls.
+
+- Read `docs/spec.md` and `docs/backlog.md` before coding. One backlog task at a time.
+- Update `docs/openapi.yaml` before changing an endpoint. It is the source of truth.
+- Every task ships tests. Each data endpoint has a cross-couple denial test.
+- Scope every query by the caller's `couple_id`. Hash passwords. Use a short-lived JWT. Invite codes are single-use, expiring, and rate-limited.
+- Call an LLM only when that couple has opted in. Do not log personal content or prompts.
+- Store datetimes in UTC. Convert with the user's IANA timezone in the UI.
+- Keep secrets in env vars listed in `.env.example`.
+- After a task, tick `docs/backlog.md` and append the prompt to `docs/ai-log.md`.
+
+A visit lookup must include the couple. Filter `Visit.couple_id == couple.id` with the visit id. Do not load a visit by id alone.
