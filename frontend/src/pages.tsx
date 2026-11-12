@@ -24,6 +24,7 @@ import {
   RegisterForm,
 } from "./components/widgets"
 import { formatWhen, localDate } from "./format"
+import { checkInStreak, DAILY_PROMPT, moodLabel } from "./mood"
 import { useSession } from "./session"
 import type { CheckIn, EventItem, Memory, Visit } from "./types"
 
@@ -490,9 +491,19 @@ export function CheckInsPage() {
   if (!user || !couple) return null
   const today = localDate(user.timezone)
   const mine = items.find((item) => item.user_id === user.id && item.local_date === today) ?? null
+  const myDates = items.filter((item) => item.user_id === user.id).map((item) => item.local_date)
+  const streak = checkInStreak(myDates, today)
   return (
     <main className="sheet">
       <h1>Check-in</h1>
+      <section className="card prompt-card" aria-label="Daily prompt">
+        <p className="kicker">Today&apos;s prompt</p>
+        <h2>{DAILY_PROMPT}</h2>
+        <p className="muted">A shared question for both of you. Answers stay in your notes for now.</p>
+      </section>
+      <p className="streak" aria-label="Check-in streak">
+        Your streak: <strong>{streak}</strong> {streak === 1 ? "day" : "days"}
+      </p>
       <PartnerTodayCards members={couple.members} items={items} today={today} />
       <CheckInForm
         key={mine?.id ?? "new"}
@@ -512,7 +523,7 @@ export function CheckInsPage() {
                 <p className="kicker">
                   {name} · {item.local_date}
                 </p>
-                <h2>{item.mood}</h2>
+                <h2>{moodLabel(item.mood)}</h2>
                 {item.note ? <p>{item.note}</p> : null}
               </li>
             )

@@ -23,7 +23,7 @@ describe("PartnerTodayCards", () => {
     ]
     render(<PartnerTodayCards members={members} items={items} today="2026-11-12" />)
     expect(screen.getByText("Ada")).toBeInTheDocument()
-    expect(screen.getByText("great")).toBeInTheDocument()
+    expect(screen.getByText("🌟 Great")).toBeInTheDocument()
     expect(screen.getByText("Bello")).toBeInTheDocument()
     expect(screen.getByText("No check-in yet today.")).toBeInTheDocument()
   })

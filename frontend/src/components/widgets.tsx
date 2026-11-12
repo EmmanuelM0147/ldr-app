@@ -1,8 +1,7 @@
 import { useState, type FormEvent } from "react"
 import { countdownParts, formatWhen } from "../format"
+import { MOOD_CHIPS } from "../mood"
 import type { Budget, CheckIn, CheckInWrite, Countdown, EventWrite, Memory, Mood } from "../types"
-
-const MOODS: Mood[] = ["great", "good", "okay", "low", "rough"]
 
 export function RegisterForm({
   onSubmit,
@@ -269,16 +268,17 @@ export function CheckInForm({
   return (
     <form onSubmit={handleSubmit} className="stack">
       <div className="moods" role="radiogroup" aria-label="Mood">
-        {MOODS.map((item) => (
+        {MOOD_CHIPS.map((item) => (
           <button
-            key={item}
+            key={item.mood}
             type="button"
             role="radio"
-            aria-checked={mood === item}
-            className={mood === item ? "mood on" : "mood"}
-            onClick={() => setMood(item)}
+            aria-checked={mood === item.mood}
+            className={mood === item.mood ? "mood on" : "mood"}
+            onClick={() => setMood(item.mood)}
           >
-            {item}
+            <span aria-hidden>{item.emoji}</span>
+            <span>{item.label}</span>
           </button>
         ))}
       </div>

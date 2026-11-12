@@ -160,3 +160,9 @@ Prompt: same redesign prompt as step 1 (item 4).
 Added `traveler_user_id` to the OpenAPI Visit schemas, migration `0003_visit_traveler`, and backend validation. Visit cards show route, dates, traveler, countdown chip, and cost split; the form takes traveler and optional budget. Backend 20 and frontend 24 tests passed.
 
 Prompt: same redesign prompt as step 1 (item 5).
+
+## 2026-11-12 — UI redesign step 6: check-in
+
+Emoji mood chips, side-by-side partner check-ins, streak counter, and a daily prompt placeholder. Frontend 26 tests passed.
+
+Prompt: same redesign prompt as step 1 (item 6).

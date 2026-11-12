@@ -1,3 +1,4 @@
+import { moodLabel } from "../mood"
 import type { CheckIn, Member } from "../types"
 
 export function PartnerTodayCards({
@@ -11,14 +12,20 @@ export function PartnerTodayCards({
 }) {
   return (
     <section className="pair" aria-label="Both check-ins today">
-      {members.map((member) => {
+      {members.map((member, index) => {
         const entry = items.find((item) => item.user_id === member.user_id && item.local_date === today) ?? null
+        const accent = index % 2 === 0 ? "partner-a" : "partner-b"
         return (
-          <article key={member.user_id} className="card">
-            <p className="kicker">{member.display_name}</p>
+          <article key={member.user_id} className={`card partner-card ${accent}`}>
+            <div className="partner-head">
+              <span className={`avatar partner-avatar ${accent}`} aria-hidden>
+                {member.display_name.slice(0, 1).toUpperCase()}
+              </span>
+              <p className="kicker">{member.display_name}</p>
+            </div>
             {entry ? (
               <>
-                <h2>{entry.mood}</h2>
+                <h2>{moodLabel(entry.mood)}</h2>
                 {entry.note ? <p>{entry.note}</p> : <p className="muted">No note.</p>}
               </>
             ) : (
