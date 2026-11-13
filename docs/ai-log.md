@@ -319,3 +319,9 @@ Compose Playwright: register two users, create/join via invite code, assert both
 
 Prompt: Auth polish item 7
 
+
+## 2026-11-13 - QA remediations (critical/high/P0)
+
+Landed SEC-01 strong JWT_SECRET validation; FUNC-01/02/15/16/22 (partner today TZ, IANA wall times, presence TTL + disconnect, WS reconnect, couple_gone); A11Y-P0-1..3 (nav clearance, BottomSheet focus trap, nav icon titles). See docs/qa-log.md.
+
+Prompt: Phase 1 land uncommitted QA remediations

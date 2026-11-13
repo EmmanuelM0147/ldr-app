@@ -14,7 +14,8 @@ export function BottomNav() {
     <nav className="tabs" aria-label="Main">
       {ITEMS.map(({ to, label, Icon, ...rest }) => (
         <NavLink key={to} to={to} end={"end" in rest ? rest.end : undefined} className="tab-link">
-          <Icon />
+          {/* Decorative beside the visible label — avoid "Home Home" for screen readers. */}
+          <Icon title="" />
           <span>{label}</span>
         </NavLink>
       ))}

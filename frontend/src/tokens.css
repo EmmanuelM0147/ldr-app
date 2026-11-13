@@ -79,9 +79,10 @@
   /* Layout */
   --touch-min: 2.75rem;
   --sheet-max: 40rem;
-  --nav-height: 4.5rem;
-  /* Nav bar height + 24px (--space-5) for content clearance */
-  --nav-clearance: calc(var(--nav-height) + var(--space-5));
+  /* Matches the floating tab bar (~icon + label + padding), ~88px. */
+  --nav-height: 5.5rem;
+  /* Nav bar height + bottom offset (--space-3) + extra (--space-5) for footer/content. */
+  --nav-clearance: calc(var(--nav-height) + var(--space-3) + var(--space-5));
 
   font-family: var(--font-sans);
   color: var(--color-ink);

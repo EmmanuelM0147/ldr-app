@@ -13,4 +13,17 @@ describe("BottomNav", () => {
     expect(link).toHaveAttribute("href", "/check-ins")
     expect(screen.getByRole("link", { name: /Home/i })).toBeInTheDocument()
   })
+
+  it("does not double-announce icon titles (A11Y-P0-3)", () => {
+    render(
+      <MemoryRouter>
+        <BottomNav />
+      </MemoryRouter>,
+    )
+    expect(screen.getByRole("link", { name: "Home" })).toHaveAccessibleName("Home")
+    expect(screen.getByRole("link", { name: "Calendar" })).toHaveAccessibleName("Calendar")
+    expect(screen.getByRole("link", { name: "Visits" })).toHaveAccessibleName("Visits")
+    expect(screen.getByRole("link", { name: "Check-in" })).toHaveAccessibleName("Check-in")
+    expect(screen.getByRole("link", { name: "Memories" })).toHaveAccessibleName("Memories")
+  })
 })
