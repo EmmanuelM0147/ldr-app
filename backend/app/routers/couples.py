@@ -10,6 +10,7 @@ from app.deps import get_clock, get_current_user, get_db
 from app.deps import get_current_couple as load_couple
 from app.media import delete_media_file
 from app.models import (
+    AiDailyUsage,
     Budget,
     BudgetShare,
     CheckIn,
@@ -52,7 +53,7 @@ def create_couple(
 ) -> CoupleOut:
     if db.scalar(select(Membership.user_id).where(Membership.user_id == user.id)) is not None:
         raise HTTPException(status_code=409, detail="You already have a couple space.")
-    couple = Couple(ai_opt_in=False, created_at=now)
+    couple = Couple(ai_enabled=False, created_at=now)
     db.add(couple)
     db.flush()
     db.add(Membership(couple_id=couple.id, user_id=user.id, seat=1, joined_at=now))
@@ -108,6 +109,7 @@ async def delete_current_couple(
         delete_media_file(memory.media_path)
     db.execute(delete(Memory).where(Memory.couple_id == couple_id))
     db.execute(delete(Presence).where(Presence.couple_id == couple_id))
+    db.execute(delete(AiDailyUsage).where(AiDailyUsage.couple_id == couple_id))
     db.execute(delete(Invite).where(Invite.couple_id == couple_id))
     db.execute(delete(Membership).where(Membership.couple_id == couple_id))
     db.execute(delete(Couple).where(Couple.id == couple_id))

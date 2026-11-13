@@ -149,13 +149,13 @@ class MemberOut(ApiModel):
 
 class CoupleOut(ApiModel):
     id: uuid.UUID
-    ai_opt_in: bool
+    ai_enabled: bool
     created_at: datetime
     members: list[MemberOut]
 
 
 class CouplePatch(ApiModel):
-    ai_opt_in: bool | None = None
+    ai_enabled: bool | None = None
 
 
 class CoupleDelete(ApiModel):
@@ -169,17 +169,34 @@ class CoupleDelete(ApiModel):
         return value
 
 
-class DateNightIdeaRequest(ApiModel):
-    vibe: str | None = Field(default=None, max_length=80)
+class DateIdeasRequest(ApiModel):
+    duration_minutes: int = Field(ge=15, le=720)
+    budget: str = Field(min_length=1, max_length=80)
+    mode: Literal["together", "apart"]
+    mood: str | None = Field(default=None, max_length=80)
 
-    @field_validator("vibe")
+    @field_validator("budget")
     @classmethod
-    def clean_vibe(cls, value: str | None) -> str | None:
+    def clean_budget(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("budget is required")
+        return cleaned
+
+    @field_validator("mood")
+    @classmethod
+    def clean_mood(cls, value: str | None) -> str | None:
         return _blank(value)
 
 
-class DateNightIdea(ApiModel):
-    idea: str = Field(min_length=1, max_length=1000)
+class DateIdea(ApiModel):
+    title: str = Field(min_length=1, max_length=120)
+    description: str = Field(min_length=1, max_length=1000)
+    est_cost: str = Field(min_length=1, max_length=80)
+
+
+class DateIdeas(ApiModel):
+    ideas: list[DateIdea] = Field(min_length=1, max_length=5)
 
 
 class InviteCreated(ApiModel):

@@ -9,7 +9,7 @@ Copy `.env.example` → `.env`, then:
 1. **`JWT_SECRET`** — required, ≥32 characters, not a placeholder.  
    `python -c "import secrets; print(secrets.token_urlsafe(48))"`
 2. **`REGISTRATION_ALLOWED_EMAILS`** — optional. Comma-separated; when set, only those emails can register (same generic 409 as a taken address). Leave empty for open local registration. Documented in `.env.example` and the README.
-3. **`LLM_API_KEY`** — optional; only needed if you demo date-night ideas after the couple opts in. Keep empty otherwise. Never commit real keys.
+3. **`GEMINI_API_KEY`** / **`GEMINI_MODEL`** — optional; only needed if you demo date ideas after the couple opts in. Keep empty otherwise. Never commit real keys.
 
 ## Preferred: full Compose
 

@@ -24,9 +24,8 @@ class Settings(BaseSettings):
         "http://localhost:5173,http://localhost,http://127.0.0.1:5173,http://127.0.0.1"
     )
     media_root: str = "./media"
-    llm_api_key: str = ""
-    llm_base_url: str = "https://api.openai.com/v1"
-    llm_model: str = "gpt-4o-mini"
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.5-flash"
     # Comma-separated emails. Empty = open registration. When set, only these may register.
     registration_allowed_emails: str = ""
     # Base URL for reset links in AUTH_RESET_DEBUG responses (frontend origin).

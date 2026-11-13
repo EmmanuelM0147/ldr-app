@@ -1,0 +1,2 @@
+# Pinned runtime deps used by the API. Prefer installing via pyproject.toml (`pip install .`).
+google-genai==3.3.0

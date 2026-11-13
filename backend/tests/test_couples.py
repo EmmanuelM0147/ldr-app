@@ -211,17 +211,17 @@ def test_delete_keeps_users_and_other_couple(client, db_factory) -> None:
     assert client.get("/events", headers=auth(other)).json()[0]["title"] == "Theirs"
 
 
-def test_update_couple_ai_opt_in(client) -> None:
+def test_update_couple_ai_enabled(client) -> None:
     owner = register(client, "ada@example.com")
     partner = register(client, "bello@example.com", name="Bello")
     client.post("/couples", headers=auth(owner))
     code = client.post("/couples/current/invites", headers=auth(owner)).json()["code"]
     client.post("/couples/join", json={"code": code}, headers=auth(partner))
-    assert client.get("/couples/current", headers=auth(owner)).json()["ai_opt_in"] is False
-    enabled = client.patch("/couples/current", json={"ai_opt_in": True}, headers=auth(partner))
+    assert client.get("/couples/current", headers=auth(owner)).json()["ai_enabled"] is False
+    enabled = client.patch("/couples/current", json={"ai_enabled": True}, headers=auth(partner))
     assert enabled.status_code == 200
-    assert enabled.json()["ai_opt_in"] is True
-    assert client.get("/couples/current", headers=auth(owner)).json()["ai_opt_in"] is True
-    disabled = client.patch("/couples/current", json={"ai_opt_in": False}, headers=auth(owner))
+    assert enabled.json()["ai_enabled"] is True
+    assert client.get("/couples/current", headers=auth(owner)).json()["ai_enabled"] is True
+    disabled = client.patch("/couples/current", json={"ai_enabled": False}, headers=auth(owner))
     assert disabled.status_code == 200
-    assert disabled.json()["ai_opt_in"] is False
+    assert disabled.json()["ai_enabled"] is False

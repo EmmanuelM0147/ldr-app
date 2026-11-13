@@ -1,28 +1,64 @@
-from typing import Annotated
+from datetime import UTC, date, datetime
 
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-from app.deps import get_current_couple
-from app.llm import LlmClient, LlmNotConfiguredError, LlmProviderError, get_llm_client
-from app.models import Couple
-from app.schemas.api import DateNightIdea, DateNightIdeaRequest
+from app.deps import get_current_couple, get_db
+from app.gemini import (
+    DAILY_LIMIT,
+    DateIdeasClient,
+    GeminiNotConfiguredError,
+    get_gemini_client,
+)
+from app.models import AiDailyUsage, Couple
+from app.schemas.api import DateIdeas, DateIdeasRequest
 
 router = APIRouter()
 
 
-@router.post("/ideas", response_model=DateNightIdea, operation_id="createDateNightIdea")
-def create_date_night_idea(
+def _utc_today() -> date:
+    return datetime.now(UTC).date()
+
+
+def _consume_daily_quota(db: Session, couple_id: object, today: date) -> None:
+    row = db.scalar(
+        select(AiDailyUsage).where(
+            AiDailyUsage.couple_id == couple_id,
+            AiDailyUsage.day == today,
+        )
+    )
+    if row is None:
+        row = AiDailyUsage(couple_id=couple_id, day=today, request_count=0)
+        db.add(row)
+        db.flush()
+    if row.request_count >= DAILY_LIMIT:
+        raise HTTPException(
+            status_code=429,
+            detail="Daily AI idea limit reached. Try again tomorrow.",
+        )
+    row.request_count += 1
+    db.commit()
+
+
+@router.post("/ai/date-ideas", response_model=DateIdeas, operation_id="createDateIdeas")
+def create_date_ideas(
+    body: DateIdeasRequest,
     couple: Couple = Depends(get_current_couple),
-    llm: LlmClient = Depends(get_llm_client),
-    body: Annotated[DateNightIdeaRequest | None, Body()] = None,
-) -> DateNightIdea:
-    if not couple.ai_opt_in:
+    db: Session = Depends(get_db),
+    gemini: DateIdeasClient = Depends(get_gemini_client),
+) -> DateIdeas:
+    if not couple.ai_enabled:
         raise HTTPException(status_code=403, detail="Turn on AI ideas in settings first.")
-    request = body or DateNightIdeaRequest()
+
+    _consume_daily_quota(db, couple.id, _utc_today())
+
     try:
-        idea = llm.suggest_date_night(request.vibe)
-    except LlmNotConfiguredError as exc:
-        raise HTTPException(status_code=503, detail="Date-night ideas are not configured.") from exc
-    except LlmProviderError as exc:
-        raise HTTPException(status_code=503, detail="Could not get an idea right now.") from exc
-    return DateNightIdea(idea=idea)
+        return gemini.generate(
+            duration_minutes=body.duration_minutes,
+            budget=body.budget,
+            mode=body.mode,
+            mood=body.mood,
+        )
+    except GeminiNotConfiguredError as exc:
+        raise HTTPException(status_code=503, detail="Date ideas are not configured.") from exc

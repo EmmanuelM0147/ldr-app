@@ -29,7 +29,8 @@ class Couple(Base):
     __tablename__ = "couples"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    ai_opt_in: Mapped[bool] = mapped_column(default=False)
+    # Column kept as ai_opt_in for existing DBs; API field is ai_enabled.
+    ai_enabled: Mapped[bool] = mapped_column("ai_opt_in", default=False)
     created_at: Mapped[datetime] = mapped_column(UtcDateTime)
 
     memberships: Mapped[list[Membership]] = relationship(back_populates="couple")
@@ -38,6 +39,7 @@ class Couple(Base):
     visits: Mapped[list[Visit]] = relationship(back_populates="couple")
     check_ins: Mapped[list[CheckIn]] = relationship(back_populates="couple")
     memories: Mapped[list[Memory]] = relationship(back_populates="couple")
+    ai_usage: Mapped[list[AiDailyUsage]] = relationship(back_populates="couple")
 
 
 class Membership(Base):
@@ -217,3 +219,17 @@ class PasswordResetFailure(Base):
     ip: Mapped[str] = mapped_column(String(64), index=True)
     email: Mapped[str] = mapped_column(String(255), index=True, default="")
     created_at: Mapped[datetime] = mapped_column(UtcDateTime, index=True)
+
+
+class AiDailyUsage(Base):
+    """Per-couple Gemini request counter for a UTC calendar day."""
+
+    __tablename__ = "ai_daily_usage"
+    __table_args__ = (UniqueConstraint("couple_id", "day"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    couple_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("couples.id", ondelete="CASCADE"), index=True)
+    day: Mapped[date]
+    request_count: Mapped[int] = mapped_column(default=0)
+
+    couple: Mapped[Couple] = relationship(back_populates="ai_usage")

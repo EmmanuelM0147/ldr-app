@@ -30,7 +30,7 @@ Real captures go under [`docs/screenshots/`](docs/screenshots/README.md) (see ca
 
 ## Architecture
 
-React PWA → FastAPI → PostgreSQL. Presence and check-in updates go over an authenticated WebSocket (`/ws`). Memory and avatar media are stored under `MEDIA_ROOT` on the API host (local disk in Compose; object storage is a later deploy choice). Date-night ideas call an external LLM only when the couple has opted in. **`docs/openapi.yaml` is the API contract** — update it before changing endpoints.
+React PWA → FastAPI → PostgreSQL. Presence and check-in updates go over an authenticated WebSocket (`/ws`). Memory and avatar media are stored under `MEDIA_ROOT` on the API host (local disk in Compose; object storage is a later deploy choice). Date ideas call Google Gemini only when the couple has opted in (`ai_enabled`). **`docs/openapi.yaml` is the API contract** — update it before changing endpoints.
 
 ```
 ┌─────────────┐     HTTPS / WS      ┌─────────────┐     SQL      ┌──────────┐
@@ -40,7 +40,7 @@ React PWA → FastAPI → PostgreSQL. Presence and check-in updates go over an a
                                     └──────┬──────┘
                                            │ opt-in only
                                            ▼
-                                      LLM API (ideas)
+                                      Gemini API (ideas)
 ```
 
 | Layer | Tech |
@@ -115,7 +115,7 @@ This project was built with AI tooling under an explicit engineering process.
 
 ## Testing
 
-- **Backend:** pytest for auth, pairing, events, visits/budgets, check-ins, memories, presence/WS, ideas (LLM mocked), and cross-couple denial.
+- **Backend:** pytest for auth, pairing, events, visits/budgets, check-ins, memories, presence/WS, ideas (Gemini mocked), and cross-couple denial.
 - **Frontend:** Vitest for formatters, tokens/contrast, forms, and key components.
 - **E2E:** Playwright mock flows (home, calendar-add, visit-add) and Compose pairing (`user A` invites, `user B` joins, both see shared data).
 - **CI:** GitHub Actions runs backend lint + pytest, frontend typecheck + Vitest, Docker image builds, then gated deploy on `main`. Playwright e2e stays local (`npm run test:e2e` / `test:e2e:compose`).

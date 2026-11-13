@@ -59,7 +59,7 @@ Set these on the ECS task definition / Secrets Manager (not in git):
 - `JWT_SECRET` (strong random string, min 32 characters; placeholders rejected at boot)
 - `CORS_ORIGINS`
 - `MEDIA_ROOT` (path on the task filesystem or mount)
-- `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL` (optional; ideas stay disabled until a couple opts in)
+- `GEMINI_API_KEY`, `GEMINI_MODEL` (optional; ideas stay disabled until a couple opts in)
 
 Match names in `.env.example`.
 

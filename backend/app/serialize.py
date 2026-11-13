@@ -44,7 +44,7 @@ def couple_out(couple: Couple) -> CoupleOut:
     ]
     return CoupleOut(
         id=couple.id,
-        ai_opt_in=couple.ai_opt_in,
+        ai_enabled=couple.ai_enabled,
         created_at=couple.created_at,
         members=members,
     )
