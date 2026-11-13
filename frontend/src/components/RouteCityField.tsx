@@ -1,14 +1,48 @@
-export function RouteCityField({ suggestions }: { suggestions: string[] }) {
-  const listId = "route-city-suggestions"
+export function RouteCityField({
+  suggestions,
+  defaultFrom = "Lagos",
+  defaultTo = "Abuja",
+}: {
+  suggestions: string[]
+  defaultFrom?: string
+  defaultTo?: string
+}) {
+  const fromListId = "route-from-suggestions"
+  const toListId = "route-to-suggestions"
   return (
-    <label className="field">
-      <span>Route / city</span>
-      <input name="location" list={listId} placeholder="e.g. Lagos" autoComplete="off" />
-      <datalist id={listId}>
-        {suggestions.map((place) => (
-          <option key={place} value={place} />
-        ))}
-      </datalist>
-    </label>
+    <div className="route-pair">
+      <label className="field">
+        <span>From</span>
+        <input
+          name="location_from"
+          list={fromListId}
+          defaultValue={defaultFrom}
+          placeholder="e.g. Lagos"
+          autoComplete="off"
+          required
+        />
+        <datalist id={fromListId}>
+          {suggestions.map((place) => (
+            <option key={`from-${place}`} value={place} />
+          ))}
+        </datalist>
+      </label>
+      <label className="field">
+        <span>To</span>
+        <input
+          name="location_to"
+          list={toListId}
+          defaultValue={defaultTo}
+          placeholder="e.g. Abuja"
+          autoComplete="off"
+          required
+        />
+        <datalist id={toListId}>
+          {suggestions.map((place) => (
+            <option key={`to-${place}`} value={place} />
+          ))}
+        </datalist>
+      </label>
+    </div>
   )
 }

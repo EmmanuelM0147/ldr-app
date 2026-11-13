@@ -198,6 +198,17 @@ button, input, textarea, select {
   margin: var(--space-4) 0;
 }
 
+.route-pair {
+  display: grid;
+  gap: var(--space-3);
+}
+
+@media (min-width: 520px) {
+  .route-pair {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .list {
   list-style: none;
   padding: 0;

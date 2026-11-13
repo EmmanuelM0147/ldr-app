@@ -19,7 +19,7 @@ import { ProfileSettingsForm } from "./components/ProfileSettingsForm"
 import { RouteCityField } from "./components/RouteCityField"
 import { EmptyState, ErrorState, LoadingState } from "./components/ScreenState"
 import { VisitCard } from "./components/VisitCard"
-import { routeSuggestions } from "./visitHints"
+import { composeRouteLocation, routeSuggestions } from "./visitHints"
 import {
   BudgetFields,
   BudgetForm,
@@ -698,13 +698,21 @@ export function VisitsPage() {
       return
     }
     const travelerRaw = String(data.get("traveler_user_id") ?? "").trim()
+    const location = composeRouteLocation(
+      String(data.get("location_from") ?? ""),
+      String(data.get("location_to") ?? ""),
+    )
+    if (!location) {
+      setError("Choose a From and To city.")
+      return
+    }
     setError(null)
     void client
       ?.createVisit({
         title: String(data.get("title") ?? ""),
         starts_at: starts,
         ends_at: ends,
-        location: String(data.get("location") ?? ""),
+        location,
         traveler_user_id: travelerRaw || null,
         budget: parsed.budget,
       })
@@ -754,6 +762,7 @@ export function VisitsPage() {
       </button>
       <BottomSheet open={sheetOpen} title="Add visit" onClose={() => setSheetOpen(false)}>
         <form onSubmit={addVisit} className="stack">
+          {error ? <p className="error" role="alert">{error}</p> : null}
           <label className="field">
             <span>Title</span>
             <input name="title" required />

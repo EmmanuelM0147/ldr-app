@@ -143,11 +143,14 @@ export function budgetFromForm(
   const totalRaw = String(data.get("total") ?? "").trim()
   const firstRaw = String(data.get("first") ?? "").trim()
   const secondRaw = String(data.get("second") ?? "").trim()
-  const blank = !currency && !totalRaw && !firstRaw && !secondRaw
-  if (blank) {
+  const amountsBlank = !totalRaw && !firstRaw && !secondRaw
+  if (amountsBlank) {
     return required
       ? { budget: null, error: "Enter the total and both shares." }
       : { budget: null, error: null }
+  }
+  if (!totalRaw || !firstRaw || !secondRaw) {
+    return { budget: null, error: "Enter the total and both shares." }
   }
   if (!/^[A-Z]{3}$/.test(currency)) {
     return { budget: null, error: "Currency must be a 3-letter code." }
@@ -159,7 +162,7 @@ export function budgetFromForm(
     return { budget: null, error: "Amounts cannot be negative." }
   }
   if (first + second !== total) {
-    return { budget: null, error: "The two shares must add up to the total." }
+    return { budget: null, error: "Your share plus their share must equal the total." }
   }
   return {
     budget: {
