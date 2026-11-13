@@ -291,3 +291,10 @@ Smaller auth brand lockup; email/current-password/new-password autocomplete; aut
 
 Prompt: Auth polish item 3
 
+
+## 2026-11-13 — Auth polish 4: pairing start
+
+Clearer post-signup Create a space / Join with invite code screen.
+
+Prompt: Auth polish item 4
+

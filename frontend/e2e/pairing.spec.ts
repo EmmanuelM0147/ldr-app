@@ -7,7 +7,7 @@ async function register(page: Page, input: { email: string; name: string; passwo
   await page.getByLabel("Password", { exact: true }).fill(input.password)
   await page.getByLabel("Timezone").selectOption("UTC")
   await page.getByRole("button", { name: "Create account" }).click()
-  await expect(page.getByRole("heading", { name: /Start with just the two of you/i })).toBeVisible()
+  await expect(page.getByRole("heading", { name: /Start your couple space/i })).toBeVisible()
 }
 
 test("user A creates a space, user B joins, both see the same visit and check-in", async ({ browser }) => {
@@ -23,14 +23,14 @@ test("user A creates a space, user B joins, both see the same visit and check-in
   const pageB = await contextB.newPage()
 
   await register(pageA, ada)
-  await pageA.getByRole("button", { name: "Create our space" }).click()
+  await pageA.getByRole("button", { name: "Create a space" }).click()
   await expect(pageA.getByRole("heading", { name: "Invite your partner" })).toBeVisible()
   const inviteCode = (await pageA.locator(".code").innerText()).trim()
   expect(inviteCode.length).toBeGreaterThanOrEqual(8)
 
   await register(pageB, bello)
   await pageB.getByLabel("Invite code").fill(inviteCode)
-  await pageB.getByRole("button", { name: "Join with a code" }).click()
+  await pageB.getByRole("button", { name: "Join with invite code" }).click()
   await expect(pageB.getByLabel("You and your partner")).toBeVisible()
   await expect(pageB.getByRole("heading", { name: "Ada" })).toBeVisible()
   await expect(pageB.getByRole("heading", { name: "Bello" })).toBeVisible()

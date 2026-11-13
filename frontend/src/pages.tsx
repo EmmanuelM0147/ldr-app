@@ -4,6 +4,7 @@ import { ApiError } from "./api/errors"
 import { AvatarMenu } from "./components/AvatarMenu"
 import { BottomNav } from "./components/BottomNav"
 import { BrandLockup } from "./components/BrandLockup"
+import { PairingStart } from "./components/PairingStart"
 import { BottomSheet } from "./components/BottomSheet"
 import { DeleteSpaceForm } from "./components/DeleteSpaceForm"
 import { HomeHero } from "./components/HomeHero"
@@ -199,22 +200,12 @@ export function HomePage() {
 
   if (!couple) {
     return (
-      <main className="sheet">
-        <h1>Start with just the two of you.</h1>
-        <button className="primary" type="button" onClick={() => void createSpace()}>
-          Create our space
-        </button>
-        <form onSubmit={(event) => void join(event)} className="stack">
-          <label className="field">
-            <span>Invite code</span>
-            <input name="code" required minLength={8} />
-          </label>
-          <button className="secondary" type="submit">
-            Join with a code
-          </button>
-        </form>
-        {error ? <p className="error">{error}</p> : null}
-      </main>
+      <PairingStart
+        displayName={user.display_name}
+        error={error}
+        onCreateSpace={() => void createSpace()}
+        onJoin={(event) => void join(event)}
+      />
     )
   }
 

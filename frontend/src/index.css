@@ -694,6 +694,24 @@ input, textarea, select {
   text-align: center;
 }
 
+.pairing-start .lede {
+  margin: 0 0 var(--space-5);
+}
+
+.pairing-choice {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-4);
+}
+
+.pairing-choice h2 {
+  margin: 0;
+}
+
+.pairing-choice .muted {
+  margin: 0;
+}
+
 .visit-card-top {
   display: flex;
   justify-content: space-between;
