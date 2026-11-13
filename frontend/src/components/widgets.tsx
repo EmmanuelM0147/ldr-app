@@ -76,7 +76,14 @@ export function RegisterForm({
 
   return (
     <form onSubmit={(event) => void handleSubmit(event)} className="stack" noValidate>
-      <Field label="Display name" name="display_name" required error={fieldErrors.display_name} />
+      <Field
+        label="Display name"
+        name="display_name"
+        required
+        autoComplete="nickname"
+        autoFocus
+        error={fieldErrors.display_name}
+      />
       <Field label="Email" name="email" type="email" required autoComplete="email" error={fieldErrors.email} />
       <PasswordField
         label="Password"
@@ -131,7 +138,7 @@ export function LoginForm({
 
   return (
     <form onSubmit={handleSubmit} className="stack">
-      <Field label="Email" name="email" type="email" required />
+      <Field label="Email" name="email" type="email" required autoComplete="email" autoFocus />
       <PasswordField label="Password" name="password" required autoComplete="current-password" />
       {error ? <p className="error">{error}</p> : null}
       <button className="primary" type="submit">

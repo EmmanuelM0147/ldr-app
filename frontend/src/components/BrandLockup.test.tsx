@@ -11,6 +11,7 @@ describe("BrandLockup", () => {
     )
     expect(screen.getByRole("img", { name: "Closer" })).toBeInTheDocument()
     expect(screen.getByText("Closer")).toBeInTheDocument()
+    expect(screen.getByRole("img", { name: "Closer" })).toHaveClass("brand-lockup--auth")
   })
 
   it("links home from the header lockup", () => {

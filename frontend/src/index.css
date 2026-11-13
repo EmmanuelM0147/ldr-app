@@ -148,25 +148,25 @@ button, input, textarea, select {
 .brand-lockup--auth {
   display: grid;
   justify-items: start;
-  gap: var(--space-4);
-  margin: 0 0 var(--space-6);
+  gap: var(--space-3);
+  margin: 0 0 var(--space-5);
 }
 
 .brand-lockup--auth .brand-mark {
-  width: 4.25rem;
-  height: 4.25rem;
-  border-radius: var(--radius-lg);
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius-md);
 }
 
 .brand-lockup--auth .brand-word {
-  font-size: clamp(2.75rem, 11vw, 4rem);
-  letter-spacing: 0.14em;
+  font-size: clamp(1.75rem, 7vw, 2.25rem);
+  letter-spacing: 0.12em;
 }
 
 .auth-sheet .auth-lede {
-  margin: 0 0 var(--space-5);
+  margin: 0 0 var(--space-4);
   max-width: 22rem;
-  font-size: var(--text-lg);
+  font-size: var(--text-md);
   line-height: var(--leading-snug);
   color: var(--color-muted);
 }

@@ -64,10 +64,27 @@ describe("forms", () => {
       await client.login(email, password)
     })
     render(<LoginForm onSubmit={onSubmit} />)
+    expect(screen.getByLabelText("Email")).toHaveAttribute("autocomplete", "email")
+    expect(screen.getByLabelText("Password", { exact: true })).toHaveAttribute(
+      "autocomplete",
+      "current-password",
+    )
+    expect(screen.getByLabelText("Email")).toHaveFocus()
     await user.type(screen.getByLabelText("Email"), "ada@example.com")
-    await user.type(screen.getByLabelText("Password"), "password123")
+    await user.type(screen.getByLabelText("Password", { exact: true }), "password123")
     await user.click(screen.getByRole("button", { name: "Sign in" }))
     expect(onSubmit).toHaveBeenCalledWith("ada@example.com", "password123")
+  })
+
+  it("uses new-password autocomplete and autofocuses display name on register", () => {
+    render(<RegisterForm onSubmit={vi.fn()} />)
+    expect(screen.getByLabelText("Display name")).toHaveFocus()
+    expect(screen.getByLabelText("Display name")).toHaveAttribute("autocomplete", "nickname")
+    expect(screen.getByLabelText("Email")).toHaveAttribute("autocomplete", "email")
+    expect(screen.getByLabelText("Password", { exact: true })).toHaveAttribute(
+      "autocomplete",
+      "new-password",
+    )
   })
 
   it("rejects an event that ends before it starts", async () => {

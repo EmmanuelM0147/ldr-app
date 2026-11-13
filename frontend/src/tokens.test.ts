@@ -48,8 +48,20 @@ describe("design tokens", () => {
     }
   })
 
-  it("defines nav clearance as nav height plus 24px spacing token", () => {
-    expect(css).toContain("--nav-clearance: calc(var(--nav-height) + var(--space-5))")
+  it("defines nav clearance above the floating tab bar", () => {
+    expect(css).toContain(
+      "--nav-clearance: calc(var(--nav-height) + var(--space-3) + var(--space-5))",
+    )
+  })
+
+  it("clears the timezone footer above the bottom nav (A11Y-P0-1)", () => {
+    const indexCss = readFileSync(resolve(here, "index.css"), "utf8")
+    expect(indexCss).toMatch(/\.shell:has\(\.tabs\)\s+\.zone\s*\{[^}]*nav-clearance/s)
+  })
+
+  it("keeps the auth brand lockup compact", () => {
+    const indexCss = readFileSync(resolve(here, "index.css"), "utf8")
+    expect(indexCss).toMatch(/\.brand-lockup--auth \.brand-mark\s*\{[^}]*2\.75rem/s)
   })
 
   it("supports dark mode", () => {

@@ -284,3 +284,10 @@ Inline password rule, field-level email/password errors, privacy note under Crea
 
 Prompt: Auth polish item 2
 
+
+## 2026-11-13 — Auth polish 3: auth chrome
+
+Smaller auth brand lockup; email/current-password/new-password autocomplete; autofocus on login email and register display name.
+
+Prompt: Auth polish item 3
+
