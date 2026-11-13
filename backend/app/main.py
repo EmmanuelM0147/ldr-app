@@ -37,12 +37,18 @@ async def validation_error(_request: Request, exc: RequestValidationError) -> JS
 
 
 @app.exception_handler(SQLAlchemyError)
-async def database_unavailable(_request: Request, _exc: SQLAlchemyError) -> JSONResponse:
+async def database_unavailable(_request: Request, exc: SQLAlchemyError) -> JSONResponse:
     # Return a normal JSON response so CORSMiddleware can attach headers
     # (unhandled 500s often look like "Failed to fetch" in the browser).
+    # Include a short, non-secret hint so Vercel misconfig is diagnosable from the client.
+    hint = str(exc).split("\n", 1)[0].strip()
+    if len(hint) > 180:
+        hint = hint[:177] + "..."
     return JSONResponse(
         status_code=503,
-        content={"detail": "Database unavailable. Check DATABASE_URL / POSTGRES_URL."},
+        content={
+            "detail": f"Database unavailable ({type(exc).__name__}): {hint}",
+        },
     )
 
 

@@ -16,7 +16,7 @@ def test_normalize_forces_psycopg_and_strips_supabase_query_junk() -> None:
     assert "pooler.supabase.com:6543/postgres" in out
     from app.db_url import supabase_connect_args
 
-    assert supabase_connect_args(out) == {"sslmode": "require"}
+    assert supabase_connect_args(out) == {"sslmode": "require", "prepare_threshold": None}
 
 
 def test_normalize_strips_quotes_and_rejects_empty() -> None:

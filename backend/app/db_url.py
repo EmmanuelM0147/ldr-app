@@ -37,9 +37,14 @@ def normalize_database_url(raw: str) -> str:
     return cleaned.render_as_string(hide_password=False)
 
 
-def supabase_connect_args(url: str) -> dict[str, str]:
-    """libpq connect_args for Supabase hosts (ssl required)."""
-    host = (make_url(url).host or "").lower()
-    if "supabase.com" in host or "supabase.co" in host:
-        return {"sslmode": "require"}
-    return {}
+def supabase_connect_args(url: str) -> dict[str, object]:
+    """Driver connect_args for Supabase (ssl + pgbouncer-safe psycopg settings)."""
+    parsed = make_url(url)
+    host = (parsed.host or "").lower()
+    if "supabase.com" not in host and "supabase.co" not in host:
+        return {}
+    args: dict[str, object] = {"sslmode": "require"}
+    # Transaction-mode pooler (port 6543) rejects prepared statements.
+    if parsed.port == 6543:
+        args["prepare_threshold"] = None
+    return args
