@@ -20,7 +20,7 @@ services:
     entrypoint: ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"]
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-closer}:${POSTGRES_PASSWORD:-closer}@db:5432/${POSTGRES_DB:-closer}
-      JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-string}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env (min 32 chars; no placeholders)}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost,http://127.0.0.1:5173,http://127.0.0.1}
       LLM_API_KEY: ${LLM_API_KEY:-}
       LLM_BASE_URL: ${LLM_BASE_URL:-https://api.openai.com/v1}

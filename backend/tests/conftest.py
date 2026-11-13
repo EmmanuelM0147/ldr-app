@@ -1,5 +1,9 @@
 from collections.abc import Iterator
 from pathlib import Path
+import os
+
+# Settings require a strong JWT_SECRET at import (CORS middleware loads settings).
+os.environ["JWT_SECRET"] = "test-secret-not-for-production-use"
 
 import pytest
 from alembic import command

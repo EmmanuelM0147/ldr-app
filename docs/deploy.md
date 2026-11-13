@@ -56,7 +56,7 @@ The deploy job uses the `production` environment so you can require reviewers an
 Set these on the ECS task definition / Secrets Manager (not in git):
 
 - `DATABASE_URL`
-- `JWT_SECRET` (long random string)
+- `JWT_SECRET` (strong random string, min 32 characters; placeholders rejected at boot)
 - `CORS_ORIGINS`
 - `MEDIA_ROOT` (path on the task filesystem or mount)
 - `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL` (optional; ideas stay disabled until a couple opts in)

@@ -1,11 +1,25 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Known weak / placeholder values that must never mint production-valid JWTs.
+_WEAK_JWT_SECRETS = frozenset(
+    {
+        "dev-only-change-me-not-for-production",
+        "change-me-to-a-long-random-string",
+        "change-me",
+        "secret",
+        "jwt-secret",
+        "your-secret-here",
+    }
+)
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     database_url: str = "sqlite:///./closer.db"
-    jwt_secret: str = "dev-only-change-me-not-for-production"
+    # Required via JWT_SECRET env. No weak default — boot fails if missing/weak.
+    jwt_secret: str
     cors_origins: str = (
         "http://localhost:5173,http://localhost,http://127.0.0.1:5173,http://127.0.0.1"
     )
@@ -15,6 +29,18 @@ class Settings(BaseSettings):
     llm_model: str = "gpt-4o-mini"
     # Comma-separated emails. Empty = open registration. When set, only these may register.
     registration_allowed_emails: str = ""
+
+    @field_validator("jwt_secret")
+    @classmethod
+    def jwt_secret_must_be_strong(cls, value: str) -> str:
+        secret = value.strip()
+        if not secret:
+            raise ValueError("JWT_SECRET must not be empty")
+        if secret.lower() in _WEAK_JWT_SECRETS or secret in _WEAK_JWT_SECRETS:
+            raise ValueError("JWT_SECRET is a known weak/placeholder value")
+        if len(secret) < 32:
+            raise ValueError("JWT_SECRET must be at least 32 characters")
+        return secret
 
 
 def get_settings() -> Settings:
