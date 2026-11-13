@@ -57,9 +57,9 @@ export function PartnerHomeCards({
                 loadBlob={loadAvatar}
                 className={`avatar partner-avatar ${accent}`}
               />
-              <div>
+              <div className="partner-meta">
                 <h2>{member.display_name}</h2>
-                <p className="muted">{cityFromTimezone(member.timezone)}</p>
+                <p className="muted partner-place">{cityFromTimezone(member.timezone)}</p>
               </div>
             </div>
             <p className="partner-time" aria-live="polite">

@@ -378,7 +378,30 @@ input, textarea, select {
   margin-bottom: var(--space-3);
 }
 
-.partner-head h2 { margin: 0; }
+.partner-meta {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+  text-align: left;
+}
+
+.partner-meta h2,
+.partner-meta p,
+.partner-place {
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.partner-meta h2 {
+  font-size: var(--text-xl);
+  line-height: 1.15;
+}
+
+.partner-place {
+  font-size: var(--text-sm);
+  line-height: 1.2;
+}
 
 .partner-avatar.partner-a {
   background: var(--color-partner-a-soft);
