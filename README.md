@@ -21,13 +21,17 @@ When you live in different cities, chat apps already handle talking. What gets l
 
 ## Screenshots
 
-Capture steps and expected filenames live under [`docs/screenshots/`](docs/screenshots/README.md). Until PNGs are committed, slots only:
+Captured from the local PWA (~390×844). Capture notes: [`docs/screenshots/`](docs/screenshots/README.md).
 
-- Home (countdown + partner cards) - `docs/screenshots/home.png`
-- Calendar - `docs/screenshots/calendar.png`
-- Visits - `docs/screenshots/visits.png`
-- Check-in - `docs/screenshots/check-in.png`
-- Memories - `docs/screenshots/memories.png`
+| Home | Calendar | Visits |
+| --- | --- | --- |
+| ![Home](docs/screenshots/home.png) | ![Calendar](docs/screenshots/calendar.png) | ![Visits](docs/screenshots/visits.png) |
+
+| Check-in | Memories |
+| --- | --- |
+| ![Check-in](docs/screenshots/check-in.png) | ![Memories](docs/screenshots/memories.png) |
+
+Optional: [login](docs/screenshots/login.png) · [settings (AI disclosure)](docs/screenshots/settings.png)
 
 ## Architecture
 
@@ -135,7 +139,7 @@ This project was built with AI tooling under an explicit engineering process.
 - One couple space per user; no chat or video (by design).
 - Media is local disk in Compose, not yet object storage / CDN.
 - Password-reset email (SMTP) is not wired; local debug URL only.
-- Live demo URL, demo video, and screenshot gallery are still outstanding.
+- Live demo URL and demo video are still outstanding (screenshot gallery is in `docs/screenshots/`).
 - AWS resources (ECR/ECS/RDS) must be provisioned and GitHub secrets set before `deploy` succeeds. See `docs/deploy.md`.
 
 ## Project structure
