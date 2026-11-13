@@ -64,10 +64,16 @@ button, input, textarea, select {
   width: min(var(--sheet-max), calc(100% - var(--space-6)));
   margin: 0 auto;
   padding: var(--space-5) 0 var(--space-3);
+  display: grid;
+  gap: var(--space-2);
+}
+
+.top-bar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-4);
+  min-height: var(--touch-min);
 }
 
 .top-copy { min-width: 0; }
@@ -80,11 +86,13 @@ button, input, textarea, select {
 }
 
 .names {
-  margin: var(--space-1) 0 0;
+  margin: 0;
+  padding-left: calc(2.75rem + var(--space-3));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--color-muted);
+  font-size: var(--text-sm);
 }
 
 .brand {
@@ -107,40 +115,48 @@ button, input, textarea, select {
   display: block;
   flex-shrink: 0;
   border-radius: var(--radius-md);
-  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-sm);
 }
 
 .brand-word {
   font-family: var(--font-serif);
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--color-ink);
   line-height: 1;
 }
 
+.brand-lockup--header {
+  min-height: var(--touch-min);
+}
+
 .brand-lockup--header .brand-mark {
-  width: 2.25rem;
-  height: 2.25rem;
+  width: var(--touch-min);
+  height: var(--touch-min);
+  border-radius: var(--radius-md);
 }
 
 .brand-lockup--header .brand-word {
-  font-size: clamp(1.35rem, 4vw, 1.75rem);
+  font-size: clamp(1.5rem, 5vw, 1.9rem);
 }
 
 .brand-lockup--auth {
-  margin: 0 0 var(--space-5);
+  display: grid;
+  justify-items: start;
+  gap: var(--space-4);
+  margin: 0 0 var(--space-6);
 }
 
 .brand-lockup--auth .brand-mark {
-  width: 3.5rem;
-  height: 3.5rem;
+  width: 4.25rem;
+  height: 4.25rem;
   border-radius: var(--radius-lg);
 }
 
 .brand-lockup--auth .brand-word {
-  font-size: clamp(2.4rem, 9vw, 3.5rem);
-  letter-spacing: 0.1em;
+  font-size: clamp(2.75rem, 11vw, 4rem);
+  letter-spacing: 0.14em;
 }
 
 .auth-sheet .auth-lede {
@@ -740,15 +756,26 @@ a.button-link {
   color: var(--color-on-accent);
 }
 
-.avatar-menu { position: relative; }
+.avatar-menu {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
 
 .avatar-button {
   border: 0;
   background: none;
   padding: 0;
+  width: var(--touch-min);
+  height: var(--touch-min);
   min-width: var(--touch-min);
   min-height: var(--touch-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  border-radius: var(--radius-pill);
 }
 
 .avatar {
@@ -764,6 +791,7 @@ a.button-link {
   font-size: var(--text-lg);
   overflow: hidden;
   flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
 }
 
 img.avatar-photo {

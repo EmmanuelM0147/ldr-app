@@ -103,21 +103,23 @@ export function Shell() {
   return (
     <div className="shell">
       <header className="top">
-        <div className="top-copy">
+        <div className="top-bar">
           <BrandLockup size="header" to="/" />
+          {user && client ? (
+            <AvatarMenu
+              userId={user.id}
+              name={user.display_name}
+              avatarUrl={user.avatar_url}
+              loadAvatar={(userId) => client.getUserAvatar(userId)}
+              onSignOut={signOut}
+            />
+          ) : null}
+        </div>
+        {user ? (
           <p className="muted names">
-            {user?.display_name}
+            {user.display_name}
             {partner ? ` and ${partner.display_name}` : ""}
           </p>
-        </div>
-        {user && client ? (
-          <AvatarMenu
-            userId={user.id}
-            name={user.display_name}
-            avatarUrl={user.avatar_url}
-            loadAvatar={(userId) => client.getUserAvatar(userId)}
-            onSignOut={signOut}
-          />
         ) : null}
       </header>
       <Outlet />

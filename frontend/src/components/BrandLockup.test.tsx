@@ -9,6 +9,7 @@ describe("BrandLockup", () => {
         <BrandLockup size="auth" />
       </MemoryRouter>,
     )
+    expect(screen.getByRole("img", { name: "Closer" })).toBeInTheDocument()
     expect(screen.getByText("Closer")).toBeInTheDocument()
   })
 

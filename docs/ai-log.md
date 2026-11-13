@@ -240,3 +240,9 @@ Prompt: need fix: the users should be able to see their password
 Replaced the tiny scaled SVG wordmark with a mark + HTML “Closer” lockup on auth and in the shell header so the name reads clearly.
 
 Prompt: need fix: the brand name isn't glaring
+
+## 2026-11-13 — Header brand alignment
+
+Moved avatar onto a top bar with the logo so the profile CTA lines up with the mark; names sit under. Auth brand stacks mark above a larger wordmark.
+
+Prompt: can you make it better, also the profile cta isn't aligned with the logo
