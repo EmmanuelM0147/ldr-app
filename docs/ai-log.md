@@ -355,3 +355,9 @@ Prompt: Phase 3 medium QA a11y P1 safe-area
 Documented JWT_SECRET + REGISTRATION_ALLOWED_EMAILS in README; added docs/demo.md and docs/screenshots capture guidance; committed Vite API proxy for host demos. No cloud deploy.
 
 Prompt: Phase 4 demo readiness
+
+## 2026-11-13 - Auth BrandLockup size
+
+Grew auth mark to 4.25rem and tightened mark-to-word gap to `--space-2`; header lockup unchanged. Updated tokens size test.
+
+Prompt: proceed Option 1 auth logo

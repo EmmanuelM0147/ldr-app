@@ -71,9 +71,10 @@ describe("design tokens", () => {
     expect(indexCss).toMatch(/\.fab\s*\{[^}]*safe-bottom/s)
   })
 
-  it("keeps the auth brand lockup compact", () => {
+  it("sizes the auth brand lockup larger than chrome", () => {
     const indexCss = readFileSync(resolve(here, "index.css"), "utf8")
-    expect(indexCss).toMatch(/\.brand-lockup--auth \.brand-mark\s*\{[^}]*2\.75rem/s)
+    expect(indexCss).toMatch(/\.brand-lockup--auth \.brand-mark\s*\{[^}]*4\.25rem/s)
+    expect(indexCss).toMatch(/\.brand-lockup--auth\s*\{[^}]*gap:\s*var\(--space-2\)/s)
   })
 
   it("supports dark mode", () => {
