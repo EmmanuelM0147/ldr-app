@@ -224,6 +224,12 @@ paths:
       tags: [pairing]
       operationId: deleteCurrentCouple
       summary: Delete the couple space and its data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CoupleDelete"
       responses:
         "204":
           description: Space and couple-owned rows deleted. User accounts remain.
@@ -231,6 +237,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/Missing"
+        "422":
+          $ref: "#/components/responses/Invalid"
     patch:
       tags: [pairing]
       operationId: updateCurrentCouple
@@ -969,6 +977,15 @@ components:
       properties:
         ai_opt_in:
           type: boolean
+    CoupleDelete:
+      type: object
+      additionalProperties: false
+      required: [confirm]
+      properties:
+        confirm:
+          type: string
+          description: Must be exactly DELETE (typed confirmation; not UI-only).
+          enum: [DELETE]
     DateNightIdeaRequest:
       type: object
       additionalProperties: false

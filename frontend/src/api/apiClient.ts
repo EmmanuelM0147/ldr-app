@@ -133,7 +133,7 @@ export function createApiClient(baseUrl = "http://localhost:8000"): Api {
     },
 
     async deleteCurrentCouple() {
-      await unwrap(api.DELETE("/couples/current"))
+      await unwrap(api.DELETE("/couples/current", { body: { confirm: "DELETE" } }))
     },
 
     createInvite() {

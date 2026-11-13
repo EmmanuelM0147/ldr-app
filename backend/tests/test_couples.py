@@ -132,6 +132,32 @@ def test_expired_and_reused_codes(client, db_factory) -> None:
     assert reused.status_code == 400
 
 
+def _delete_couple(client, token: str, confirm: str | None = "DELETE"):
+    """Starlette TestClient.delete() has no json=; use request() for the body."""
+    if confirm is None:
+        return client.request("DELETE", "/couples/current", headers=auth(token))
+    return client.request(
+        "DELETE", "/couples/current", headers=auth(token), json={"confirm": confirm}
+    )
+
+
+def test_delete_requires_typed_confirm_body(client) -> None:
+    """SEC-05: API delete without confirm=DELETE must not succeed."""
+    owner = register(client, "ada@example.com", name="Ada")
+    client.post("/couples", headers=auth(owner))
+
+    missing = _delete_couple(client, owner, confirm=None)
+    assert missing.status_code == 422
+
+    wrong = _delete_couple(client, owner, confirm="delete")
+    assert wrong.status_code == 422
+    assert client.get("/couples/current", headers=auth(owner)).status_code == 200
+
+    ok = _delete_couple(client, owner)
+    assert ok.status_code == 204
+    assert client.get("/couples/current", headers=auth(owner)).status_code == 404
+
+
 def test_delete_notifies_partner_over_websocket(client) -> None:
     """FUNC-22: remaining partner gets couple_gone so the UI can clear the space."""
     import json
@@ -144,7 +170,7 @@ def test_delete_notifies_partner_over_websocket(client) -> None:
 
     with client.websocket_connect("/ws") as socket:
         socket.send_text(json.dumps({"token": partner}))
-        deleted = client.delete("/couples/current", headers=auth(owner))
+        deleted = _delete_couple(client, owner)
         assert deleted.status_code == 204
         event = socket.receive_json()
         assert event == {"type": "couple_gone"}
@@ -172,9 +198,9 @@ def test_delete_keeps_users_and_other_couple(client, db_factory) -> None:
     )
 
     lonely = register(client, "dapo@example.com", name="Dapo")
-    assert client.delete("/couples/current", headers=auth(lonely)).status_code == 404
+    assert _delete_couple(client, lonely).status_code == 404
 
-    deleted = client.delete("/couples/current", headers=auth(partner))
+    deleted = _delete_couple(client, partner)
     assert deleted.status_code == 204
     assert client.get("/me", headers=auth(owner)).status_code == 200
     assert client.get("/me", headers=auth(partner)).status_code == 200

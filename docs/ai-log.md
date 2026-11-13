@@ -331,3 +331,9 @@ Prompt: Phase 1 land uncommitted QA remediations
 Restored pairing.spec.ts: register/pair, both see same space, create visit (From/To) and check-in, partner sees both. Selectors match current UI (Invite code textbox, Add visit dialog, Main nav).
 
 Prompt: Phase 2 restore Compose pairing e2e
+
+## 2026-11-13 - SEC-05 delete confirm API
+
+Require `confirm: DELETE` body on `DELETE /couples/current`. SEC-04 deferred to short-lived JWT TTL (no denylist).
+
+Prompt: Phase 3 medium QA SEC-05

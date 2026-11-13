@@ -24,7 +24,7 @@ from app.models import (
     Visit,
 )
 from app.realtime import hub
-from app.schemas.api import CoupleOut, CouplePatch, InviteCreated, JoinRequest
+from app.schemas.api import CoupleDelete, CoupleOut, CouplePatch, InviteCreated, JoinRequest
 from app.security import hash_invite_code
 from app.serialize import couple_out
 
@@ -89,9 +89,11 @@ def update_current_couple(
 
 @router.delete("/couples/current", status_code=204, operation_id="deleteCurrentCouple")
 async def delete_current_couple(
+    body: CoupleDelete,
     couple: Couple = Depends(load_couple),
     db: Session = Depends(get_db),
 ) -> Response:
+    _ = body.confirm  # validated: must be DELETE
     couple_id = couple.id
     # Notify peers before rows disappear so their UI can clear the space (FUNC-22).
     await hub.publish(couple_id, {"type": "couple_gone"})

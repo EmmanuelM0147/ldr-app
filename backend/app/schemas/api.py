@@ -127,6 +127,17 @@ class CouplePatch(ApiModel):
     ai_opt_in: bool | None = None
 
 
+class CoupleDelete(ApiModel):
+    confirm: str
+
+    @field_validator("confirm")
+    @classmethod
+    def must_be_delete(cls, value: str) -> str:
+        if value != "DELETE":
+            raise ValueError("Type DELETE to confirm")
+        return value
+
+
 class DateNightIdeaRequest(ApiModel):
     vibe: str | None = Field(default=None, max_length=80)
 

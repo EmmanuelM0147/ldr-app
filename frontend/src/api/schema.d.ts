@@ -487,6 +487,13 @@ export interface components {
         CouplePatch: {
             ai_opt_in?: boolean;
         };
+        CoupleDelete: {
+            /**
+             * @description Must be exactly DELETE (typed confirmation; not UI-only).
+             * @enum {string}
+             */
+            confirm: "DELETE";
+        };
         DateNightIdeaRequest: {
             /** @description Optional short mood for the suggestion. Not logged. */
             vibe?: string;
@@ -842,8 +849,17 @@ export interface operations {
                     "application/json": components["schemas"]["AuthResponse"];
                 };
             };
-            409: components["responses"]["Conflict"];
+            /** @description Registration rejected (generic; does not reveal if the email exists) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             422: components["responses"]["Invalid"];
+            429: components["responses"]["Limited"];
         };
     };
     login: {
@@ -1050,7 +1066,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CoupleDelete"];
+            };
+        };
         responses: {
             /** @description Space and couple-owned rows deleted. User accounts remain. */
             204: {
@@ -1061,6 +1081,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["Missing"];
+            422: components["responses"]["Invalid"];
         };
     };
     updateCurrentCouple: {
