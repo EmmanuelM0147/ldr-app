@@ -1,4 +1,4 @@
-# AI log
+ï»¿# AI log
 
 ## 2026-11-12 â€” Task 1: Scaffold the API
 
@@ -271,49 +271,49 @@ Expanded `.github/workflows/test.yml`: frontend tests, `build-images` after back
 
 Prompt: proceed
 
-## 2026-11-13 — Auth polish 1: register timezone
+## 2026-11-13 ï¿½ Auth polish 1: register timezone
 
 Auto-detect IANA timezone via Intl, searchable timezone select on register (shows detected zone). Server already validates IANA via ZoneInfo.
 
 Prompt: Auth polish. One commit each... 1. Register: auto-detect timezone via Intl...
 
 
-## 2026-11-13 — Auth polish 2: register field errors
+## 2026-11-13 ï¿½ Auth polish 2: register field errors
 
 Inline password rule, field-level email/password errors, privacy note under Create account.
 
 Prompt: Auth polish item 2
 
 
-## 2026-11-13 — Auth polish 3: auth chrome
+## 2026-11-13 ï¿½ Auth polish 3: auth chrome
 
 Smaller auth brand lockup; email/current-password/new-password autocomplete; autofocus on login email and register display name.
 
 Prompt: Auth polish item 3
 
 
-## 2026-11-13 — Auth polish 4: pairing start
+## 2026-11-13 ï¿½ Auth polish 4: pairing start
 
 Clearer post-signup Create a space / Join with invite code screen.
 
 Prompt: Auth polish item 4
 
 
-## 2026-11-13 — Auth polish 5: auth rate limits
+## 2026-11-13 ï¿½ Auth polish 5: auth rate limits
 
 Rate-limit login/register per IP and email; generic register error that does not reveal whether the email exists.
 
 Prompt: Auth polish item 5
 
 
-## 2026-11-13 — Auth polish 6: registration allowlist
+## 2026-11-13 ï¿½ Auth polish 6: registration allowlist
 
 `REGISTRATION_ALLOWED_EMAILS` (comma-separated). When set, only those emails can register; others get the same generic 409 as a taken email. Empty keeps registration open.
 
 Prompt: Auth polish item 6
 
 
-## 2026-11-13 — Auth polish 7: Playwright pairing
+## 2026-11-13 ï¿½ Auth polish 7: Playwright pairing
 
 Compose Playwright: register two users, create/join via invite code, assert both see the same couple space (partner cards).
 
@@ -379,3 +379,9 @@ Prompt: theres no forget password â€” add forgot-password path (OpenAPI + token 
 Migrated couple AI from OpenAI-compatible `/ideas` to `POST /ai/date-ideas` using pinned `google-genai==3.3.0`. Couple field `ai_enabled` (DB column still `ai_opt_in`). Env: `GEMINI_API_KEY`, `GEMINI_MODEL` (server-only). Service: 10s timeout, max output tokens, structured `DateIdeas`, 10/day per couple, fallback on malformed/timeout (no 500). Logs status+latency only. Home Date night ideas card + Settings disclosure of what is sent.
 
 Prompt: Implement opt-in AI features for Closer using Google Gemini. Update openapi.yaml FIRST. Use google-genai; GEMINI_API_KEY/GEMINI_MODEL; POST /ai/date-ideas; rate limit 10/day; Home card; Settings toggle; tests mocked; commit contract/backend/frontend; append ai-log.
+
+## 2026-11-13 - Settings AI toggle 422
+
+Root cause: uvicorn on :8000 was started before the ai_opt_in to ai_enabled rename, so CouplePatch still forbade ai_enabled (extra=forbid) while the frontend sent the new field. Code/contract/DB mapping were already correct (column remains ai_opt_in). Hardened PATCH test (reject ai_opt_in, outsider 404, cross-couple isolation). Restarted API; alembic head 0009.
+
+Prompt: Bug: Settings AI toggle shows ai_enabled Extra inputs are not permitted - fix schema/openapi/client sync, test, restart, commit.

@@ -218,6 +218,10 @@ def test_update_couple_ai_enabled(client) -> None:
     code = client.post("/couples/current/invites", headers=auth(owner)).json()["code"]
     client.post("/couples/join", json={"code": code}, headers=auth(partner))
     assert client.get("/couples/current", headers=auth(owner)).json()["ai_enabled"] is False
+    # Renamed field: old ai_opt_in must not be accepted (extra=forbid).
+    stale = client.patch("/couples/current", json={"ai_opt_in": True}, headers=auth(partner))
+    assert stale.status_code == 422
+    assert client.get("/couples/current", headers=auth(owner)).json()["ai_enabled"] is False
     enabled = client.patch("/couples/current", json={"ai_enabled": True}, headers=auth(partner))
     assert enabled.status_code == 200
     assert enabled.json()["ai_enabled"] is True
@@ -225,3 +229,14 @@ def test_update_couple_ai_enabled(client) -> None:
     disabled = client.patch("/couples/current", json={"ai_enabled": False}, headers=auth(owner))
     assert disabled.status_code == 200
     assert disabled.json()["ai_enabled"] is False
+
+    alone = register(client, "chi@example.com", name="Chi")
+    assert client.patch("/couples/current", json={"ai_enabled": True}, headers=auth(alone)).status_code == 404
+
+    other = register(client, "dapo@example.com", name="Dapo")
+    client.post("/couples", headers=auth(other))
+    other_on = client.patch("/couples/current", json={"ai_enabled": True}, headers=auth(other))
+    assert other_on.status_code == 200
+    assert other_on.json()["ai_enabled"] is True
+    # Other couple's toggle must not change this couple's flag.
+    assert client.get("/couples/current", headers=auth(owner)).json()["ai_enabled"] is False
