@@ -10,6 +10,7 @@ from sqlalchemy.pool import NullPool
 
 from app.config import resolved_database_url
 from app.db import session_factory
+from app.db_url import supabase_connect_args
 from app.models import Couple, Membership, User
 from app.security import read_user_id
 
@@ -21,12 +22,20 @@ _factory = None
 def get_engine():
     global _engine, _factory
     if _engine is None:
-        url = resolved_database_url()
+        try:
+            url = resolved_database_url()
+        except ValueError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
         if url.startswith("sqlite"):
             _engine = create_engine(url, connect_args={"check_same_thread": False})
         else:
             # NullPool: safe for Vercel/serverless (no sticky connections across invocations).
-            _engine = create_engine(url, poolclass=NullPool)
+            # SSL for Supabase is passed as connect_args (query string is stripped).
+            _engine = create_engine(
+                url,
+                poolclass=NullPool,
+                connect_args=supabase_connect_args(url),
+            )
         _factory = session_factory(_engine)
     return _engine
 

@@ -408,3 +408,9 @@ Prompt: commit and push all, also update the README (honest portfolio state; exc
 Diagnosed live deploy: frontend baked no `VITE_API_URL` so login POSTed to the static host (generic Request failed.); backend CORS allowed localhost only (not the Vercel frontend origin); auth POST returned 500 without managed Postgres. Added `GET /`, `frontend/vercel.json` SPA rewrites, `backend/vercel.json` + `[tool.vercel]` entrypoint, `.env.example` + `docs/deploy.md` Vercel checklist.
 
 Prompt: Diagnose and fix Vercel deploy so frontend can call backend; probe /, /health, CORS, VITE_API_URL; commit+push; list env vars.
+
+## 2026-11-13 - Harden Supabase DATABASE_URL on Vercel
+
+Register 500s: `invalid connection option "supa"` and unparseable SQLAlchemy URL from Vercel/Supabase `POSTGRES_URL` query junk. `normalize_database_url` now drops the entire query string, forces `postgresql+psycopg`, and applies `sslmode=require` via connect_args for Supabase hosts. SQLAlchemy errors return 503 JSON so CORS headers reach the browser instead of "Failed to fetch".
+
+Prompt: Vercel register Failed to fetch + logs with invalid connection option "supa" / Could not parse SQLAlchemy URL — harden URL cleanup and CORS-friendly DB errors; redeploy.

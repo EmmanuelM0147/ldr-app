@@ -2,43 +2,44 @@
 
 from __future__ import annotations
 
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
-
-# Query keys safe to pass through to psycopg/libpq.
-_ALLOWED_QUERY_KEYS = frozenset({"sslmode", "connect_timeout", "application_name"})
+from sqlalchemy.engine.url import make_url
 
 
 def normalize_database_url(raw: str) -> str:
     """Return a SQLAlchemy URL that psycopg can open.
 
-    Vercel/Supabase often inject ``POSTGRES_URL`` like
-    ``postgres://…@…pooler.supabase.com:6543/postgres?pgbouncer=true&…``.
-    Those extra query keys become libpq options and crash with errors such as
-    ``invalid connection option "supa"``. Strip unknown query params and force
-    the ``postgresql+psycopg`` driver.
+    Vercel/Supabase ``POSTGRES_URL`` values often look like
+    ``postgres://…@…pooler.supabase.com:6543/postgres?pgbouncer=true&supa=…``.
+    Any unknown query key is forwarded to libpq and crashes with
+    ``invalid connection option "…"``. Drop the query string entirely and force
+    the ``postgresql+psycopg`` driver. SSL is applied via connect_args in deps.
     """
     url = raw.strip().strip('"').strip("'")
     if not url:
         raise ValueError("DATABASE_URL is empty")
 
-    if url.startswith("postgres://"):
+    # Some hosts turn "+" into a space when storing env vars.
+    if url.startswith("postgresql psycopg://"):
+        url = "postgresql+psycopg://" + url.removeprefix("postgresql psycopg://")
+    elif url.startswith("postgres://"):
         url = "postgresql+psycopg://" + url.removeprefix("postgres://")
-    elif url.startswith("postgresql+psycopg://"):
-        pass
     elif url.startswith("postgresql://"):
         url = "postgresql+psycopg://" + url.removeprefix("postgresql://")
 
     if url.startswith("sqlite:"):
         return url
 
-    parts = urlsplit(url)
-    if not parts.scheme or not parts.netloc:
-        raise ValueError("DATABASE_URL is not a valid SQLAlchemy URL")
+    parsed = make_url(url)
+    if not parsed.drivername.startswith("postgresql"):
+        raise ValueError("DATABASE_URL must be a Postgres or SQLite URL")
+    # Drop every query param (pgbouncer, Prisma, stray "supa", etc.).
+    cleaned = parsed.set(drivername="postgresql+psycopg", query={})
+    return cleaned.render_as_string(hide_password=False)
 
-    kept = [
-        (key, value)
-        for key, value in parse_qsl(parts.query, keep_blank_values=True)
-        if key.lower() in _ALLOWED_QUERY_KEYS
-    ]
-    query = urlencode(kept)
-    return urlunsplit((parts.scheme, parts.netloc, parts.path or "/", query, ""))
+
+def supabase_connect_args(url: str) -> dict[str, str]:
+    """libpq connect_args for Supabase hosts (ssl required)."""
+    host = (make_url(url).host or "").lower()
+    if "supabase.com" in host or "supabase.co" in host:
+        return {"sslmode": "require"}
+    return {}

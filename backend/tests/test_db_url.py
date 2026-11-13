@@ -10,12 +10,13 @@ def test_normalize_forces_psycopg_and_strips_supabase_query_junk() -> None:
     )
     out = normalize_database_url(raw)
     assert out.startswith("postgresql+psycopg://")
-    query = out.split("?", 1)[1] if "?" in out else ""
-    assert "pgbouncer" not in query
-    assert "connection_limit" not in query
-    assert "supa=" not in query
-    assert "sslmode=require" in query
+    assert "?" not in out
+    assert "pgbouncer" not in out
+    assert "supa=1" not in out
     assert "pooler.supabase.com:6543/postgres" in out
+    from app.db_url import supabase_connect_args
+
+    assert supabase_connect_args(out) == {"sslmode": "require"}
 
 
 def test_normalize_strips_quotes_and_rejects_empty() -> None:

@@ -120,7 +120,7 @@ Use **two** Vercel projects from the same GitHub repo. Do not put frontend and A
 | Variable | Required | Notes |
 |---|---|---|
 | `JWT_SECRET` | yes | ≥32 chars; not a placeholder |
-| `DATABASE_URL` | yes* | Managed Postgres. Prefer `postgresql+psycopg://…`. If you only have Vercel’s `POSTGRES_URL`, either rename/copy it to `DATABASE_URL` or leave `DATABASE_URL` unset (app falls back to `POSTGRES_URL`). Strip Prisma junk (`pgbouncer`, `connection_limit`, etc.) or let the app strip it. SQLite will 500 on auth |
+| `DATABASE_URL` | yes* | Managed Postgres pooler URL, e.g. `postgresql+psycopg://postgres.<ref>:<urlencoded-password>@aws-0-….pooler.supabase.com:6543/postgres`. Vercel’s `POSTGRES_URL` works as a fallback when `DATABASE_URL` is unset/SQLite. The app strips all query params (`pgbouncer`, `supa`, etc.) and sets `sslmode=require` for Supabase hosts. Do not use `SUPABASE_URL` (https API). SQLite will fail auth on Vercel |
 | `CORS_ORIGINS` | yes | Exact frontend origin(s), e.g. `https://frontend-kohl-one-76.vercel.app` |
 | `MEDIA_ROOT` | optional | Ephemeral on Vercel; fine for tiny demos only |
 | `GEMINI_API_KEY` / `GEMINI_MODEL` | optional | Server-only; date ideas stay off until couple opts in |
