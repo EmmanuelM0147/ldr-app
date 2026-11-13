@@ -414,3 +414,9 @@ Prompt: Diagnose and fix Vercel deploy so frontend can call backend; probe /, /h
 Register 500s: `invalid connection option "supa"` and unparseable SQLAlchemy URL from Vercel/Supabase `POSTGRES_URL` query junk. `normalize_database_url` now drops the entire query string, forces `postgresql+psycopg`, and applies `sslmode=require` via connect_args for Supabase hosts. SQLAlchemy errors return 503 JSON so CORS headers reach the browser instead of "Failed to fetch".
 
 Prompt: Vercel register Failed to fetch + logs with invalid connection option "supa" / Could not parse SQLAlchemy URL — harden URL cleanup and CORS-friendly DB errors; redeploy.
+
+## 2026-11-13 - Auto-migrate on Vercel cold start
+
+After URL fix, register returned `UndefinedTable register_failures` (DB reachable, migrations never run). Cold-start lifespan runs `alembic upgrade head` for non-SQLite; alembic env uses NullPool + Supabase ssl/prepare_threshold connect_args. 503 detail includes a short SQLAlchemy hint.
+
+Prompt: continue from Vercel register failure / logs; get hosted register working.

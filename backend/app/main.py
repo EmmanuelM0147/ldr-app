@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -5,10 +7,24 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import cors_origin_list
+from app.migrate import run_upgrade
 from app.routers import auth, checkins, couples, events, ideas, memories, presence, visits
 from app.schemas.health import Health, HealthStatus
 
-app = FastAPI(title="Closer API", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # Serverless: apply pending migrations on cold start so register works without a
+    # separate migrate job. Idempotent when already at head.
+    try:
+        run_upgrade()
+    except Exception:
+        # Keep the app up; routes return 503 with a hint if the DB is still broken.
+        pass
+    yield
+
+
+app = FastAPI(title="Closer API", version="0.1.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origin_list(),

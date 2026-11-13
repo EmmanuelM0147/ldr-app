@@ -128,12 +128,14 @@ Use **two** Vercel projects from the same GitHub repo. Do not put frontend and A
 | `PUBLIC_APP_URL` | optional | Frontend origin for reset-link debug |
 | `AUTH_RESET_DEBUG` | no | Leave unset/`0` in production |
 
-After the database is reachable, run migrations once (local machine or one-off job) with the same `DATABASE_URL`:
+The API runs `alembic upgrade head` on cold start (skipped for SQLite). You can still migrate manually:
 
 ```bash
 cd backend
 alembic upgrade head
 ```
+
+Use a **dedicated** Postgres for Closer (do not point at another product’s Supabase). Prefer the pooler URL on port `6543`.
 
 **Sanity checks** (replace with your API host):
 
