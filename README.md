@@ -87,7 +87,7 @@ cd frontend && npm run test:e2e:compose  # pairing against Compose stack
 
 ## Deployment
 
-GitHub Actions (`.github/workflows/test.yml`) runs backend Ruff + pytest and frontend typecheck + Vitest, then builds API/web images. On pushes to `main`, a `deploy` job (needs those jobs) pushes to ECR and rolls ECS services when secrets are configured. Secrets, variables, first-time AWS setup, and rollback are in [`docs/deploy.md`](docs/deploy.md). Local Compose remains the default for day-to-day work.
+GitHub Actions (`.github/workflows/test.yml`) runs backend Ruff + pytest and frontend typecheck + Vitest, then builds API/web images. On pushes to `main`, a `deploy` job (needs those jobs) pushes to ECR and rolls ECS services when secrets are configured. Secrets, variables, first-time AWS setup, optional **Vercel** two-project demo wiring (`VITE_API_URL`, `CORS_ORIGINS`, Postgres), and rollback are in [`docs/deploy.md`](docs/deploy.md). Local Compose remains the default for day-to-day work.
 
 ## How I used AI tools
 

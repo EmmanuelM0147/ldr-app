@@ -1,4 +1,10 @@
-# Deploy Closer to AWS
+# Deploy Closer
+
+Primary target is **AWS** (ECS + RDS) via GitHub Actions. **Vercel** can host a demo of the Vite frontend and FastAPI API as two projects; it is not a full substitute for ECS (WebSockets and local media disks are limited).
+
+---
+
+## AWS (production path)
 
 Closer ships as two container images (API + web) built in GitHub Actions. Tests and a dry-run image build must pass before the deploy job runs. Deploy runs only on pushes to `main`.
 
@@ -94,3 +100,82 @@ docker compose up
 ```
 
 CI’s `build-images` job is the same Dockerfiles with `push: false`.
+
+---
+
+## Vercel (optional demo)
+
+Use **two** Vercel projects from the same GitHub repo. Do not put frontend and API in one project without a monorepo/services setup.
+
+### Backend project
+
+| Setting | Value |
+|---|---|
+| Root Directory | `backend` |
+| Framework | FastAPI (auto) / Python |
+| Entrypoint | `app.main:app` (also in `backend/pyproject.toml` → `[tool.vercel]`) |
+
+**Environment variables (Production):**
+
+| Variable | Required | Notes |
+|---|---|---|
+| `JWT_SECRET` | yes | ≥32 chars; not a placeholder |
+| `DATABASE_URL` | yes | Managed Postgres (`postgresql+psycopg://…`). SQLite will 500 on auth |
+| `CORS_ORIGINS` | yes | Exact frontend origin(s), e.g. `https://frontend-kohl-one-76.vercel.app` |
+| `MEDIA_ROOT` | optional | Ephemeral on Vercel; fine for tiny demos only |
+| `GEMINI_API_KEY` / `GEMINI_MODEL` | optional | Server-only; date ideas stay off until couple opts in |
+| `REGISTRATION_ALLOWED_EMAILS` | optional | Comma-separated allowlist |
+| `PUBLIC_APP_URL` | optional | Frontend origin for reset-link debug |
+| `AUTH_RESET_DEBUG` | no | Leave unset/`0` in production |
+
+After the database is reachable, run migrations once (local machine or one-off job) with the same `DATABASE_URL`:
+
+```bash
+cd backend
+alembic upgrade head
+```
+
+**Sanity checks** (replace with your API host):
+
+```bash
+curl -sS https://backend-lilac-nine-81.vercel.app/
+curl -sS https://backend-lilac-nine-81.vercel.app/health
+# OPTIONS should include Access-Control-Allow-Origin for your frontend:
+curl -sS -D - -o /dev/null -X OPTIONS \
+  -H "Origin: https://frontend-kohl-one-76.vercel.app" \
+  -H "Access-Control-Request-Method: POST" \
+  https://backend-lilac-nine-81.vercel.app/auth/login
+```
+
+Root `/` returning `{"detail":"Not Found"}` on older deploys was normal before `GET /` existed; `/health` is the liveness check. Auth routes must return JSON (401/422), not a platform 500.
+
+### Frontend project
+
+| Setting | Value |
+|---|---|
+| Root Directory | `frontend` |
+| Framework | Vite |
+| Build Command | `npm run build` |
+| Output Directory | `dist` |
+| Rewrites | `frontend/vercel.json` → SPA fallback to `index.html` |
+
+**Environment variables (must be available at Build time):**
+
+| Variable | Required | Notes |
+|---|---|---|
+| `VITE_API_URL` | yes | Public API origin, no trailing slash, e.g. `https://backend-lilac-nine-81.vercel.app` |
+
+If `VITE_API_URL` is missing, the client falls back to `window.location.origin` and login POSTs to the static site → generic **"Request failed."** After changing `VITE_API_URL`, trigger a **Redeploy** (rebuild), not only a restart.
+
+### Verify login end-to-end
+
+1. Open the frontend `/login` URL (hard refresh should not 404).
+2. DevTools → Network: `POST …/auth/login` must hit the **backend** host, not the frontend host.
+3. Preflight `OPTIONS` must show `Access-Control-Allow-Origin` matching the frontend.
+4. Wrong password → `401` with `"Email or password is wrong."`; success → token + redirect home.
+
+### Vercel limitations
+
+- Presence WebSocket (`/ws`) is unreliable on Vercel serverless; prefer AWS/ECS for realtime.
+- Uploaded media under `MEDIA_ROOT` does not persist across instances; use object storage later.
+- Always use external Postgres; never rely on SQLite on Vercel.

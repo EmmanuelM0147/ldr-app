@@ -5,6 +5,7 @@ import yaml
 CONTRACT_PATH = Path(__file__).resolve().parents[2] / "docs" / "openapi.yaml"
 
 REQUIRED: dict[str, set[str]] = {
+    "/": {"get"},
     "/health": {"get"},
     "/auth/register": {"post"},
     "/auth/login": {"post"},

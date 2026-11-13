@@ -16,6 +16,13 @@ def _contract() -> dict:
     return loaded
 
 
+def test_root_ok() -> None:
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/json")
+    assert response.json() == {"service": "Closer API", "docs": "/docs", "health": "/health"}
+
+
 def test_health_ok() -> None:
     response = client.get("/health")
     assert response.status_code == 200

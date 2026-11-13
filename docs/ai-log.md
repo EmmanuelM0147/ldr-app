@@ -403,3 +403,8 @@ Prompt: proceed Date Ideas UX (AI label once, list cards, sanitize dashes); test
 Updated README for current product: Gemini `POST /ai/date-ideas` + `ai_enabled`, auth polish (timezone, rate limits, allowlist, forgot/reset / `AUTH_RESET_DEBUG`), strong `JWT_SECRET`, Compose/.env.example run path, links to demo.md and ai-log.md, honest "live demo outstanding", screenshots slots, no em dashes. Ignored `tools/` (cloudflared binaries). Committed and pushed to origin.
 
 Prompt: commit and push all, also update the README (honest portfolio state; exclude .env and tunnel binaries).
+## 2026-11-13 - Fix Vercel frontend/backend wiring
+
+Diagnosed live deploy: frontend baked no `VITE_API_URL` so login POSTed to the static host (generic Request failed.); backend CORS allowed localhost only (not the Vercel frontend origin); auth POST returned 500 without managed Postgres. Added `GET /`, `frontend/vercel.json` SPA rewrites, `backend/vercel.json` + `[tool.vercel]` entrypoint, `.env.example` + `docs/deploy.md` Vercel checklist.
+
+Prompt: Diagnose and fix Vercel deploy so frontend can call backend; probe /, /health, CORS, VITE_API_URL; commit+push; list env vars.

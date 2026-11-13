@@ -35,6 +35,11 @@ async def validation_error(_request: Request, exc: RequestValidationError) -> JS
     return JSONResponse(status_code=422, content={"detail": "; ".join(parts)})
 
 
+@app.get("/", operation_id="getRoot")
+def get_root() -> dict[str, str]:
+    return {"service": "Closer API", "docs": "/docs", "health": "/health"}
+
+
 @app.get("/health", response_model=Health, operation_id="getHealth")
 def get_health() -> Health:
     return Health(status=HealthStatus.ok)

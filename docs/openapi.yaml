@@ -18,6 +18,27 @@ tags:
 security:
   - bearerAuth: []
 paths:
+  /:
+    get:
+      tags: [meta]
+      operationId: getRoot
+      security: []
+      summary: API root
+      responses:
+        "200":
+          description: API is reachable; points at docs and health
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [service, docs, health]
+                properties:
+                  service:
+                    type: string
+                  docs:
+                    type: string
+                  health:
+                    type: string
   /health:
     get:
       tags: [meta]

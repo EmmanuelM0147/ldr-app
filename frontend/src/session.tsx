@@ -34,6 +34,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false
     void (async () => {
+      if (import.meta.env.PROD && import.meta.env.VITE_USE_MOCK !== "1" && !import.meta.env.VITE_API_URL) {
+        console.warn(
+          "VITE_API_URL was not set at build time; API calls use this page origin and will fail against a static host.",
+        )
+      }
       const next =
         import.meta.env.VITE_USE_MOCK === "1"
           ? await createDemoClient(window.sessionStorage)
