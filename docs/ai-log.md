@@ -312,3 +312,10 @@ Prompt: Auth polish item 5
 
 Prompt: Auth polish item 6
 
+
+## 2026-11-13 — Auth polish 7: Playwright pairing
+
+Compose Playwright: register two users, create/join via invite code, assert both see the same couple space (partner cards).
+
+Prompt: Auth polish item 7
+
