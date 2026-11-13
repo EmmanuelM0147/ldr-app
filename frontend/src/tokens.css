@@ -81,8 +81,10 @@
   --sheet-max: 40rem;
   /* Matches the floating tab bar (~icon + label + padding), ~88px. */
   --nav-height: 5.5rem;
-  /* Nav bar height + bottom offset (--space-3) + extra (--space-5) for footer/content. */
-  --nav-clearance: calc(var(--nav-height) + var(--space-3) + var(--space-5));
+  /* Home-indicator / notch inset; 0 on devices without a safe area. */
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  /* Nav bar height + bottom offset (--space-3) + extra (--space-5) + safe area. */
+  --nav-clearance: calc(var(--nav-height) + var(--space-3) + var(--space-5) + var(--safe-bottom));
 
   font-family: var(--font-sans);
   color: var(--color-ink);

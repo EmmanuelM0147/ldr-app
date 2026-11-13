@@ -616,8 +616,8 @@ input, textarea, select {
 .fab {
   position: fixed;
   right: max(var(--space-4), calc(50% - 19rem));
-  /* Clear floating tabs (nav height + tabs bottom offset) then + 24px */
-  bottom: calc(var(--nav-height) + var(--space-3) + var(--space-5));
+  /* Clear floating tabs (nav height + tabs bottom offset + safe area) then + 24px */
+  bottom: calc(var(--nav-height) + var(--space-3) + var(--space-5) + var(--safe-bottom));
   width: 3.5rem;
   height: 3.5rem;
   border: 0;
@@ -945,7 +945,7 @@ a.button-link {
 .tabs {
   position: fixed;
   left: 50%;
-  bottom: var(--space-3);
+  bottom: calc(var(--space-3) + var(--safe-bottom));
   transform: translateX(-50%);
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));

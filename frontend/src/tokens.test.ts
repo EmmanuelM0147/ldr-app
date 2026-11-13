@@ -50,13 +50,25 @@ describe("design tokens", () => {
 
   it("defines nav clearance above the floating tab bar", () => {
     expect(css).toContain(
-      "--nav-clearance: calc(var(--nav-height) + var(--space-3) + var(--space-5))",
+      "--nav-clearance: calc(var(--nav-height) + var(--space-3) + var(--space-5) + var(--safe-bottom))",
     )
   })
 
   it("clears the timezone footer above the bottom nav (A11Y-P0-1)", () => {
     const indexCss = readFileSync(resolve(here, "index.css"), "utf8")
     expect(indexCss).toMatch(/\.shell:has\(\.tabs\)\s+\.zone\s*\{[^}]*nav-clearance/s)
+  })
+
+  it("lifts tabs and FAB for safe-area insets (A11Y-P1)", () => {
+    const html = readFileSync(resolve(here, "../index.html"), "utf8")
+    expect(html).toMatch(/viewport-fit=cover/)
+    expect(css).toContain("--safe-bottom: env(safe-area-inset-bottom, 0px)")
+    expect(css).toContain(
+      "--nav-clearance: calc(var(--nav-height) + var(--space-3) + var(--space-5) + var(--safe-bottom))",
+    )
+    const indexCss = readFileSync(resolve(here, "index.css"), "utf8")
+    expect(indexCss).toMatch(/\.tabs\s*\{[^}]*safe-bottom/s)
+    expect(indexCss).toMatch(/\.fab\s*\{[^}]*safe-bottom/s)
   })
 
   it("keeps the auth brand lockup compact", () => {

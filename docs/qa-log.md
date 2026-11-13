@@ -162,3 +162,14 @@ Fixes for issues from `docs/qa-report.md`. One entry per issue.
 - Test: windows the week in America/New_York vs UTC (FUNC-03).
 
 **OpenAPI:** unchanged.
+
+## A11Y-P1 — Safe-area insets for tabs and FAB
+
+**Issue:** No `viewport-fit=cover` / `safe-area-inset-bottom`; home-indicator phones could clip the floating tab bar and FAB.
+
+**Fix:**
+- `viewport-fit=cover` on the viewport meta.
+- `--safe-bottom` token; folded into `--nav-clearance`, `.tabs` bottom, and `.fab` bottom.
+- Test: tokens.test A11Y-P1 assertions.
+
+**OpenAPI:** unchanged.

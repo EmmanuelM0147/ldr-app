@@ -343,3 +343,9 @@ Prompt: Phase 3 medium QA SEC-05
 This-week window uses the profile IANA timezone, not device-local midnight.
 
 Prompt: Phase 3 medium QA FUNC-03
+
+## 2026-11-13 - A11Y-P1 safe-area
+
+Lift bottom nav and FAB with `env(safe-area-inset-bottom)` and `viewport-fit=cover`.
+
+Prompt: Phase 3 medium QA a11y P1 safe-area
