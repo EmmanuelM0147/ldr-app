@@ -6,8 +6,9 @@ from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.pool import NullPool
 
-from app.config import get_settings
+from app.config import resolved_database_url
 from app.db import session_factory
 from app.models import Couple, Membership, User
 from app.security import read_user_id
@@ -20,9 +21,12 @@ _factory = None
 def get_engine():
     global _engine, _factory
     if _engine is None:
-        url = get_settings().database_url
-        args = {"check_same_thread": False} if url.startswith("sqlite") else {}
-        _engine = create_engine(url, connect_args=args)
+        url = resolved_database_url()
+        if url.startswith("sqlite"):
+            _engine = create_engine(url, connect_args={"check_same_thread": False})
+        else:
+            # NullPool: safe for Vercel/serverless (no sticky connections across invocations).
+            _engine = create_engine(url, poolclass=NullPool)
         _factory = session_factory(_engine)
     return _engine
 

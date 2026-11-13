@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     database_url: str = "sqlite:///./closer.db"
+    # Vercel Supabase integration sets POSTGRES_URL; used when DATABASE_URL is unset/default.
+    postgres_url: str = ""
     # Required via JWT_SECRET env. No weak default — boot fails if missing/weak.
     jwt_secret: str
     cors_origins: str = (
@@ -48,6 +50,18 @@ class Settings(BaseSettings):
 
 def get_settings() -> Settings:
     return Settings()
+
+
+def resolved_database_url() -> str:
+    """Prefer DATABASE_URL; fall back to POSTGRES_URL from Vercel/Supabase."""
+    from app.db_url import normalize_database_url
+
+    settings = get_settings()
+    raw = settings.database_url.strip()
+    default_sqlite = raw.startswith("sqlite:")
+    if (not raw or default_sqlite) and settings.postgres_url.strip():
+        raw = settings.postgres_url
+    return normalize_database_url(raw)
 
 
 def registration_allowlist() -> set[str] | None:
