@@ -73,7 +73,7 @@ cd frontend && npm run test:e2e:compose  # pairing against Compose stack
 
 ## Deployment
 
-CI today (`.github/workflows/test.yml`) runs backend Ruff + pytest on every push and pull request. Full image build and AWS deploy, gated on green tests, are backlog task 24 — document steps in `docs/deploy.md` when that ships. Until then, local/Compose is the supported run path.
+GitHub Actions (`.github/workflows/test.yml`) runs backend Ruff + pytest and frontend typecheck + Vitest, then builds API/web images. On pushes to `main`, a `deploy` job (needs those jobs) pushes to ECR and rolls ECS services when secrets are configured. Secrets, variables, first-time AWS setup, and rollback are in [`docs/deploy.md`](docs/deploy.md). Local Compose remains the default for day-to-day work.
 
 ## How I used AI tools
 
@@ -114,7 +114,7 @@ This project was built with AI tooling under an explicit engineering process.
 - **Backend:** pytest for auth, pairing, events, visits/budgets, check-ins, memories, presence/WS, ideas (LLM mocked), and cross-couple denial.
 - **Frontend:** Vitest for formatters, tokens/contrast, forms, and key components.
 - **E2E:** Playwright mock flows (home, calendar-add, visit-add) and Compose pairing (`user A` invites, `user B` joins, both see shared data).
-- **CI:** GitHub Actions runs backend lint + pytest; frontend e2e is local/`npm run test:e2e` until the deploy workflow lands.
+- **CI:** GitHub Actions runs backend lint + pytest, frontend typecheck + Vitest, Docker image builds, then gated deploy on `main`. Playwright e2e stays local (`npm run test:e2e` / `test:e2e:compose`).
 
 ## Limitations and next steps
 
@@ -122,7 +122,8 @@ This project was built with AI tooling under an explicit engineering process.
 - No push notifications; presence is in-app WebSocket only.
 - One couple space per user; no chat or video (by design).
 - Media is local disk in Compose, not yet object storage / CDN.
-- Live demo URL, demo video, screenshot gallery, `docs/deploy.md`, and AWS CD are still outstanding (backlog 24+ polish).
+- Live demo URL, demo video, and screenshot gallery are still outstanding.
+- AWS resources (ECR/ECS/RDS) must be provisioned and GitHub secrets set before `deploy` succeeds — see `docs/deploy.md`.
 
 ## Project structure
 

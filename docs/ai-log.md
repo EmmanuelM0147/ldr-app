@@ -264,3 +264,9 @@ Prompt: Frontend polish pass (one commit per item) — implement the plan; do no
 Filled root `README.md` from the portfolio template: problem, features, architecture (OpenAPI contract), local Compose run, honest CI/deploy status, AI workflow + real failure examples, security/privacy, testing, limitations. Ticked backlog task 25. Live demo / screenshots / `docs/deploy.md` left as outstanding.
 
 Prompt: (README template for Closer — Why / Features / Architecture / Run / AI tools / Security / Testing)
+
+## 2026-11-13 — Task 24: CI/CD + deploy docs
+
+Expanded `.github/workflows/test.yml`: frontend tests, `build-images` after backend+frontend, `deploy` on `main` needing all three (ECR push + ECS roll via OIDC). Wrote `docs/deploy.md` (secrets, variables, rollback). Added `scripts/check_workflow_order.py`. No AWS keys in repo.
+
+Prompt: proceed

@@ -116,7 +116,7 @@ Done already: repo layout, Cursor rules, `GET /health`, draft Compose file.
   - Acceptance: the flow runs against the Compose stack.
   - Tests: that Playwright spec.
 
-- [ ] 24. GitHub Actions: lint, test, build images, and deploy to AWS only after tests pass. Write `docs/deploy.md`.
+- [x] 24. GitHub Actions: lint, test, build images, and deploy to AWS only after tests pass. Write `docs/deploy.md`.
   - Acceptance: the deploy job needs the test job. The doc lists the required secrets and the rollback step.
   - Tests: workflow YAML includes the job order. No secrets are committed.
 
