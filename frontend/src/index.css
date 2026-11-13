@@ -60,6 +60,10 @@ button, input, textarea, select {
   flex: 1;
 }
 
+.shell:has(.tabs) .sheet {
+  padding-bottom: var(--nav-clearance);
+}
+
 .top {
   width: min(var(--sheet-max), calc(100% - var(--space-6)));
   margin: 0 auto;
@@ -571,7 +575,8 @@ input, textarea, select {
 .fab {
   position: fixed;
   right: max(var(--space-4), calc(50% - 19rem));
-  bottom: calc(var(--nav-height) + var(--space-6));
+  /* Clear floating tabs (nav height + tabs bottom offset) then + 24px */
+  bottom: calc(var(--nav-height) + var(--space-3) + var(--space-5));
   width: 3.5rem;
   height: 3.5rem;
   border: 0;
@@ -950,11 +955,15 @@ img.avatar-photo {
 
 .zone {
   width: min(var(--sheet-max), calc(100% - var(--space-6)));
-  margin: auto auto calc(var(--nav-height) + var(--space-5));
+  margin: auto auto var(--space-3);
   text-align: center;
   color: var(--color-muted);
   font-size: var(--text-sm);
   padding: var(--space-2) 0 0;
+}
+
+.shell:has(.tabs) .zone {
+  margin-bottom: var(--space-3);
 }
 
 .partner-a { color: var(--color-partner-a); }

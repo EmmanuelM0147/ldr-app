@@ -75,6 +75,8 @@
   --touch-min: 2.75rem;
   --sheet-max: 40rem;
   --nav-height: 4.5rem;
+  /* Nav bar height + 24px (--space-5) for content clearance */
+  --nav-clearance: calc(var(--nav-height) + var(--space-5));
 
   font-family: var(--font-sans);
   color: var(--color-ink);

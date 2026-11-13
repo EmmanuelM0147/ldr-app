@@ -41,9 +41,15 @@ describe("design tokens", () => {
       "--radius-lg",
       "--shadow-md",
       "--touch-min",
+      "--nav-height",
+      "--nav-clearance",
     ]) {
       expect(css).toContain(name)
     }
+  })
+
+  it("defines nav clearance as nav height plus 24px spacing token", () => {
+    expect(css).toContain("--nav-clearance: calc(var(--nav-height) + var(--space-5))")
   })
 
   it("supports dark mode", () => {
