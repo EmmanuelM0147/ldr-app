@@ -561,12 +561,21 @@ input, textarea, select {
   color: var(--color-on-accent);
 }
 
+.month-dots {
+  display: inline-flex;
+  gap: 0.15rem;
+  align-items: center;
+  justify-content: center;
+}
+
 .month-dot {
   width: 0.35rem;
   height: 0.35rem;
   border-radius: var(--radius-pill);
   background: var(--color-partner-a);
 }
+
+.month-dot.partner-b { background: var(--color-partner-b); }
 
 .month-cell.selected .month-dot { background: var(--color-on-accent); }
 
@@ -736,7 +745,13 @@ input, textarea, select {
   background: var(--color-partner-a);
 }
 
+.timeline-item.partner-b::before { background: var(--color-partner-b); }
+
 .timeline-card { margin: 0; }
+
+.timeline-card.partner-a { border-color: var(--color-partner-a-soft); }
+
+.timeline-card.partner-b { border-color: var(--color-partner-b-soft); }
 
 .memory-media {
   display: block;

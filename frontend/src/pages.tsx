@@ -31,6 +31,7 @@ import {
   RegisterForm,
 } from "./components/widgets"
 import { formatDay, formatWhen, localDate } from "./format"
+import { partnerAccent } from "./partnerAccent"
 import { checkInStreak, DAILY_PROMPT, moodLabel } from "./mood"
 import { useSession } from "./session"
 import type { CheckIn, EventItem, Memory, Visit } from "./types"
@@ -522,7 +523,7 @@ export function SettingsPage() {
 }
 
 export function CalendarPage() {
-  const { client, user } = useSession()
+  const { client, user, couple } = useSession()
   const [events, setEvents] = useState<EventItem[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -553,8 +554,15 @@ export function CalendarPage() {
     )
   }
 
+  const memberIds = couple?.members.map((member) => member.user_id) ?? (user ? [user.id] : [])
   const byDay = eventsByDay(events, user.timezone)
   const markedKeys = new Set(byDay.keys())
+  const dayAccents = new Map(
+    [...byDay.entries()].map(([key, dayItems]) => {
+      const accents = [...new Set(dayItems.map((event) => partnerAccent(event.created_by, memberIds)))]
+      return [key, accents] as const
+    }),
+  )
   const dayEvents = byDay.get(selectedKey) ?? []
   const selectedLabel = new Intl.DateTimeFormat("en-GB", {
     weekday: "long",
@@ -571,6 +579,7 @@ export function CalendarPage() {
         monthIndex={cursor.monthIndex}
         selectedKey={selectedKey}
         markedKeys={markedKeys}
+        dayAccents={dayAccents}
         onSelect={setSelectedKey}
         onPrev={() =>
           setCursor((value) => {
@@ -594,7 +603,7 @@ export function CalendarPage() {
         ) : (
           <ul className="list compact">
             {dayEvents.map((event) => (
-              <li key={event.id}>
+              <li key={event.id} className={partnerAccent(event.created_by, memberIds)}>
                 <strong>{event.title}</strong>
                 <p className="muted">{formatWhen(event.starts_at, user.timezone)}</p>
                 {event.location ? <p>{event.location}</p> : null}
@@ -855,7 +864,7 @@ export function CheckInsPage() {
 }
 
 export function MemoriesPage() {
-  const { client, user } = useSession()
+  const { client, user, couple } = useSession()
   const [memories, setMemories] = useState<Memory[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -945,6 +954,7 @@ export function MemoriesPage() {
         <MemoryTimeline
           memories={memories}
           currentUserId={user.id}
+          memberIds={couple?.members.map((member) => member.user_id) ?? [user.id]}
           timeZone={user.timezone}
           loadMedia={loadMedia}
           onDelete={(id) => void client.deleteMemory(id).then(reload)}

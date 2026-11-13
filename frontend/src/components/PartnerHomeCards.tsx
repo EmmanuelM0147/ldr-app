@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { moodLabel } from "../mood"
+import { partnerAccent } from "../partnerAccent"
 import type { CheckIn, Member, Presence } from "../types"
 import { UserAvatar } from "./UserAvatar"
 
@@ -40,14 +41,17 @@ export function PartnerHomeCards({
 
   return (
     <section className="pair" aria-label="You and your partner">
-      {members.map((member, index) => {
+      {members.map((member) => {
         const free = presence.find((item) => item.user_id === member.user_id)?.free_to_talk ?? false
         const mood =
           [...checkIns]
             .filter((item) => item.user_id === member.user_id)
             .sort((a, b) => b.local_date.localeCompare(a.local_date))[0]?.mood ?? null
         const mine = member.user_id === viewerId
-        const accent = index % 2 === 0 ? "partner-a" : "partner-b"
+        const accent = partnerAccent(
+          member.user_id,
+          members.map((item) => item.user_id),
+        )
         return (
           <article key={member.user_id} className={`card partner-card ${accent}`}>
             <div className="partner-head">

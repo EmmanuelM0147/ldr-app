@@ -1,4 +1,5 @@
 import { moodLabel } from "../mood"
+import { partnerAccent } from "../partnerAccent"
 import type { CheckIn, Member } from "../types"
 
 export function PartnerTodayCards({
@@ -12,9 +13,12 @@ export function PartnerTodayCards({
 }) {
   return (
     <section className="pair" aria-label="Both check-ins today">
-      {members.map((member, index) => {
+      {members.map((member) => {
         const entry = items.find((item) => item.user_id === member.user_id && item.local_date === today) ?? null
-        const accent = index % 2 === 0 ? "partner-a" : "partner-b"
+        const accent = partnerAccent(
+          member.user_id,
+          members.map((item) => item.user_id),
+        )
         return (
           <article key={member.user_id} className={`card partner-card ${accent}`}>
             <div className="partner-head">

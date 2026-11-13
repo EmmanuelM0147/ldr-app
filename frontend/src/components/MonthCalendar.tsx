@@ -1,3 +1,4 @@
+import type { PartnerAccent } from "../partnerAccent"
 import type { EventItem } from "../types"
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
@@ -33,6 +34,7 @@ export function MonthCalendar({
   monthIndex,
   selectedKey,
   markedKeys,
+  dayAccents,
   onSelect,
   onPrev,
   onNext,
@@ -41,6 +43,7 @@ export function MonthCalendar({
   monthIndex: number
   selectedKey: string
   markedKeys: Set<string>
+  dayAccents?: Map<string, PartnerAccent[]>
   onSelect: (key: string) => void
   onPrev: () => void
   onNext: () => void
@@ -90,7 +93,13 @@ export function MonthCalendar({
               onClick={() => onSelect(cell.key)}
             >
               <span>{cell.day}</span>
-              {markedKeys.has(cell.key) ? <i className="month-dot" aria-hidden /> : null}
+              {markedKeys.has(cell.key) ? (
+                <span className="month-dots" aria-hidden>
+                  {(dayAccents?.get(cell.key) ?? ["partner-a"]).map((accent) => (
+                    <i key={accent} className={`month-dot ${accent}`} />
+                  ))}
+                </span>
+              ) : null}
             </button>
           ),
         )}

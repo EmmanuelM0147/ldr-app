@@ -108,7 +108,13 @@ describe("forms", () => {
       memory("theirs", "bello", "Their note"),
     ]
     render(
-      <MemoryTimeline memories={memories} currentUserId="ada" timeZone="UTC" onDelete={vi.fn()} />,
+      <MemoryTimeline
+        memories={memories}
+        currentUserId="ada"
+        memberIds={["ada", "bello"]}
+        timeZone="UTC"
+        onDelete={vi.fn()}
+      />,
     )
     expect(screen.getAllByRole("button", { name: "Delete memory" })).toHaveLength(1)
   })

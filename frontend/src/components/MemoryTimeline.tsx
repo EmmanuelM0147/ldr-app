@@ -1,4 +1,5 @@
 import { formatWhen } from "../format"
+import { partnerAccent } from "../partnerAccent"
 import type { Memory } from "../types"
 import { MemoryMediaView } from "./MemoryMedia"
 
@@ -16,12 +17,14 @@ export function onThisDay(memories: Memory[], now = new Date()): Memory[] {
 export function MemoryTimeline({
   memories,
   currentUserId,
+  memberIds,
   timeZone,
   onDelete,
   loadMedia,
 }: {
   memories: Memory[]
   currentUserId: string
+  memberIds: string[]
   timeZone: string
   onDelete: (id: string) => void
   loadMedia?: (memoryId: string) => Promise<Blob>
@@ -30,23 +33,26 @@ export function MemoryTimeline({
   if (sorted.length === 0) return <p className="muted">Nothing saved yet.</p>
   return (
     <ol className="timeline" aria-label="Memory timeline">
-      {sorted.map((memory) => (
-        <li key={memory.id} className="timeline-item">
-          <article className="card timeline-card">
-            <p className="kicker">{formatWhen(memory.created_at, timeZone)}</p>
-            {memory.title ? <h3>{memory.title}</h3> : null}
-            {memory.media ? (
-              <MemoryMediaView media={memory.media} memoryId={memory.id} loadBlob={loadMedia} />
-            ) : null}
-            {memory.body ? <p>{memory.body}</p> : null}
-            {memory.author_id === currentUserId ? (
-              <button type="button" className="textish" onClick={() => onDelete(memory.id)}>
-                Delete memory
-              </button>
-            ) : null}
-          </article>
-        </li>
-      ))}
+      {sorted.map((memory) => {
+        const accent = partnerAccent(memory.author_id, memberIds)
+        return (
+          <li key={memory.id} className={`timeline-item ${accent}`}>
+            <article className={`card timeline-card ${accent}`}>
+              <p className="kicker">{formatWhen(memory.created_at, timeZone)}</p>
+              {memory.title ? <h3>{memory.title}</h3> : null}
+              {memory.media ? (
+                <MemoryMediaView media={memory.media} memoryId={memory.id} loadBlob={loadMedia} />
+              ) : null}
+              {memory.body ? <p>{memory.body}</p> : null}
+              {memory.author_id === currentUserId ? (
+                <button type="button" className="textish" onClick={() => onDelete(memory.id)}>
+                  Delete memory
+                </button>
+              ) : null}
+            </article>
+          </li>
+        )
+      })}
     </ol>
   )
 }

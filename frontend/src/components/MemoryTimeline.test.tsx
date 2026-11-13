@@ -30,7 +30,13 @@ describe("MemoryTimeline", () => {
     render(
       <>
         <OnThisDay memories={onThisDay(items, new Date("2026-11-12T12:00:00.000Z"))} timeZone="UTC" />
-        <MemoryTimeline memories={items} currentUserId="ada" timeZone="UTC" onDelete={() => undefined} />
+        <MemoryTimeline
+          memories={items}
+          currentUserId="ada"
+          memberIds={["ada", "bello"]}
+          timeZone="UTC"
+          onDelete={() => undefined}
+        />
       </>,
     )
     expect(screen.getByRole("heading", { name: "On this day" })).toBeInTheDocument()
