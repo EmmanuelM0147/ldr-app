@@ -197,3 +197,23 @@ class RegisterFailure(Base):
     ip: Mapped[str] = mapped_column(String(64), index=True)
     email: Mapped[str] = mapped_column(String(255), index=True, default="")
     created_at: Mapped[datetime] = mapped_column(UtcDateTime, index=True)
+
+
+class PasswordResetToken(Base):
+    __tablename__ = "password_reset_tokens"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    expires_at: Mapped[datetime] = mapped_column(UtcDateTime)
+    used_at: Mapped[datetime | None] = mapped_column(UtcDateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime)
+
+
+class PasswordResetFailure(Base):
+    __tablename__ = "password_reset_failures"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    ip: Mapped[str] = mapped_column(String(64), index=True)
+    email: Mapped[str] = mapped_column(String(255), index=True, default="")
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, index=True)

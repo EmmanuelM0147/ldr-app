@@ -8,6 +8,8 @@ REQUIRED: dict[str, set[str]] = {
     "/health": {"get"},
     "/auth/register": {"post"},
     "/auth/login": {"post"},
+    "/auth/forgot-password": {"post"},
+    "/auth/reset-password": {"post"},
     "/me": {"get", "patch"},
     "/me/avatar": {"post", "delete"},
     "/users/{user_id}/avatar": {"get"},

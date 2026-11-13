@@ -73,6 +73,37 @@ class LoginRequest(ApiModel):
         return value.lower()
 
 
+class ForgotPasswordRequest(ApiModel):
+    email: EmailStr
+
+    @field_validator("email")
+    @classmethod
+    def lower_email(cls, value: str) -> str:
+        return value.lower()
+
+
+class ForgotPasswordResponse(ApiModel):
+    detail: str
+    reset_url: str | None = None
+
+
+class ResetPasswordRequest(ApiModel):
+    token: str = Field(min_length=1)
+    new_password: str = Field(min_length=8, max_length=72)
+
+    @field_validator("token")
+    @classmethod
+    def strip_token(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Token is required.")
+        return cleaned
+
+
+class ResetPasswordResponse(ApiModel):
+    detail: str
+
+
 class UserPatch(ApiModel):
     display_name: str | None = Field(default=None, min_length=1, max_length=40)
     timezone: str | None = None

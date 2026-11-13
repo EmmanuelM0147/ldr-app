@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     llm_model: str = "gpt-4o-mini"
     # Comma-separated emails. Empty = open registration. When set, only these may register.
     registration_allowed_emails: str = ""
+    # Base URL for reset links in AUTH_RESET_DEBUG responses (frontend origin).
+    public_app_url: str = "http://localhost:5173"
+    # When true, forgot-password may include reset_url in JSON (local/tests only).
+    auth_reset_debug: bool = False
 
     @field_validator("jwt_secret")
     @classmethod

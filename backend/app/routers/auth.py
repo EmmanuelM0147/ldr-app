@@ -1,3 +1,5 @@
+import logging
+import secrets
 import uuid
 from datetime import timedelta
 
@@ -6,20 +8,44 @@ from fastapi.responses import FileResponse
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
-from app.config import registration_allowlist
+from app.config import get_settings, registration_allowlist
 from app.deps import get_clock, get_current_user, get_db
 from app.media import absolute_media_path, delete_media_file, save_avatar_file
-from app.models import LoginFailure, Membership, RegisterFailure, User
-from app.schemas.api import AuthResponse, LoginRequest, RegisterRequest, UserOut, UserPatch
-from app.security import create_access_token, hash_password, verify_password
+from app.models import (
+    LoginFailure,
+    Membership,
+    PasswordResetFailure,
+    PasswordResetToken,
+    RegisterFailure,
+    User,
+)
+from app.schemas.api import (
+    AuthResponse,
+    ForgotPasswordRequest,
+    ForgotPasswordResponse,
+    LoginRequest,
+    RegisterRequest,
+    ResetPasswordRequest,
+    ResetPasswordResponse,
+    UserOut,
+    UserPatch,
+)
+from app.security import create_access_token, hash_password, hash_reset_token, verify_password
 from app.serialize import user_out
 
 router = APIRouter()
+logger = logging.getLogger("closer.auth")
 LOGIN_FAILURE_LIMIT = 20
 REGISTER_FAILURE_LIMIT = 10
+PASSWORD_RESET_LIMIT = 5
 AUTH_FAILURE_WINDOW = timedelta(hours=1)
+RESET_TOKEN_TTL = timedelta(hours=1)
 GENERIC_REGISTER_ERROR = "Unable to create an account with that email."
 GENERIC_LOGIN_ERROR = "Email or password is wrong."
+GENERIC_FORGOT_DETAIL = (
+    "If that email is registered, use the reset link to choose a new password."
+)
+GENERIC_RESET_INVALID = "Invalid or expired reset link."
 
 
 def _same_couple(db: Session, left: uuid.UUID, right: uuid.UUID) -> bool:
@@ -37,7 +63,7 @@ def _client_ip(request: Request) -> str:
 def _too_many(
     db: Session,
     *,
-    model: type[LoginFailure] | type[RegisterFailure],
+    model: type[LoginFailure] | type[RegisterFailure] | type[PasswordResetFailure],
     ip: str,
     email: str,
     now,
@@ -51,6 +77,23 @@ def _too_many(
             model.created_at >= since,
             or_(model.ip == ip, model.email == email),
         )
+    )
+    return count is not None and count >= limit
+
+
+def _too_many_ip(
+    db: Session,
+    *,
+    model: type[PasswordResetFailure],
+    ip: str,
+    now,
+    limit: int,
+) -> bool:
+    since = now - AUTH_FAILURE_WINDOW
+    count = db.scalar(
+        select(func.count())
+        .select_from(model)
+        .where(model.created_at >= since, model.ip == ip)
     )
     return count is not None and count >= limit
 
@@ -123,6 +166,98 @@ def login(
         db.commit()
         raise HTTPException(status_code=401, detail=GENERIC_LOGIN_ERROR)
     return AuthResponse(access_token=create_access_token(user.id, now), user=user_out(user))
+
+
+@router.post(
+    "/auth/forgot-password",
+    response_model=ForgotPasswordResponse,
+    operation_id="forgotPassword",
+)
+def forgot_password(
+    body: ForgotPasswordRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    now=Depends(get_clock),
+) -> ForgotPasswordResponse:
+    ip = _client_ip(request)
+    email = body.email
+    if _too_many(
+        db,
+        model=PasswordResetFailure,
+        ip=ip,
+        email=email,
+        now=now,
+        limit=PASSWORD_RESET_LIMIT,
+    ):
+        raise HTTPException(status_code=429, detail="Too many attempts. Try again later.")
+
+    db.add(PasswordResetFailure(ip=ip, email=email, created_at=now))
+    reset_url: str | None = None
+    user = db.scalar(select(User).where(User.email == email))
+    if user is not None:
+        token = secrets.token_urlsafe(32)
+        db.add(
+            PasswordResetToken(
+                user_id=user.id,
+                token_hash=hash_reset_token(token),
+                expires_at=now + RESET_TOKEN_TTL,
+                created_at=now,
+            )
+        )
+        # Non-PII only: never log the email or plaintext token outside debug URL.
+        logger.info("password_reset_token_created")
+        settings = get_settings()
+        if settings.auth_reset_debug:
+            base = settings.public_app_url.rstrip("/")
+            reset_url = f"{base}/reset-password?token={token}"
+
+    db.commit()
+    return ForgotPasswordResponse(detail=GENERIC_FORGOT_DETAIL, reset_url=reset_url)
+
+
+@router.post(
+    "/auth/reset-password",
+    response_model=ResetPasswordResponse,
+    operation_id="resetPassword",
+)
+def reset_password(
+    body: ResetPasswordRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    now=Depends(get_clock),
+) -> ResetPasswordResponse:
+    ip = _client_ip(request)
+    # Rate-limit by IP only (token is the secret; email unknown here).
+    if _too_many_ip(db, model=PasswordResetFailure, ip=ip, now=now, limit=PASSWORD_RESET_LIMIT):
+        raise HTTPException(status_code=429, detail="Too many attempts. Try again later.")
+
+    row = db.scalar(
+        select(PasswordResetToken).where(PasswordResetToken.token_hash == hash_reset_token(body.token))
+    )
+    if row is None or row.used_at is not None or row.expires_at <= now:
+        db.add(PasswordResetFailure(ip=ip, email="reset", created_at=now))
+        db.commit()
+        raise HTTPException(status_code=400, detail=GENERIC_RESET_INVALID)
+
+    user = db.get(User, row.user_id)
+    if user is None:
+        db.add(PasswordResetFailure(ip=ip, email="reset", created_at=now))
+        db.commit()
+        raise HTTPException(status_code=400, detail=GENERIC_RESET_INVALID)
+
+    user.password_hash = hash_password(body.new_password)
+    row.used_at = now
+    for other in db.scalars(
+        select(PasswordResetToken).where(
+            PasswordResetToken.user_id == user.id,
+            PasswordResetToken.used_at.is_(None),
+            PasswordResetToken.id != row.id,
+        )
+    ):
+        other.used_at = now
+    db.commit()
+    logger.info("password_reset_completed")
+    return ResetPasswordResponse(detail="Password updated. You can sign in.")
 
 
 @router.get("/me", response_model=UserOut, operation_id="getMe")

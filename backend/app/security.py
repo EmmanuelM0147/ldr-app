@@ -27,6 +27,10 @@ def hash_invite_code(code: str) -> str:
     return hashlib.sha256(code.encode()).hexdigest()
 
 
+def hash_reset_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
 def create_access_token(user_id: uuid.UUID, now: datetime) -> str:
     issued = now.astimezone(UTC)
     payload = {"sub": str(user_id), "iat": issued, "exp": issued + TOKEN_TTL}

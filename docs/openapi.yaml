@@ -85,6 +85,62 @@ paths:
           $ref: "#/components/responses/Invalid"
         "429":
           $ref: "#/components/responses/Limited"
+  /auth/forgot-password:
+    post:
+      tags: [auth]
+      operationId: forgotPassword
+      security: []
+      summary: Request a password reset link
+      description: >
+        Always returns 200 with a generic message (no email enumeration).
+        Email delivery is not wired yet. When AUTH_RESET_DEBUG=1 and the email
+        exists, the response may include reset_url for local/demo tests only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordRequest"
+      responses:
+        "200":
+          description: Generic acknowledgement (same whether or not the email exists)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForgotPasswordResponse"
+        "422":
+          $ref: "#/components/responses/Invalid"
+        "429":
+          $ref: "#/components/responses/Limited"
+  /auth/reset-password:
+    post:
+      tags: [auth]
+      operationId: resetPassword
+      security: []
+      summary: Set a new password with a reset token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordRequest"
+      responses:
+        "200":
+          description: Password updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResetPasswordResponse"
+        "400":
+          description: Invalid, used, or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          $ref: "#/components/responses/Invalid"
+        "429":
+          $ref: "#/components/responses/Limited"
   /me:
     get:
       tags: [auth]
@@ -1015,6 +1071,46 @@ components:
           type: string
           minLength: 8
           maxLength: 72
+    ForgotPasswordRequest:
+      type: object
+      additionalProperties: false
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+    ForgotPasswordResponse:
+      type: object
+      additionalProperties: false
+      required: [detail]
+      properties:
+        detail:
+          type: string
+        reset_url:
+          type: string
+          nullable: true
+          description: >
+            Present only when AUTH_RESET_DEBUG=1 and a token was issued.
+            Never enabled by default in production.
+    ResetPasswordRequest:
+      type: object
+      additionalProperties: false
+      required: [token, new_password]
+      properties:
+        token:
+          type: string
+          minLength: 1
+        new_password:
+          type: string
+          minLength: 8
+          maxLength: 72
+    ResetPasswordResponse:
+      type: object
+      additionalProperties: false
+      required: [detail]
+      properties:
+        detail:
+          type: string
     AuthResponse:
       type: object
       additionalProperties: false

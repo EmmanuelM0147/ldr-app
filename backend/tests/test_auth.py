@@ -139,6 +139,63 @@ def test_register_rate_limited_after_duplicate_attempts(client) -> None:
     assert blocked.status_code == 429
 
 
+def test_forgot_password_generic_and_debug_url(client, monkeypatch) -> None:
+    register(client, "ada@example.com")
+    unknown = client.post("/auth/forgot-password", json={"email": "nobody@example.com"})
+    assert unknown.status_code == 200
+    assert "registered" in unknown.json()["detail"].lower()
+    assert unknown.json().get("reset_url") is None
+
+    without_debug = client.post("/auth/forgot-password", json={"email": "ada@example.com"})
+    assert without_debug.status_code == 200
+    assert without_debug.json()["detail"] == unknown.json()["detail"]
+    assert without_debug.json().get("reset_url") is None
+
+    monkeypatch.setenv("AUTH_RESET_DEBUG", "1")
+    monkeypatch.setenv("PUBLIC_APP_URL", "http://localhost:5173")
+    debug = client.post("/auth/forgot-password", json={"email": "Ada@Example.com"})
+    assert debug.status_code == 200
+    body = debug.json()
+    assert body["detail"] == unknown.json()["detail"]
+    assert body["reset_url"] is not None
+    assert body["reset_url"].startswith("http://localhost:5173/reset-password?token=")
+    assert "ada@" not in body["reset_url"].lower()
+
+
+def test_reset_password_flow_and_reuse(client, monkeypatch) -> None:
+    register(client, "ada@example.com")
+    monkeypatch.setenv("AUTH_RESET_DEBUG", "1")
+    forgot = client.post("/auth/forgot-password", json={"email": "ada@example.com"})
+    assert forgot.status_code == 200
+    reset_url = forgot.json()["reset_url"]
+    assert reset_url
+    token = reset_url.rsplit("token=", 1)[1]
+
+    bad = client.post("/auth/reset-password", json={"token": "not-a-real-token", "new_password": "password999"})
+    assert bad.status_code == 400
+    assert bad.json()["detail"] == "Invalid or expired reset link."
+
+    short = client.post("/auth/reset-password", json={"token": token, "new_password": "short"})
+    assert short.status_code == 422
+
+    ok = client.post("/auth/reset-password", json={"token": token, "new_password": "password456"})
+    assert ok.status_code == 200
+    assert "sign in" in ok.json()["detail"].lower()
+    assert client.post("/auth/login", json={"email": "ada@example.com", "password": "password456"}).status_code == 200
+    assert client.post("/auth/login", json={"email": "ada@example.com", "password": "password123"}).status_code == 401
+
+    reuse = client.post("/auth/reset-password", json={"token": token, "new_password": "password789"})
+    assert reuse.status_code == 400
+
+
+def test_forgot_password_rate_limited(client) -> None:
+    register(client, "ada@example.com")
+    for _ in range(5):
+        assert client.post("/auth/forgot-password", json={"email": "ada@example.com"}).status_code == 200
+    blocked = client.post("/auth/forgot-password", json={"email": "ada@example.com"})
+    assert blocked.status_code == 429
+
+
 def test_me_requires_token(client) -> None:
     assert client.get("/me").status_code == 401
     assert isinstance(client.get("/me").json()["detail"], str)
