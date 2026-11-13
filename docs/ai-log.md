@@ -349,3 +349,9 @@ Prompt: Phase 3 medium QA FUNC-03
 Lift bottom nav and FAB with `env(safe-area-inset-bottom)` and `viewport-fit=cover`.
 
 Prompt: Phase 3 medium QA a11y P1 safe-area
+
+## 2026-11-13 - Demo readiness docs
+
+Documented JWT_SECRET + REGISTRATION_ALLOWED_EMAILS in README; added docs/demo.md and docs/screenshots capture guidance; committed Vite API proxy for host demos. No cloud deploy.
+
+Prompt: Phase 4 demo readiness

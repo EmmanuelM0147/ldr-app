@@ -20,13 +20,13 @@ When you live in different cities, chat apps already handle talking — what get
 
 ## Screenshots
 
-Add captures under `docs/screenshots/` and link them here when ready:
+Real captures go under [`docs/screenshots/`](docs/screenshots/README.md) (see capture steps there). Slots:
 
-- Home (countdown + partner cards)
-- Calendar
-- Visits
-- Check-in
-- Memories
+- Home (countdown + partner cards) — `docs/screenshots/home.png`
+- Calendar — `docs/screenshots/calendar.png`
+- Visits — `docs/screenshots/visits.png`
+- Check-in — `docs/screenshots/check-in.png`
+- Memories — `docs/screenshots/memories.png`
 
 ## Architecture
 
@@ -56,11 +56,15 @@ React PWA → FastAPI → PostgreSQL. Presence and check-in updates go over an a
 
 ```bash
 cp .env.example .env
+# Required: set JWT_SECRET to a strong random string (≥32 chars). Example:
+#   python -c "import secrets; print(secrets.token_urlsafe(48))"
+# Optional: REGISTRATION_ALLOWED_EMAILS=you@example.com,partner@example.com
+#   When set, only those emails can register; empty keeps registration open.
 docker compose up --build
 # frontend: http://localhost:5173   api docs: http://localhost:8000/docs
 ```
 
-Without Compose, point `DATABASE_URL` at Postgres (or leave it unset for SQLite), set `JWT_SECRET`, run Alembic + Uvicorn from `backend/`, and `npm run dev` in `frontend/`.
+Without Compose, point `DATABASE_URL` at Postgres (or leave it unset for SQLite), set `JWT_SECRET`, run Alembic + Uvicorn from `backend/`, and `npm run dev` in `frontend/`. Host-API + Compose-DB fallback commands are in [`docs/demo.md`](docs/demo.md).
 
 Run tests:
 
