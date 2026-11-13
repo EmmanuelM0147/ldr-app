@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
+from app.config import registration_allowlist
 from app.deps import get_clock, get_current_user, get_db
 from app.media import absolute_media_path, delete_media_file, save_avatar_file
 from app.models import LoginFailure, Membership, RegisterFailure, User
@@ -72,6 +73,12 @@ def register(
         limit=REGISTER_FAILURE_LIMIT,
     ):
         raise HTTPException(status_code=429, detail="Too many attempts. Try again later.")
+
+    allowed = registration_allowlist()
+    if allowed is not None and email not in allowed:
+        db.add(RegisterFailure(ip=ip, email=email, created_at=now))
+        db.commit()
+        raise HTTPException(status_code=409, detail=GENERIC_REGISTER_ERROR)
 
     if db.scalar(select(User.id).where(User.email == email)) is not None:
         db.add(RegisterFailure(ip=ip, email=email, created_at=now))

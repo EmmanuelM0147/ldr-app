@@ -305,3 +305,10 @@ Rate-limit login/register per IP and email; generic register error that does not
 
 Prompt: Auth polish item 5
 
+
+## 2026-11-13 — Auth polish 6: registration allowlist
+
+`REGISTRATION_ALLOWED_EMAILS` (comma-separated). When set, only those emails can register; others get the same generic 409 as a taken email. Empty keeps registration open.
+
+Prompt: Auth polish item 6
+

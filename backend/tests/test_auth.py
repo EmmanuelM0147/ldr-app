@@ -88,6 +88,31 @@ def test_login_rate_limited_after_failed_attempts(client) -> None:
     )
 
 
+def test_register_allowlist_rejects_other_emails(client, monkeypatch) -> None:
+    monkeypatch.setenv("REGISTRATION_ALLOWED_EMAILS", "ada@example.com, bello@example.com")
+    denied = client.post(
+        "/auth/register",
+        json={
+            "email": "outsider@example.com",
+            "password": "password123",
+            "display_name": "Out",
+            "timezone": "UTC",
+        },
+    )
+    assert denied.status_code == 409
+    assert denied.json()["detail"] == "Unable to create an account with that email."
+    ok = client.post(
+        "/auth/register",
+        json={
+            "email": "Ada@Example.com",
+            "password": "password123",
+            "display_name": "Ada",
+            "timezone": "UTC",
+        },
+    )
+    assert ok.status_code == 201
+
+
 def test_register_rate_limited_after_duplicate_attempts(client) -> None:
     register(client, "ada@example.com")
     for _ in range(10):
