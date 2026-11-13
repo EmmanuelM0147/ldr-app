@@ -325,3 +325,9 @@ Prompt: Auth polish item 7
 Landed SEC-01 strong JWT_SECRET validation; FUNC-01/02/15/16/22 (partner today TZ, IANA wall times, presence TTL + disconnect, WS reconnect, couple_gone); A11Y-P0-1..3 (nav clearance, BottomSheet focus trap, nav icon titles). See docs/qa-log.md.
 
 Prompt: Phase 1 land uncommitted QA remediations
+
+## 2026-11-13 - Restore Compose pairing e2e (visit + check-in)
+
+Restored pairing.spec.ts: register/pair, both see same space, create visit (From/To) and check-in, partner sees both. Selectors match current UI (Invite code textbox, Add visit dialog, Main nav).
+
+Prompt: Phase 2 restore Compose pairing e2e

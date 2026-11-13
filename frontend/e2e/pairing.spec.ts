@@ -10,11 +10,14 @@ async function register(page: Page, input: { email: string; name: string; passwo
   await expect(page.getByRole("heading", { name: /Start your couple space/i })).toBeVisible()
 }
 
-test("register two users, pair via invite code, both see the same space", async ({ browser }) => {
+test("user A creates a space, user B joins, both see the same visit and check-in", async ({
+  browser,
+}) => {
   const stamp = Date.now()
   const password = "password123"
   const ada = { email: `ada-${stamp}@example.com`, name: "Ada", password }
   const bello = { email: `bello-${stamp}@example.com`, name: "Bello", password }
+  const visitTitle = `Lagos reunion ${stamp}`
 
   const contextA = await browser.newContext()
   const contextB = await browser.newContext()
@@ -38,6 +41,42 @@ test("register two users, pair via invite code, both see the same space", async 
   await expect(pageA.getByLabel("You and your partner")).toBeVisible()
   await expect(pageA.getByRole("heading", { name: "Ada" })).toBeVisible()
   await expect(pageA.getByRole("heading", { name: "Bello" })).toBeVisible()
+
+  await pageA.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Visits" }).click()
+  await expect(pageA.getByRole("heading", { name: "Visits" })).toBeVisible()
+  await pageA.getByRole("button", { name: "Add visit" }).click()
+  const dialog = pageA.getByRole("dialog", { name: "Add visit" })
+  await expect(dialog).toBeVisible()
+  await dialog.getByLabel("Title").fill(visitTitle)
+  await dialog.locator('input[name="starts_at"]').fill("2099-07-01T10:00")
+  await dialog.locator('input[name="ends_at"]').fill("2099-07-05T18:00")
+  await dialog.getByLabel("From", { exact: true }).fill("Lagos")
+  await dialog.getByLabel("To", { exact: true }).fill("Abuja")
+  await dialog.getByLabel("Traveler").selectOption({ label: "Ada" })
+  await dialog.getByRole("button", { name: "Add visit" }).click()
+  await expect(dialog).toBeHidden()
+  const visitCardA = pageA.getByRole("article").filter({ hasText: visitTitle })
+  await expect(visitCardA.getByRole("heading", { name: visitTitle })).toBeVisible({ timeout: 15_000 })
+  await expect(visitCardA.getByText(/Route · Lagos → Abuja/)).toBeVisible()
+
+  await pageA.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Check-in" }).click()
+  await expect(pageA.getByRole("heading", { name: "Check-in", exact: true })).toBeVisible()
+  await pageA.getByRole("radio", { name: /Great/i }).click()
+  await pageA.getByLabel("Note").fill("Counting the days together.")
+  await pageA.getByRole("button", { name: /Save today's check-in|Update today's check-in/i }).click()
+  await expect(
+    pageA.getByLabel("Both check-ins today").getByText("Counting the days together."),
+  ).toBeVisible({ timeout: 15_000 })
+
+  await pageB.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Visits" }).click()
+  const visitCardB = pageB.getByRole("article").filter({ hasText: visitTitle })
+  await expect(visitCardB.getByRole("heading", { name: visitTitle })).toBeVisible({ timeout: 15_000 })
+  await expect(visitCardB.getByText(/Route · Lagos → Abuja/)).toBeVisible()
+
+  await pageB.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Check-in" }).click()
+  const both = pageB.getByLabel("Both check-ins today")
+  await expect(both.getByText("Counting the days together.")).toBeVisible({ timeout: 15_000 })
+  await expect(both.getByText(/Great/i)).toBeVisible()
 
   await contextA.close()
   await contextB.close()
