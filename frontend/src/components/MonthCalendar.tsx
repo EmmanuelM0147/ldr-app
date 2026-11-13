@@ -33,6 +33,7 @@ export function MonthCalendar({
   year,
   monthIndex,
   selectedKey,
+  todayKey,
   markedKeys,
   dayAccents,
   onSelect,
@@ -42,6 +43,7 @@ export function MonthCalendar({
   year: number
   monthIndex: number
   selectedKey: string
+  todayKey?: string
   markedKeys: Set<string>
   dayAccents?: Map<string, PartnerAccent[]>
   onSelect: (key: string) => void
@@ -85,10 +87,12 @@ export function MonthCalendar({
               className={[
                 "month-cell",
                 markedKeys.has(cell.key) ? "marked" : "",
+                todayKey === cell.key ? "today" : "",
                 selectedKey === cell.key ? "selected" : "",
               ]
                 .filter(Boolean)
                 .join(" ")}
+              aria-current={todayKey === cell.key ? "date" : undefined}
               aria-pressed={selectedKey === cell.key}
               onClick={() => onSelect(cell.key)}
             >

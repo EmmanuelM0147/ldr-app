@@ -26,6 +26,7 @@ describe("MonthCalendar", () => {
         year={2026}
         monthIndex={10}
         selectedKey="2026-11-12"
+        todayKey="2026-11-12"
         markedKeys={new Set(byDay.keys())}
         onSelect={onSelect}
         onPrev={() => undefined}
@@ -34,8 +35,12 @@ describe("MonthCalendar", () => {
     )
     expect(screen.getByRole("heading", { name: monthLabel(2026, 10) })).toBeInTheDocument()
     expect(screen.getByText("November 2026")).toBeInTheDocument()
+    const today = screen.getByRole("gridcell", { name: "12" })
+    expect(today.className).toContain("today")
+    expect(today).toHaveAttribute("aria-current", "date")
     const marked = screen.getByRole("gridcell", { name: "15" })
     expect(marked.className).toContain("marked")
+    expect(marked.querySelector(".month-dot")).not.toBeNull()
     await user.click(marked)
     expect(onSelect).toHaveBeenCalledWith("2026-11-15")
   })

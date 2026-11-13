@@ -556,9 +556,15 @@ input, textarea, select {
 
 .month-cell.marked { font-weight: 600; }
 
+.month-cell.today {
+  box-shadow: inset 0 0 0 2px var(--color-partner-b);
+  border-radius: var(--radius-pill);
+}
+
 .month-cell.selected {
   background: var(--color-accent);
   color: var(--color-on-accent);
+  box-shadow: none;
 }
 
 .month-dots {

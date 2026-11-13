@@ -578,6 +578,7 @@ export function CalendarPage() {
         year={cursor.year}
         monthIndex={cursor.monthIndex}
         selectedKey={selectedKey}
+        todayKey={localDate(user.timezone)}
         markedKeys={markedKeys}
         dayAccents={dayAccents}
         onSelect={setSelectedKey}
