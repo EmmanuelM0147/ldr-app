@@ -680,7 +680,7 @@ export function createMockClient(options: Options = {}) {
           {
             title: "Short walk and talk",
             description: "Walk somewhere nearby or call while each of you walks, then share one highlight.",
-            est_cost: "free–low",
+            est_cost: "free-low",
           },
         ],
       }

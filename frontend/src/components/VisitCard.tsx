@@ -36,7 +36,7 @@ export function VisitCard({
         <span className={`chip ${seconds > 0 ? "chip-soon" : "chip-muted"}`}>{chip}</span>
       </div>
       <p className="muted">
-        {formatWhen(visit.starts_at, timeZone)} – {formatWhen(visit.ends_at, timeZone)}
+        {formatWhen(visit.starts_at, timeZone)} - {formatWhen(visit.ends_at, timeZone)}
       </p>
       <p>Traveler: {traveler?.display_name ?? "Not set"}</p>
       {visit.budget ? (

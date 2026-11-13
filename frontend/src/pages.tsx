@@ -427,7 +427,7 @@ export function SettingsPage() {
         <ul className="list compact">
           <li>
             <strong>{user.email}</strong>
-            <p className="muted">Sign-in email — not shared as a public profile.</p>
+            <p className="muted">Sign-in email, not shared as a public profile.</p>
           </li>
           <li>
             <strong>Member since</strong>
@@ -539,7 +539,7 @@ export function SettingsPage() {
           </label>
           <p className="muted">
             Off by default. Either of you can turn this off anytime. When on, Home can ask Google Gemini for date
-            ideas. We send only the form fields you enter (duration, budget, together/apart, optional mood) — never
+            ideas. We send only the form fields you enter (duration, budget, together/apart, optional mood), never
             names, emails, check-ins, memories, visit notes, or other couple content. Prompts and replies are not
             logged.
           </p>

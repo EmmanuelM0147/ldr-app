@@ -1,4 +1,4 @@
-﻿# AI log
+# AI log
 
 ## 2026-11-12 — Task 1: Scaffold the API
 
@@ -385,3 +385,9 @@ Prompt: Implement opt-in AI features for Closer using Google Gemini. Update open
 Root cause: uvicorn on :8000 was started before the ai_opt_in to ai_enabled rename, so CouplePatch still forbade ai_enabled (extra=forbid) while the frontend sent the new field. Code/contract/DB mapping were already correct (column remains ai_opt_in). Hardened PATCH test (reject ai_opt_in, outsider 404, cross-couple isolation). Restarted API; alembic head 0009.
 
 Prompt: Bug: Settings AI toggle shows ai_enabled Extra inputs are not permitted - fix schema/openapi/client sync, test, restart, commit.
+
+## 2026-11-13 - Remove UI em dashes
+
+Replaced user-facing em/en dashes in frontend copy with periods, commas, colons, or hyphens (Settings AI disclosure, DateIdeasCard, VisitCard ranges, currency labels). Updated DateIdeasCard test. Left code comments alone.
+
+Prompt: remove em dashes from Closer UI copy; prefer commas/periods/colons/hyphens; update tests; commit; brief ai-log.

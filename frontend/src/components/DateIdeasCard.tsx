@@ -22,7 +22,7 @@ export function DateIdeasCard({
     return (
       <section className="card" aria-labelledby="date-ideas-heading">
         <h2 id="date-ideas-heading">Date night ideas</h2>
-        <p className="muted">AI is off — enable in Settings.</p>
+        <p className="muted">AI is off. Enable in Settings.</p>
         <Link className="secondary button-link" to="/settings">
           Open Settings
         </Link>
@@ -63,7 +63,7 @@ export function DateIdeasCard({
     <section className="card" aria-labelledby="date-ideas-heading">
       <h2 id="date-ideas-heading">Date night ideas</h2>
       <p className="muted">
-        Sends only duration, budget, mode, and optional mood — never names, notes, or other couple content.
+        Sends only duration, budget, mode, and optional mood, never names, notes, or other couple content.
       </p>
       <form className="stack" onSubmit={(event) => void onSubmit(event)}>
         <label className="field">

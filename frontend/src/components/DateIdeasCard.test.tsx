@@ -12,7 +12,7 @@ describe("DateIdeasCard", () => {
         <DateIdeasCard aiEnabled={false} client={{ createDateIdeas: vi.fn() }} />
       </MemoryRouter>,
     )
-    expect(screen.getByText(/AI is off — enable in Settings/i)).toBeInTheDocument()
+    expect(screen.getByText(/AI is off\. Enable in Settings/i)).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /Open Settings/i })).toHaveAttribute("href", "/settings")
   })
 
