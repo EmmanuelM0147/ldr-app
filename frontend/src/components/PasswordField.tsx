@@ -19,8 +19,8 @@ export function PasswordField({
   const toggleLabel = visible ? "Hide password" : "Show password"
 
   return (
-    <label className="field" htmlFor={inputId}>
-      <span>{label}</span>
+    <div className="field">
+      <label htmlFor={inputId}>{label}</label>
       <div className="password-field">
         <input
           id={inputId}
@@ -40,6 +40,6 @@ export function PasswordField({
           {visible ? <IconEyeOff /> : <IconEye />}
         </button>
       </div>
-    </label>
+    </div>
   )
 }

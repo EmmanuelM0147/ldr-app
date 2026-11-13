@@ -252,3 +252,9 @@ Prompt: can you make it better, also the profile cta isn't aligned with the logo
 Nav clearance + FAB above tabs; stable `partnerAccent(userId)`; en-GB date formatters; check-in requires explicit mood (😑 Okay); calendar today ring + event dots; Visits/Memories list-first with FAB bottom sheets.
 
 Prompt: Frontend polish pass (one commit per item) — implement the plan; do not edit the plan file.
+
+## 2026-11-13 — Frontend polish (7–11)
+
+Visit From/To + balanced budget; memory drop zone; compact empty HomeHero; AA contrast aliases/`partner-a-ink`; Playwright home + calendar-add + visit-add (mock).
+
+Prompt: Frontend polish pass (one commit per item) — implement the plan; do not edit the plan file.

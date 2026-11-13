@@ -262,7 +262,8 @@ button, input, textarea, select {
   gap: var(--space-1);
 }
 
-.field > span {
+.field > span,
+.field > label {
   font-size: var(--text-sm);
   color: var(--color-muted);
 }
