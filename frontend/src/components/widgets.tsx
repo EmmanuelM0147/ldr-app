@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react"
+import { useEffect, useState, type FormEvent } from "react"
 import { countdownParts, formatWhen } from "../format"
 import { MOOD_CHIPS } from "../mood"
 import type { Budget, CheckIn, CheckInWrite, Countdown, EventWrite, Mood } from "../types"
@@ -263,10 +263,19 @@ export function CheckInForm({
   onSave: (input: CheckInWrite) => void
 }) {
   const [error, setError] = useState<string | null>(null)
-  const [mood, setMood] = useState<Mood>(existing?.mood ?? "good")
+  const [mood, setMood] = useState<Mood | null>(existing?.mood ?? null)
+
+  useEffect(() => {
+    setMood(existing?.mood ?? null)
+    setError(null)
+  }, [existing?.id, existing?.mood])
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (!mood) {
+      setError("Pick a mood first.")
+      return
+    }
     const note = String(new FormData(event.currentTarget).get("note") ?? "")
     if (note.trim().length > 280) {
       setError("Notes can be at most 280 characters.")
@@ -298,7 +307,7 @@ export function CheckInForm({
         <textarea name="note" maxLength={320} defaultValue={existing?.note ?? ""} rows={3} />
       </label>
       {error ? <p className="error">{error}</p> : null}
-      <button className="primary" type="submit">
+      <button className="primary" type="submit" disabled={!mood}>
         {existing ? "Update today's check-in" : "Save today's check-in"}
       </button>
     </form>

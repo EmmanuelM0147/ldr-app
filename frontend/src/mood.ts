@@ -3,7 +3,7 @@ import type { Mood } from "./types"
 export const MOOD_CHIPS: Array<{ mood: Mood; emoji: string; label: string }> = [
   { mood: "great", emoji: "🌟", label: "Great" },
   { mood: "good", emoji: "🙂", label: "Good" },
-  { mood: "okay", emoji: "😐", label: "Okay" },
+  { mood: "okay", emoji: "😑", label: "Okay" },
   { mood: "low", emoji: "😔", label: "Low" },
   { mood: "rough", emoji: "🌧️", label: "Rough" },
 ]

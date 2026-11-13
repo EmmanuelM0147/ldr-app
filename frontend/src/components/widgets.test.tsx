@@ -95,12 +95,20 @@ describe("forms", () => {
 
     onSave.mockClear()
     rerender(<CheckInForm existing={null} onSave={onSave} />)
+    expect(screen.getByRole("button", { name: "Save today's check-in" })).toBeDisabled()
+    await user.click(screen.getByRole("radio", { name: /Good/i }))
+    expect(screen.getByRole("button", { name: "Save today's check-in" })).toBeEnabled()
     await user.click(screen.getByLabelText("Note"))
     await user.paste("a".repeat(281))
     await user.click(screen.getByRole("button", { name: "Save today's check-in" }))
     expect(screen.getByText("Notes can be at most 280 characters.")).toBeInTheDocument()
     expect(onSave).not.toHaveBeenCalled()
   }, 10_000)
+
+  it("uses a clear neutral face for Okay", () => {
+    render(<CheckInForm existing={null} onSave={vi.fn()} />)
+    expect(screen.getByRole("radio", { name: /Okay/i })).toHaveTextContent("😑")
+  })
 
   it("hides delete on a partner's memory", () => {
     const memories: Memory[] = [
