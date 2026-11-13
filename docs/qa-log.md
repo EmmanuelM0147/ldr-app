@@ -151,3 +151,14 @@ Fixes for issues from `docs/qa-report.md`. One entry per issue.
 **Issue:** JWTs remain valid until `exp` after client sign-out or password change.
 
 **Decision:** Keep short-lived JWT TTL-only for MVP (no server-side denylist). Sign-out is client token clear; password change does not revoke existing tokens. Revisit if we add refresh tokens or a denylist. Documented rather than implemented.
+
+## FUNC-03 — This week uses profile IANA TZ (medium)
+
+**Issue:** `itemsThisWeek` used `Date#setHours(0,0,0,0)` (device-local midnight), so the week window could disagree with the profile timezone used for display.
+
+**Fix:**
+- Week window is local midnight ? +7 days in the profile IANA zone via `localDate` + `zonedLocalDateTimeToUtc`.
+- Home passes `user.timezone` into `itemsThisWeek`.
+- Test: windows the week in America/New_York vs UTC (FUNC-03).
+
+**OpenAPI:** unchanged.

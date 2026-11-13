@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom"
-import { formatWhen } from "../format"
+import { formatWhen, localDate, zonedLocalDateTimeToUtc } from "../format"
 import type { EventItem, Visit } from "../types"
 
 export type WeekItem = {
@@ -10,13 +10,24 @@ export type WeekItem = {
   location: string | null
 }
 
-export function itemsThisWeek(events: EventItem[], visits: Visit[], now = new Date()): WeekItem[] {
-  const start = new Date(now)
-  start.setHours(0, 0, 0, 0)
-  const end = new Date(start)
-  end.setDate(end.getDate() + 7)
-  const startMs = start.getTime()
-  const endMs = end.getTime()
+function addCalendarDays(isoDate: string, days: number): string {
+  const [year, month, day] = isoDate.split("-").map(Number)
+  const utc = new Date(Date.UTC(year, month - 1, day + days))
+  return utc.toISOString().slice(0, 10)
+}
+
+/** Next 7 local calendar days in the profile IANA zone (not the device zone). */
+export function itemsThisWeek(
+  events: EventItem[],
+  visits: Visit[],
+  timeZone: string,
+  now = new Date(),
+): WeekItem[] {
+  const today = localDate(timeZone, now)
+  const startMs = new Date(zonedLocalDateTimeToUtc(today, "00:00", timeZone)).getTime()
+  const endMs = new Date(
+    zonedLocalDateTimeToUtc(addCalendarDays(today, 7), "00:00", timeZone),
+  ).getTime()
 
   const fromEvents: WeekItem[] = events
     .filter((event) => {

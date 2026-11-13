@@ -337,3 +337,9 @@ Prompt: Phase 2 restore Compose pairing e2e
 Require `confirm: DELETE` body on `DELETE /couples/current`. SEC-04 deferred to short-lived JWT TTL (no denylist).
 
 Prompt: Phase 3 medium QA SEC-05
+
+## 2026-11-13 - FUNC-03 This week IANA TZ
+
+This-week window uses the profile IANA timezone, not device-local midnight.
+
+Prompt: Phase 3 medium QA FUNC-03

@@ -35,14 +35,31 @@ const visit: Visit = {
 
 describe("ThisWeekList", () => {
   it("collects events and visits in the next seven days", () => {
-    const items = itemsThisWeek([event], [visit], now)
+    const items = itemsThisWeek([event], [visit], "UTC", now)
     expect(items.map((item) => item.title)).toEqual(["Call night", "Abuja trip"])
+  })
+
+  it("windows the week in the profile IANA timezone (FUNC-03)", () => {
+    // 23:30 UTC on 12 Nov is still 18:30 in America/New_York. Profile week starts at
+    // NY midnight (05:00Z), so 03:00Z is the previous calendar day there.
+    const evening = new Date("2026-11-12T23:30:00.000Z")
+    const tooEarlyNy: EventItem = {
+      ...event,
+      id: "early",
+      title: "Too early in NY",
+      starts_at: "2026-11-12T03:00:00.000Z",
+    }
+    const inNyWeek = itemsThisWeek([tooEarlyNy, event], [], "America/New_York", evening)
+    expect(inNyWeek.map((item) => item.title)).toEqual(["Call night"])
+
+    const inUtcWeek = itemsThisWeek([tooEarlyNy, event], [], "UTC", evening)
+    expect(inUtcWeek.map((item) => item.title)).toEqual(["Too early in NY", "Call night"])
   })
 
   it("renders the week list", () => {
     render(
       <MemoryRouter>
-        <ThisWeekList items={itemsThisWeek([event], [visit], now)} timeZone="UTC" />
+        <ThisWeekList items={itemsThisWeek([event], [visit], "UTC", now)} timeZone="UTC" />
       </MemoryRouter>,
     )
     expect(screen.getByRole("heading", { name: "This week" })).toBeInTheDocument()

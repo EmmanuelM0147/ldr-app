@@ -209,7 +209,7 @@ export function HomePage() {
     )
   }
 
-  const week = itemsThisWeek(events, visits)
+  const week = itemsThisWeek(events, visits, user.timezone)
 
   return (
     <main className="sheet">
