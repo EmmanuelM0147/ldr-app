@@ -1,4 +1,10 @@
-import { formatDateEnGb, formatDay, formatWhen, zonedLocalDateTimeToUtc } from "./format"
+import {
+  formatDateEnGb,
+  formatDay,
+  formatWhen,
+  sanitizeDisplayText,
+  zonedLocalDateTimeToUtc,
+} from "./format"
 
 describe("en-GB date formatting", () => {
   it("formats a local date as Thu 12 Nov", () => {
@@ -8,6 +14,14 @@ describe("en-GB date formatting", () => {
   it("includes weekday in when and day formatters", () => {
     expect(formatWhen("2026-11-12T10:30:00.000Z", "UTC")).toMatch(/^Thu 12 Nov/)
     expect(formatDay("2026-11-12T10:30:00.000Z", "UTC")).toMatch(/^Thu 12 Nov 2026$/)
+  })
+})
+
+describe("sanitizeDisplayText", () => {
+  it("replaces en and em dashes with ASCII hyphens", () => {
+    expect(sanitizeDisplayText("₦4,000—₦8,000")).toBe("₦4,000-₦8,000")
+    expect(sanitizeDisplayText("quiet–playful")).toBe("quiet-playful")
+    expect(sanitizeDisplayText("plain hyphen-ok")).toBe("plain hyphen-ok")
   })
 })
 

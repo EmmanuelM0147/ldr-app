@@ -38,7 +38,7 @@ FALLBACK_IDEAS = DateIdeas(
                 "Pick up suya and chilled drinks, find a quiet park bench, and put phones away "
                 "for one hour of unhurried talk."
             ),
-            est_cost="₦4,000–₦8,000",
+            est_cost="₦4,000-₦8,000",
         ),
         DateIdea(
             title="Museum or gallery afternoon",
@@ -46,7 +46,7 @@ FALLBACK_IDEAS = DateIdeas(
                 "Visit a museum or small gallery, then stop for soft drinks nearby. "
                 "Keep the outing under two hours so it stays easy."
             ),
-            est_cost="₦2,000–₦6,000",
+            est_cost="₦2,000-₦6,000",
         ),
         DateIdea(
             title="Cook-along video call",
@@ -54,7 +54,7 @@ FALLBACK_IDEAS = DateIdeas(
                 "While apart, cook the same simple Nigerian dish over a call, plate up together, "
                 "and eat at the same time."
             ),
-            est_cost="₦3,000–₦7,000 groceries",
+            est_cost="₦3,000-₦7,000 groceries",
         ),
     ]
 )
@@ -104,10 +104,19 @@ def _user_prompt(
     )
 
 
+def _sanitize_display_text(value: str) -> str:
+    """Replace en/em dashes with ASCII hyphens in model display fields."""
+    return value.replace("\u2013", "-").replace("\u2014", "-")
+
+
 def _to_api(parsed: DateIdeasModel) -> DateIdeas:
     return DateIdeas(
         ideas=[
-            DateIdea(title=item.title, description=item.description, est_cost=item.est_cost)
+            DateIdea(
+                title=_sanitize_display_text(item.title),
+                description=_sanitize_display_text(item.description),
+                est_cost=_sanitize_display_text(item.est_cost),
+            )
             for item in parsed.ideas
         ]
     )

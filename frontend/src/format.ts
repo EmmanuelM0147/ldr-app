@@ -111,3 +111,8 @@ export function countdownParts(seconds: number): { value: string; unit: string }
   const minutes = Math.max(1, Math.floor(seconds / 60))
   return { value: String(minutes), unit: minutes === 1 ? "minute" : "minutes" }
 }
+
+/** Replace en/em dashes with ASCII hyphens for model-generated display text. */
+export function sanitizeDisplayText(value: string): string {
+  return value.replace(/[\u2013\u2014]/g, "-")
+}
