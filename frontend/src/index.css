@@ -147,7 +147,9 @@ button, input, textarea, select {
 
 .brand-lockup--auth {
   display: grid;
-  justify-items: start;
+  justify-items: center;
+  justify-self: center;
+  text-align: center;
   gap: var(--space-2);
   margin: 0 0 var(--space-5);
 }
@@ -163,9 +165,18 @@ button, input, textarea, select {
   letter-spacing: 0.12em;
 }
 
+.auth-sheet {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 .auth-sheet .auth-lede {
-  margin: 0 0 var(--space-4);
+  margin: 0 auto var(--space-4);
   max-width: 22rem;
+  text-align: center;
   font-size: var(--text-md);
   line-height: var(--leading-snug);
   color: var(--color-muted);

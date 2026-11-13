@@ -77,6 +77,15 @@ describe("design tokens", () => {
     expect(indexCss).toMatch(/\.brand-lockup--auth\s*\{[^}]*gap:\s*var\(--space-2\)/s)
   })
 
+  it("centers the auth brand lockup and sheet", () => {
+    const indexCss = readFileSync(resolve(here, "index.css"), "utf8")
+    expect(indexCss).toMatch(/\.brand-lockup--auth\s*\{[^}]*justify-items:\s*center/s)
+    expect(indexCss).toMatch(
+      /\.auth-sheet\s*\{[^}]*justify-content:\s*center[^}]*min-height:\s*100(?:dv|v)h/s,
+    )
+    expect(indexCss).toMatch(/\.auth-sheet \.auth-lede\s*\{[^}]*text-align:\s*center/s)
+  })
+
   it("supports dark mode", () => {
     expect(css).toContain("@media (prefers-color-scheme: dark)")
     expect(css).toContain('[data-theme="dark"]')

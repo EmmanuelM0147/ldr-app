@@ -361,3 +361,9 @@ Prompt: Phase 4 demo readiness
 Grew auth mark to 4.25rem and tightened mark-to-word gap to `--space-2`; header lockup unchanged. Updated tokens size test.
 
 Prompt: proceed Option 1 auth logo
+
+## 2026-11-13 - Center auth BrandLockup
+
+Centered auth mark + wordmark + lede; `.auth-sheet` uses min-height 100dvh + flex center so login/register sit in the viewport (outside `.shell`). Form labels stay left-aligned.
+
+Prompt: fix auth BrandLockup positioning (center lockup + panel)
