@@ -650,6 +650,7 @@ export function VisitsPage() {
     null,
   )
   const [error, setError] = useState<string | null>(null)
+  const [sheetOpen, setSheetOpen] = useState(false)
 
   async function reload() {
     if (!client) return
@@ -707,9 +708,10 @@ export function VisitsPage() {
         traveler_user_id: travelerRaw || null,
         budget: parsed.budget,
       })
-      .then(() => {
+      .then(async () => {
         form.reset()
-        return reload()
+        await reload()
+        setSheetOpen(false)
       })
       .catch((caught: unknown) => {
         setError(caught instanceof ApiError ? caught.detail : "Could not save the visit.")
@@ -720,46 +722,9 @@ export function VisitsPage() {
     <main className="sheet">
       <h1>Visits</h1>
       {countdown ? <CountdownCard countdown={countdown} timeZone={user.timezone} /> : null}
-      <form onSubmit={addVisit} className="stack card">
-        <label className="field">
-          <span>Title</span>
-          <input name="title" required />
-        </label>
-        <label className="field">
-          <span>Arrives</span>
-          <input name="starts_at" type="datetime-local" required />
-        </label>
-        <label className="field">
-          <span>Leaves</span>
-          <input name="ends_at" type="datetime-local" required />
-        </label>
-        <RouteCityField suggestions={routeSuggestions(visits.map((visit) => visit.location))} />
-        <label className="field">
-          <span>Traveler</span>
-          <select name="traveler_user_id" defaultValue="">
-            <option value="">Not set</option>
-            {members.map((member) => (
-              <option key={member.user_id} value={member.user_id}>
-                {member.display_name}
-              </option>
-            ))}
-          </select>
-        </label>
-        {me && them ? (
-          <>
-            <p className="muted">Optional cost split for this visit.</p>
-            <BudgetFields />
-          </>
-        ) : (
-          <p className="muted">The split opens when you are both here.</p>
-        )}
-        <button className="primary" type="submit">
-          Add visit
-        </button>
-      </form>
       {error ? <ErrorState message={error} /> : null}
       {visits.length === 0 ? (
-        <EmptyState title="No visits yet" body="Add the next trip so the countdown has somewhere to land." />
+        <EmptyState title="No visits yet" body="Tap + to add the next trip so the countdown has somewhere to land." />
       ) : (
         <ul className="list">
           {visits.map((visit) => (
@@ -784,6 +749,48 @@ export function VisitsPage() {
           ))}
         </ul>
       )}
+      <button className="fab" type="button" aria-label="Add visit" onClick={() => setSheetOpen(true)}>
+        +
+      </button>
+      <BottomSheet open={sheetOpen} title="Add visit" onClose={() => setSheetOpen(false)}>
+        <form onSubmit={addVisit} className="stack">
+          <label className="field">
+            <span>Title</span>
+            <input name="title" required />
+          </label>
+          <label className="field">
+            <span>Arrives</span>
+            <input name="starts_at" type="datetime-local" required />
+          </label>
+          <label className="field">
+            <span>Leaves</span>
+            <input name="ends_at" type="datetime-local" required />
+          </label>
+          <RouteCityField suggestions={routeSuggestions(visits.map((visit) => visit.location))} />
+          <label className="field">
+            <span>Traveler</span>
+            <select name="traveler_user_id" defaultValue="">
+              <option value="">Not set</option>
+              {members.map((member) => (
+                <option key={member.user_id} value={member.user_id}>
+                  {member.display_name}
+                </option>
+              ))}
+            </select>
+          </label>
+          {me && them ? (
+            <>
+              <p className="muted">Optional cost split for this visit.</p>
+              <BudgetFields />
+            </>
+          ) : (
+            <p className="muted">The split opens when you are both here.</p>
+          )}
+          <button className="primary" type="submit">
+            Add visit
+          </button>
+        </form>
+      </BottomSheet>
     </main>
   )
 }
@@ -868,6 +875,7 @@ export function MemoriesPage() {
   const { client, user, couple } = useSession()
   const [memories, setMemories] = useState<Memory[] | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [sheetOpen, setSheetOpen] = useState(false)
 
   async function reload() {
     if (!client) return
@@ -913,9 +921,10 @@ export function MemoriesPage() {
         body,
         file,
       })
-      .then(() => {
+      .then(async () => {
         form.reset()
-        return reload()
+        await reload()
+        setSheetOpen(false)
       })
       .catch((caught: unknown) => {
         setError(caught instanceof ApiError ? caught.detail : "Could not save that memory.")
@@ -929,28 +938,10 @@ export function MemoriesPage() {
     <main className="sheet">
       <h1>Memories</h1>
       <OnThisDay memories={todayMemories} timeZone={user.timezone} loadMedia={loadMedia} />
-      <form onSubmit={addMemory} className="stack card">
-        <label className="field">
-          <span>Title</span>
-          <input name="title" maxLength={80} />
-        </label>
-        <label className="field">
-          <span>What you want to keep</span>
-          <textarea name="body" rows={4} />
-        </label>
-        <label className="field">
-          <span>Photo or video</span>
-          <input name="media" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" />
-        </label>
-        <p className="muted">Photos up to 10 MiB. Videos up to 40 MiB (MP4 or WebM).</p>
-        <button className="primary" type="submit">
-          Save memory
-        </button>
-      </form>
       {error ? <ErrorState message={error} /> : null}
       <h2>Timeline</h2>
       {memories.length === 0 ? (
-        <EmptyState title="No memories yet" body="Save a small moment you do not want to lose." />
+        <EmptyState title="No memories yet" body="Tap + to save a small moment you do not want to lose." />
       ) : (
         <MemoryTimeline
           memories={memories}
@@ -961,6 +952,29 @@ export function MemoriesPage() {
           onDelete={(id) => void client.deleteMemory(id).then(reload)}
         />
       )}
+      <button className="fab" type="button" aria-label="Add memory" onClick={() => setSheetOpen(true)}>
+        +
+      </button>
+      <BottomSheet open={sheetOpen} title="Add memory" onClose={() => setSheetOpen(false)}>
+        <form onSubmit={addMemory} className="stack">
+          <label className="field">
+            <span>Title</span>
+            <input name="title" maxLength={80} />
+          </label>
+          <label className="field">
+            <span>What you want to keep</span>
+            <textarea name="body" rows={4} />
+          </label>
+          <label className="field">
+            <span>Photo or video</span>
+            <input name="media" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" />
+          </label>
+          <p className="muted">Photos up to 10 MiB. Videos up to 40 MiB (MP4 or WebM).</p>
+          <button className="primary" type="submit">
+            Save memory
+          </button>
+        </form>
+      </BottomSheet>
     </main>
   )
 }

@@ -246,3 +246,9 @@ Prompt: need fix: the brand name isn't glaring
 Moved avatar onto a top bar with the logo so the profile CTA lines up with the mark; names sit under. Auth brand stacks mark above a larger wordmark.
 
 Prompt: can you make it better, also the profile cta isn't aligned with the logo
+
+## 2026-11-13 — Frontend polish (1–6)
+
+Nav clearance + FAB above tabs; stable `partnerAccent(userId)`; en-GB date formatters; check-in requires explicit mood (😑 Okay); calendar today ring + event dots; Visits/Memories list-first with FAB bottom sheets.
+
+Prompt: Frontend polish pass (one commit per item) — implement the plan; do not edit the plan file.
