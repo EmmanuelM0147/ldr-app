@@ -2,7 +2,8 @@ import secrets
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.deps import get_clock, get_current_user, get_db
@@ -22,6 +23,7 @@ from app.models import (
     User,
     Visit,
 )
+from app.realtime import hub
 from app.schemas.api import CoupleOut, CouplePatch, InviteCreated, JoinRequest
 from app.security import hash_invite_code
 from app.serialize import couple_out
@@ -53,7 +55,7 @@ def create_couple(
     couple = Couple(ai_opt_in=False, created_at=now)
     db.add(couple)
     db.flush()
-    db.add(Membership(couple_id=couple.id, user_id=user.id, joined_at=now))
+    db.add(Membership(couple_id=couple.id, user_id=user.id, seat=1, joined_at=now))
     db.add(Presence(user_id=user.id, couple_id=couple.id, free_to_talk=False, updated_at=now))
     db.commit()
     return couple_out(_load_couple(db, couple.id))
@@ -86,24 +88,27 @@ def update_current_couple(
 
 
 @router.delete("/couples/current", status_code=204, operation_id="deleteCurrentCouple")
-def delete_current_couple(
+async def delete_current_couple(
     couple: Couple = Depends(load_couple),
     db: Session = Depends(get_db),
 ) -> Response:
-    visit_ids = select(Visit.id).where(Visit.couple_id == couple.id)
+    couple_id = couple.id
+    # Notify peers before rows disappear so their UI can clear the space (FUNC-22).
+    await hub.publish(couple_id, {"type": "couple_gone"})
+    visit_ids = select(Visit.id).where(Visit.couple_id == couple_id)
     db.execute(delete(BudgetShare).where(BudgetShare.visit_id.in_(select(Budget.visit_id).where(Budget.visit_id.in_(visit_ids)))))
     db.execute(delete(Budget).where(Budget.visit_id.in_(visit_ids)))
-    db.execute(delete(Visit).where(Visit.couple_id == couple.id))
-    db.execute(delete(Event).where(Event.couple_id == couple.id))
-    db.execute(delete(CheckIn).where(CheckIn.couple_id == couple.id))
-    memories = db.scalars(select(Memory).where(Memory.couple_id == couple.id)).all()
+    db.execute(delete(Visit).where(Visit.couple_id == couple_id))
+    db.execute(delete(Event).where(Event.couple_id == couple_id))
+    db.execute(delete(CheckIn).where(CheckIn.couple_id == couple_id))
+    memories = db.scalars(select(Memory).where(Memory.couple_id == couple_id)).all()
     for memory in memories:
         delete_media_file(memory.media_path)
-    db.execute(delete(Memory).where(Memory.couple_id == couple.id))
-    db.execute(delete(Presence).where(Presence.couple_id == couple.id))
-    db.execute(delete(Invite).where(Invite.couple_id == couple.id))
-    db.execute(delete(Membership).where(Membership.couple_id == couple.id))
-    db.execute(delete(Couple).where(Couple.id == couple.id))
+    db.execute(delete(Memory).where(Memory.couple_id == couple_id))
+    db.execute(delete(Presence).where(Presence.couple_id == couple_id))
+    db.execute(delete(Invite).where(Invite.couple_id == couple_id))
+    db.execute(delete(Membership).where(Membership.couple_id == couple_id))
+    db.execute(delete(Couple).where(Couple.id == couple_id))
     db.commit()
     return Response(status_code=204)
 
@@ -178,10 +183,24 @@ def join_couple(
     if db.scalar(select(Membership.user_id).where(Membership.user_id == user.id)) is not None:
         raise HTTPException(status_code=409, detail="You already have a couple space.")
 
-    invite.used_at = now
-    db.add(Membership(couple_id=invite.couple_id, user_id=user.id, joined_at=now))
+    # Claim the invite atomically so two racers cannot both treat it as unused.
+    claimed = db.execute(
+        update(Invite)
+        .where(Invite.id == invite.id, Invite.used_at.is_(None), Invite.expires_at > now)
+        .values(used_at=now)
+    )
+    if claimed.rowcount != 1:
+        _record_failure(db, ip, now)
+        raise HTTPException(status_code=400, detail="That invite code is not valid.")
+
+    db.add(Membership(couple_id=invite.couple_id, user_id=user.id, seat=2, joined_at=now))
     db.add(Presence(user_id=user.id, couple_id=invite.couple_id, free_to_talk=False, updated_at=now))
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        # Seat 2 already taken (concurrent join) or user already in a couple.
+        raise HTTPException(status_code=409, detail="This space already has two people.") from exc
     return couple_out(_load_couple(db, invite.couple_id))
 
 
