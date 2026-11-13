@@ -120,6 +120,6 @@ Done already: repo layout, Cursor rules, `GET /health`, draft Compose file.
   - Acceptance: the deploy job needs the test job. The doc lists the required secrets and the rollback step.
   - Tests: workflow YAML includes the job order. No secrets are committed.
 
-- [ ] 25. After QA fixes, write `README.md` with what it does, architecture, how to run, a link to `docs/ai-log.md`, and a privacy section.
+- [x] 25. After QA fixes, write `README.md` with what it does, architecture, how to run, a link to `docs/ai-log.md`, and a privacy section.
   - Acceptance: a newcomer can run the stack from the README alone.
   - Tests: commands in the README match Compose and pytest.

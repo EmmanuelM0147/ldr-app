@@ -258,3 +258,9 @@ Prompt: Frontend polish pass (one commit per item) — implement the plan; do no
 Visit From/To + balanced budget; memory drop zone; compact empty HomeHero; AA contrast aliases/`partner-a-ink`; Playwright home + calendar-add + visit-add (mock).
 
 Prompt: Frontend polish pass (one commit per item) — implement the plan; do not edit the plan file.
+
+## 2026-11-13 — Task 25: README
+
+Filled root `README.md` from the portfolio template: problem, features, architecture (OpenAPI contract), local Compose run, honest CI/deploy status, AI workflow + real failure examples, security/privacy, testing, limitations. Ticked backlog task 25. Live demo / screenshots / `docs/deploy.md` left as outstanding.
+
+Prompt: (README template for Closer — Why / Features / Architecture / Run / AI tools / Security / Testing)
