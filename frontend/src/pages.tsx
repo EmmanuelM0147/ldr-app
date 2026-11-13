@@ -30,7 +30,7 @@ import {
   LoginForm,
   RegisterForm,
 } from "./components/widgets"
-import { formatDay, formatWhen, localDate } from "./format"
+import { formatDateEnGb, formatDay, formatWhen, localDate } from "./format"
 import { partnerAccent } from "./partnerAccent"
 import { checkInStreak, DAILY_PROMPT, moodLabel } from "./mood"
 import { useSession } from "./session"
@@ -850,7 +850,7 @@ export function CheckInsPage() {
             return (
               <li key={item.id} className="card">
                 <p className="kicker">
-                  {name} · {item.local_date}
+                  {name} · {formatDateEnGb(item.local_date, user.timezone)}
                 </p>
                 <h2>{moodLabel(item.mood)}</h2>
                 {item.note ? <p>{item.note}</p> : null}
