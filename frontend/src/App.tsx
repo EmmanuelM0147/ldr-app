@@ -6,6 +6,7 @@ import {
   HomePage,
   LoginPage,
   MemoriesPage,
+  NotificationsPage,
   RegisterPage,
   RequireAuth,
   ResetPasswordPage,
@@ -27,6 +28,7 @@ export function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route element={<RequireCouple />}>
+            <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/visits" element={<VisitsPage />} />
             <Route path="/check-ins" element={<CheckInsPage />} />

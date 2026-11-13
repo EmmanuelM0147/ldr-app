@@ -434,6 +434,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List in-app notifications for the caller
+         * @description Newest first. Only the caller's rows in their couple. Push delivery is out of scope; these are stored for the in-app inbox and live socket.
+         */
+        get: operations["listNotifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark all of the caller's notifications as read */
+        post: operations["markAllNotificationsRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/{notification_id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark one notification as read */
+        post: operations["markNotificationRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/presence": {
         parameters: {
             query?: never;
@@ -464,7 +518,7 @@ export interface paths {
         };
         /**
          * WebSocket for couple live updates
-         * @description After the upgrade, the first text frame is JSON `{"token":"<access token>"}`. The server closes the socket with code 1008 when that token is missing or invalid, or when the caller has no couple space. Later frames from the server are LiveEvent values, sent only to sockets in that couple. When the caller's last socket for the couple disconnects, their `free_to_talk` flag is cleared and the couple is notified. When a second member joins via invite code, connected peers receive `partner_joined` with the updated couple. When either member deletes the space, connected peers receive `{"type":"couple_gone"}` before memberships are removed.
+         * @description After the upgrade, the first text frame is JSON `{"token":"<access token>"}`. The server closes the socket with code 1008 when that token is missing or invalid, or when the caller has no couple space. Later frames from the server are LiveEvent values, sent only to sockets in that couple. When the caller's last socket for the couple disconnects, their `free_to_talk` flag is cleared and the couple is notified. When a second member joins via invite code, connected peers receive `partner_joined` with the updated couple. New in-app notifications are also pushed as `notification` frames. When either member deletes the space, connected peers receive `{"type":"couple_gone"}` before memberships are removed.
          */
         get: operations["coupleEvents"];
         put?: never;
@@ -801,6 +855,23 @@ export interface components {
         PresenceWrite: {
             free_to_talk: boolean;
         };
+        /** @enum {string} */
+        NotificationKind: "partner_joined" | "check_in" | "event_created" | "visit_created";
+        Notification: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            couple_id: string;
+            /** Format: uuid */
+            recipient_user_id: string;
+            kind: components["schemas"]["NotificationKind"];
+            title: string;
+            body: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            read_at: string | null;
+        };
         LiveEvent: {
             /** @enum {string} */
             type: "presence";
@@ -816,6 +887,10 @@ export interface components {
              */
             type: "partner_joined";
             couple: components["schemas"]["Couple"];
+        } | {
+            /** @enum {string} */
+            type: "notification";
+            notification: components["schemas"]["Notification"];
         } | {
             /**
              * @description The couple space was deleted; clients should clear local couple state.
@@ -891,6 +966,7 @@ export interface components {
     };
     parameters: {
         EventId: string;
+        NotificationId: string;
         VisitId: string;
         MemoryId: string;
         UserId: string;
@@ -1826,6 +1902,72 @@ export interface operations {
                     "image/webp": string;
                     "video/mp4": string;
                     "video/webm": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["Missing"];
+        };
+    };
+    listNotifications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Notifications for the caller */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Notification"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["Missing"];
+        };
+    };
+    markAllNotificationsRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Updated */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["Missing"];
+        };
+    };
+    markNotificationRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notification_id: components["parameters"]["NotificationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Updated notification */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Notification"];
                 };
             };
             401: components["responses"]["Unauthorized"];

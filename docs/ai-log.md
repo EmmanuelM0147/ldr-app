@@ -432,3 +432,9 @@ Prompt: continue from Vercel register failure / logs; get hosted register workin
 Contract: `LiveEvent` variant `partner_joined` with updated `Couple`. Join publishes on the couple hub. Session refreshes members, shows dismissible in-shell status (“{name} joined your space.”). Mock bus is couple-scoped across shared-db clients. No push/email.
 
 Prompt: proceed (in-app notice when partner joins via invite code).
+
+## 2026-11-13 - Invite copy/paste + in-app notifications
+
+Home invite Copy code CTA; join form Paste code CTA. In-app notifications table + API (list, mark one/all read), LiveEvent `notification`, producers for partner_joined / check_in / event_created / visit_created. Alerts page + unread badge. No push.
+
+Prompt: proceed then build the rest of the notification infras and in between copy/paste invite CTA.

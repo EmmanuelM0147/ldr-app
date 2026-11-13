@@ -14,6 +14,7 @@ tags:
   - name: check-ins
   - name: memories
   - name: presence
+  - name: notifications
   - name: ai
 security:
   - bearerAuth: []
@@ -794,6 +795,57 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/Missing"
+  /notifications:
+    get:
+      tags: [notifications]
+      operationId: listNotifications
+      summary: List in-app notifications for the caller
+      description: >
+        Newest first. Only the caller's rows in their couple. Push delivery is
+        out of scope; these are stored for the in-app inbox and live socket.
+      responses:
+        "200":
+          description: Notifications for the caller
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+  /notifications/read-all:
+    post:
+      tags: [notifications]
+      operationId: markAllNotificationsRead
+      summary: Mark all of the caller's notifications as read
+      responses:
+        "204":
+          description: Updated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
+  /notifications/{notification_id}/read:
+    post:
+      tags: [notifications]
+      operationId: markNotificationRead
+      summary: Mark one notification as read
+      parameters:
+        - $ref: "#/components/parameters/NotificationId"
+      responses:
+        "200":
+          description: Updated notification
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/Missing"
   /presence:
     get:
       tags: [presence]
@@ -850,6 +902,7 @@ paths:
         `free_to_talk` flag is cleared and the couple is notified.
         When a second member joins via invite code, connected peers receive
         `partner_joined` with the updated couple.
+        New in-app notifications are also pushed as `notification` frames.
         When either member deletes the space, connected peers receive
         `{"type":"couple_gone"}` before memberships are removed.
       responses:
@@ -909,6 +962,13 @@ components:
   parameters:
     EventId:
       name: event_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    NotificationId:
+      name: notification_id
       in: path
       required: true
       schema:
@@ -1634,6 +1694,38 @@ components:
       properties:
         free_to_talk:
           type: boolean
+    NotificationKind:
+      type: string
+      enum: [partner_joined, check_in, event_created, visit_created]
+    Notification:
+      type: object
+      additionalProperties: false
+      required: [id, couple_id, recipient_user_id, kind, title, body, created_at, read_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        couple_id:
+          type: string
+          format: uuid
+        recipient_user_id:
+          type: string
+          format: uuid
+        kind:
+          $ref: "#/components/schemas/NotificationKind"
+        title:
+          type: string
+          maxLength: 120
+        body:
+          type: string
+          maxLength: 280
+        created_at:
+          type: string
+          format: date-time
+        read_at:
+          type: string
+          format: date-time
+          nullable: true
     LiveEvent:
       oneOf:
         - type: object
@@ -1666,6 +1758,15 @@ components:
               description: A second member joined the space via invite code.
             couple:
               $ref: "#/components/schemas/Couple"
+        - type: object
+          additionalProperties: false
+          required: [type, notification]
+          properties:
+            type:
+              type: string
+              enum: [notification]
+            notification:
+              $ref: "#/components/schemas/Notification"
         - type: object
           additionalProperties: false
           required: [type]

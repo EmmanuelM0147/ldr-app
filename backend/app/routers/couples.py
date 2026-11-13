@@ -11,6 +11,7 @@ from app.deps import get_current_couple as load_couple
 from app.media import delete_media_file
 from app.models import (
     AiDailyUsage,
+    AppNotification,
     Budget,
     BudgetShare,
     CheckIn,
@@ -24,6 +25,7 @@ from app.models import (
     User,
     Visit,
 )
+from app.notify import publish_rows, queue_for_partners
 from app.realtime import hub
 from app.schemas.api import CoupleDelete, CoupleOut, CouplePatch, InviteCreated, JoinRequest
 from app.security import hash_invite_code
@@ -110,6 +112,7 @@ async def delete_current_couple(
     db.execute(delete(Memory).where(Memory.couple_id == couple_id))
     db.execute(delete(Presence).where(Presence.couple_id == couple_id))
     db.execute(delete(AiDailyUsage).where(AiDailyUsage.couple_id == couple_id))
+    db.execute(delete(AppNotification).where(AppNotification.couple_id == couple_id))
     db.execute(delete(Invite).where(Invite.couple_id == couple_id))
     db.execute(delete(Membership).where(Membership.couple_id == couple_id))
     db.execute(delete(Couple).where(Couple.id == couple_id))
@@ -206,11 +209,23 @@ async def join_couple(
         db.rollback()
         # Seat 2 already taken (concurrent join) or user already in a couple.
         raise HTTPException(status_code=409, detail="This space already has two people.") from exc
-    saved = couple_out(_load_couple(db, couple_id))
+    saved_couple = _load_couple(db, couple_id)
+    rows = queue_for_partners(
+        db,
+        saved_couple,
+        actor_user_id=user.id,
+        kind="partner_joined",
+        title="Partner joined",
+        body=f"{user.display_name} joined your space.",
+        now=now,
+    )
+    db.commit()
+    saved = couple_out(saved_couple)
     await hub.publish(
         couple_id,
         {"type": "partner_joined", "couple": saved.model_dump(mode="json")},
     )
+    await publish_rows(couple_id, rows)
     return saved
 
 

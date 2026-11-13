@@ -1,4 +1,4 @@
-from app.models import Budget, CheckIn, Couple, Event, Memory, Presence, User, Visit
+from app.models import AppNotification, Budget, CheckIn, Couple, Event, Memory, Presence, User, Visit
 from app.schemas.api import (
     BudgetOut,
     BudgetShareIn,
@@ -8,6 +8,7 @@ from app.schemas.api import (
     MemberOut,
     MemoryMediaOut,
     MemoryOut,
+    NotificationOut,
     PresenceOut,
     UserOut,
     VisitOut,
@@ -105,6 +106,19 @@ def check_in_out(item: CheckIn) -> CheckInOut:
         note=item.note,
         created_at=item.created_at,
         updated_at=item.updated_at,
+    )
+
+
+def notification_out(item: AppNotification) -> NotificationOut:
+    return NotificationOut(
+        id=item.id,
+        couple_id=item.couple_id,
+        recipient_user_id=item.recipient_user_id,
+        kind=item.kind,  # type: ignore[arg-type]
+        title=item.title,
+        body=item.body,
+        created_at=item.created_at,
+        read_at=item.read_at,
     )
 
 

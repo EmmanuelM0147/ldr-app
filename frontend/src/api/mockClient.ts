@@ -1,4 +1,5 @@
 import type {
+  AppNotification,
   AuthResponse,
   Budget,
   CheckIn,
@@ -13,6 +14,7 @@ import type {
   Memory,
   MemoryWrite,
   Member,
+  NotificationKind,
   Presence,
   RegisterRequest,
   ResetPasswordResponse,
@@ -45,6 +47,7 @@ export type Database = {
   checkIns: CheckIn[]
   memories: Memory[]
   presence: Presence[]
+  notifications: AppNotification[]
   inviteCreates: { user_id: string; at: string }[]
   joinFailures: string[]
   passwordResets: { token: string; user_id: string; expires_at: string; used_at: string | null }[]
@@ -76,6 +79,7 @@ export function emptyDatabase(): Database {
     checkIns: [],
     memories: [],
     presence: [],
+    notifications: [],
     inviteCreates: [],
     joinFailures: [],
     passwordResets: [],
@@ -174,6 +178,31 @@ export function createMockClient(options: Options = {}) {
       if (other === peer) continue
       const userId = other.userId()
       if (userId && memberIds.has(userId)) other.dispatch(event)
+    }
+  }
+
+  const notifyPartners = (
+    couple: Couple,
+    actorUserId: string,
+    kind: NotificationKind,
+    title: string,
+    body: string,
+  ) => {
+    const stamp = now().toISOString()
+    for (const member of couple.members) {
+      if (member.user_id === actorUserId) continue
+      const row: AppNotification = {
+        id: newId(),
+        couple_id: couple.id,
+        recipient_user_id: member.user_id,
+        kind,
+        title,
+        body,
+        created_at: stamp,
+        read_at: null,
+      }
+      db.notifications.push(row)
+      emit({ type: "notification", notification: clone(row) }, couple.id)
     }
   }
 
@@ -398,6 +427,7 @@ export function createMockClient(options: Options = {}) {
       db.visits = db.visits.filter((item) => item.couple_id !== id)
       db.checkIns = db.checkIns.filter((item) => item.couple_id !== id)
       db.memories = db.memories.filter((item) => item.couple_id !== id)
+      db.notifications = db.notifications.filter((item) => item.couple_id !== id)
       db.presence = db.presence.filter((item) => !couple.members.some((member) => member.user_id === item.user_id))
       persist()
     },
@@ -450,6 +480,8 @@ export function createMockClient(options: Options = {}) {
       persist()
       const updated = clone(couple)
       emit({ type: "partner_joined", couple: updated }, couple.id)
+      notifyPartners(couple, user.id, "partner_joined", "Partner joined", `${user.display_name} joined your space.`)
+      persist()
       return updated
     },
 
@@ -479,6 +511,7 @@ export function createMockClient(options: Options = {}) {
         updated_at: stamp,
       }
       db.events.push(event)
+      notifyPartners(couple, user.id, "event_created", "New event", `${user.display_name} added '${event.title}'.`)
       persist()
       return clone(event)
     },
@@ -532,6 +565,7 @@ export function createMockClient(options: Options = {}) {
         updated_at: stamp,
       }
       db.visits.push(visit)
+      notifyPartners(couple, user.id, "visit_created", "New visit", `${user.display_name} added '${visit.title}'.`)
       persist()
       return clone(visit)
     },
@@ -605,6 +639,14 @@ export function createMockClient(options: Options = {}) {
         existing.updated_at = stamp
         persist()
         emit({ type: "check_in", check_in: clone(existing) }, couple.id)
+        notifyPartners(
+          couple,
+          user.id,
+          "check_in",
+          "Check-in",
+          `${user.display_name} checked in (${input.mood}).`,
+        )
+        persist()
         return clone(existing)
       }
       const created: CheckIn = {
@@ -618,8 +660,9 @@ export function createMockClient(options: Options = {}) {
         updated_at: stamp,
       }
       db.checkIns.push(created)
-      persist()
       emit({ type: "check_in", check_in: clone(created) }, couple.id)
+      notifyPartners(couple, user.id, "check_in", "Check-in", `${user.display_name} checked in (${input.mood}).`)
+      persist()
       return clone(created)
     },
 
@@ -672,6 +715,40 @@ export function createMockClient(options: Options = {}) {
       const memory = db.memories.find((item) => item.id === memoryId && item.couple_id === couple.id)
       if (!memory || memory.author_id !== user.id) throw new ApiError(404, "Memory not found.")
       db.memories = db.memories.filter((item) => item.id !== memoryId)
+      persist()
+    },
+
+    async listNotifications(): Promise<AppNotification[]> {
+      const user = currentUser()
+      const couple = requireCouple()
+      return db.notifications
+        .filter((item) => item.couple_id === couple.id && item.recipient_user_id === user.id)
+        .sort((a, b) => b.created_at.localeCompare(a.created_at))
+        .map((item) => clone(item))
+    },
+
+    async markNotificationRead(notificationId: string): Promise<AppNotification> {
+      const user = currentUser()
+      const couple = requireCouple()
+      const row = db.notifications.find(
+        (item) =>
+          item.id === notificationId && item.couple_id === couple.id && item.recipient_user_id === user.id,
+      )
+      if (!row) throw new ApiError(404, "Notification not found.")
+      if (!row.read_at) row.read_at = now().toISOString()
+      persist()
+      return clone(row)
+    },
+
+    async markAllNotificationsRead(): Promise<void> {
+      const user = currentUser()
+      const couple = requireCouple()
+      const stamp = now().toISOString()
+      for (const row of db.notifications) {
+        if (row.couple_id === couple.id && row.recipient_user_id === user.id && !row.read_at) {
+          row.read_at = stamp
+        }
+      }
       persist()
     },
 

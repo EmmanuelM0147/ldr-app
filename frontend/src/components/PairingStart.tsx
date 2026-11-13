@@ -1,4 +1,4 @@
-import type { FormEvent } from "react"
+import { useRef, useState, type FormEvent } from "react"
 
 export function PairingStart({
   displayName,
@@ -11,6 +11,26 @@ export function PairingStart({
   onCreateSpace: () => void
   onJoin: (event: FormEvent<HTMLFormElement>) => void
 }) {
+  const codeRef = useRef<HTMLInputElement>(null)
+  const [pasteError, setPasteError] = useState<string | null>(null)
+
+  async function pasteCode() {
+    setPasteError(null)
+    try {
+      const text = (await navigator.clipboard.readText()).trim()
+      if (!text) {
+        setPasteError("Clipboard is empty.")
+        return
+      }
+      if (codeRef.current) {
+        codeRef.current.value = text
+        codeRef.current.focus()
+      }
+    } catch {
+      setPasteError("Could not paste. Paste into the field manually.")
+    }
+  }
+
   return (
     <main className="sheet pairing-start">
       <p className="kicker">Welcome, {displayName}</p>
@@ -33,12 +53,31 @@ export function PairingStart({
         <form onSubmit={onJoin} className="stack">
           <label className="field">
             <span>Invite code</span>
-            <input name="code" required minLength={8} autoComplete="off" spellCheck={false} />
+            <input
+              ref={codeRef}
+              name="code"
+              required
+              minLength={8}
+              autoComplete="off"
+              spellCheck={false}
+              inputMode="text"
+              placeholder="Paste invite code"
+            />
           </label>
-          <button className="secondary" type="submit">
-            Join with invite code
-          </button>
+          <div className="row-actions">
+            <button className="secondary" type="button" onClick={() => void pasteCode()}>
+              Paste code
+            </button>
+            <button className="primary" type="submit">
+              Join with invite code
+            </button>
+          </div>
         </form>
+        {pasteError ? (
+          <p className="error" role="alert">
+            {pasteError}
+          </p>
+        ) : null}
       </section>
 
       {error ? (

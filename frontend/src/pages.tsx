@@ -236,22 +236,31 @@ export function RequireAuth() {
 }
 
 export function Shell() {
-  const { client, user, couple, signOut, partnerJoinedNotice, clearPartnerJoinedNotice } = useSession()
+  const { client, user, couple, signOut, partnerJoinedNotice, clearPartnerJoinedNotice, unreadCount } =
+    useSession()
   const partner = couple?.members.find((member) => member.user_id !== user?.id)
   return (
     <div className="shell">
       <header className="top">
         <div className="top-bar">
           <BrandLockup size="header" to="/" />
-          {user && client ? (
-            <AvatarMenu
-              userId={user.id}
-              name={user.display_name}
-              avatarUrl={user.avatar_url}
-              loadAvatar={(userId) => client.getUserAvatar(userId)}
-              onSignOut={signOut}
-            />
-          ) : null}
+          <div className="top-actions">
+            {couple ? (
+              <Link to="/notifications" className="alerts-link" aria-label="Notifications">
+                Alerts
+                {unreadCount > 0 ? <span className="alerts-badge">{unreadCount}</span> : null}
+              </Link>
+            ) : null}
+            {user && client ? (
+              <AvatarMenu
+                userId={user.id}
+                name={user.display_name}
+                avatarUrl={user.avatar_url}
+                loadAvatar={(userId) => client.getUserAvatar(userId)}
+                onSignOut={signOut}
+              />
+            ) : null}
+          </div>
         </div>
         {user ? (
           <p className="muted names">
@@ -278,6 +287,7 @@ export function Shell() {
 export function HomePage() {
   const { client, user, couple, presence, liveTick, refreshCouple, updatePresence } = useSession()
   const [code, setCode] = useState<string | null>(null)
+  const [homeCopied, setHomeCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [countdown, setCountdown] = useState<Awaited<ReturnType<NonNullable<typeof client>["getNextVisit"]>> | null>(
     null,
@@ -328,11 +338,22 @@ export function HomePage() {
   async function issueInvite() {
     if (!client) return
     setError(null)
+    setHomeCopied(false)
     try {
       const invite = await client.createInvite()
       setCode(invite.code)
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.detail : "Could not create a code.")
+    }
+  }
+
+  async function copyHomeInvite() {
+    if (!code) return
+    try {
+      await navigator.clipboard.writeText(code)
+      setHomeCopied(true)
+    } catch {
+      setError("Could not copy the code. Select it manually.")
     }
   }
 
@@ -381,8 +402,20 @@ export function HomePage() {
       {couple.members.length < 2 ? (
         <section className="card">
           <h2>Invite your partner</h2>
-          <p className="muted">The code is shown once. It expires in 7 days.</p>
-          {code ? <p className="code">{code}</p> : (
+          <p className="muted">The code is shown once. It expires in 7 days. Copy it and send it privately.</p>
+          {code ? (
+            <>
+              <p className="code">{code}</p>
+              <div className="row-actions">
+                <button className="primary" type="button" onClick={() => void copyHomeInvite()}>
+                  {homeCopied ? "Copied" : "Copy code"}
+                </button>
+                <button className="secondary" type="button" onClick={() => void issueInvite()}>
+                  New code
+                </button>
+              </div>
+            </>
+          ) : (
             <button className="secondary" type="button" onClick={() => void issueInvite()}>
               Create a new invite
             </button>
@@ -390,6 +423,84 @@ export function HomePage() {
         </section>
       ) : null}
       {error ? <ErrorState message={error} /> : null}
+    </main>
+  )
+}
+
+export function NotificationsPage() {
+  const {
+    client,
+    user,
+    couple,
+    notifications,
+    unreadCount,
+    markNotificationRead,
+    markAllNotificationsRead,
+    refreshNotifications,
+  } = useSession()
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    if (!client || !couple) return
+    void refreshNotifications().catch((caught: unknown) => {
+      setError(caught instanceof ApiError ? caught.detail : "Could not load alerts.")
+    })
+    // Load once when the couple session is ready; live socket keeps the list fresh.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refreshNotifications is stable enough per couple session
+  }, [client, couple])
+
+  if (!client || !user) return null
+  if (!couple) return <Navigate to="/" replace />
+
+  async function markAll() {
+    setBusy(true)
+    setError(null)
+    try {
+      await markAllNotificationsRead()
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.detail : "Could not update alerts.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <main className="sheet">
+      <div className="row-actions notifications-head">
+        <h1>Alerts</h1>
+        {unreadCount > 0 ? (
+          <button className="secondary" type="button" disabled={busy} onClick={() => void markAll()}>
+            Mark all read
+          </button>
+        ) : null}
+      </div>
+      <p className="muted">In-app only. No push notifications.</p>
+      {error ? <ErrorState message={error} /> : null}
+      {notifications.length === 0 ? (
+        <EmptyState title="No alerts yet" body="When your partner joins or adds something shared, it shows up here." />
+      ) : (
+        <ul className="notification-list">
+          {notifications.map((item) => (
+            <li key={item.id} className={item.read_at ? "notification-item is-read" : "notification-item"}>
+              <div>
+                <p className="notification-title">{item.title}</p>
+                <p>{item.body}</p>
+                <p className="muted">{formatWhen(item.created_at, user.timezone)}</p>
+              </div>
+              {!item.read_at ? (
+                <button
+                  className="text-button"
+                  type="button"
+                  onClick={() => void markNotificationRead(item.id).catch(() => undefined)}
+                >
+                  Mark read
+                </button>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   )
 }

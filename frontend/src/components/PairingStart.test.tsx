@@ -1,22 +1,23 @@
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { describe, expect, it, vi } from "vitest"
 import { PairingStart } from "./PairingStart"
 
 describe("PairingStart", () => {
-  it("shows clear create and join paths after signup", async () => {
+  it("offers paste and join CTAs on the invite form", async () => {
     const user = userEvent.setup()
-    const onCreateSpace = vi.fn()
-    const onJoin = vi.fn((event: { preventDefault: () => void }) => event.preventDefault())
+    const readText = vi.fn().mockResolvedValue("invite-code-abc")
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { readText },
+    })
     render(
-      <PairingStart displayName="Ada" error={null} onCreateSpace={onCreateSpace} onJoin={onJoin} />,
+      <PairingStart displayName="Ada" error={null} onCreateSpace={() => undefined} onJoin={() => undefined} />,
     )
-    expect(screen.getByText(/Welcome, Ada/i)).toBeInTheDocument()
-    expect(screen.getByRole("heading", { name: "Create a space" })).toBeInTheDocument()
-    expect(screen.getByRole("heading", { name: "Join with invite code" })).toBeInTheDocument()
-    await user.click(screen.getByRole("button", { name: "Create a space" }))
-    expect(onCreateSpace).toHaveBeenCalledOnce()
-    await user.type(screen.getByLabelText("Invite code"), "abcd1234")
-    await user.click(screen.getByRole("button", { name: "Join with invite code" }))
-    expect(onJoin).toHaveBeenCalled()
+    await user.click(screen.getByRole("button", { name: "Paste code" }))
+    expect(readText).toHaveBeenCalled()
+    expect(screen.getByLabelText("Invite code")).toHaveValue("invite-code-abc")
+    expect(screen.getByRole("button", { name: "Join with invite code" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Create a space" })).toBeInTheDocument()
   })
 })

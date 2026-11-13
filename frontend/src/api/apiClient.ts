@@ -1,6 +1,7 @@
 import createClient from "openapi-fetch"
 
 import type {
+  AppNotification,
   AuthResponse,
   Budget,
   CheckIn,
@@ -245,6 +246,20 @@ export function createApiClient(baseUrl = "http://localhost:8000"): Api {
 
     async deleteMemory(memoryId) {
       await unwrap(api.DELETE("/memories/{memory_id}", { params: { path: { memory_id: memoryId } } }))
+    },
+
+    listNotifications() {
+      return unwrap<AppNotification[]>(api.GET("/notifications"))
+    },
+
+    markNotificationRead(notificationId: string) {
+      return unwrap<AppNotification>(api.POST("/notifications/{notification_id}/read", {
+        params: { path: { notification_id: notificationId } },
+      }))
+    },
+
+    markAllNotificationsRead() {
+      return unwrap<void>(api.POST("/notifications/read-all"))
     },
 
     getPresence() {

@@ -187,10 +187,24 @@ export type PresenceList = {
   members: Presence[]
 }
 
+export type NotificationKind = "partner_joined" | "check_in" | "event_created" | "visit_created"
+
+export type AppNotification = {
+  id: string
+  couple_id: string
+  recipient_user_id: string
+  kind: NotificationKind
+  title: string
+  body: string
+  created_at: string
+  read_at: string | null
+}
+
 export type LiveEvent =
   | { type: "presence"; members: Presence[] }
   | { type: "check_in"; check_in: CheckIn }
   | { type: "partner_joined"; couple: Couple }
+  | { type: "notification"; notification: AppNotification }
   | { type: "couple_gone" }
 
 export type RegisterRequest = {

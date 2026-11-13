@@ -40,6 +40,7 @@ class Couple(Base):
     check_ins: Mapped[list[CheckIn]] = relationship(back_populates="couple")
     memories: Mapped[list[Memory]] = relationship(back_populates="couple")
     ai_usage: Mapped[list[AiDailyUsage]] = relationship(back_populates="couple")
+    notifications: Mapped[list[AppNotification]] = relationship(back_populates="couple")
 
 
 class Membership(Base):
@@ -233,3 +234,20 @@ class AiDailyUsage(Base):
     request_count: Mapped[int] = mapped_column(default=0)
 
     couple: Mapped[Couple] = relationship(back_populates="ai_usage")
+
+
+class AppNotification(Base):
+    """In-app alert for one member. Push delivery is out of scope."""
+
+    __tablename__ = "notifications"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    couple_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("couples.id", ondelete="CASCADE"), index=True)
+    recipient_user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    kind: Mapped[str] = mapped_column(String(32))
+    title: Mapped[str] = mapped_column(String(120))
+    body: Mapped[str] = mapped_column(String(280))
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, index=True)
+    read_at: Mapped[datetime | None] = mapped_column(UtcDateTime, nullable=True)
+
+    couple: Mapped[Couple] = relationship(back_populates="notifications")

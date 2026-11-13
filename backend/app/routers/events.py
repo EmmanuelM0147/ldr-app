@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.deps import get_clock, get_current_couple, get_current_user, get_db
 from app.models import Couple, Event, User
+from app.notify import publish_rows, queue_for_partners
 from app.schemas.api import EventOut, EventPatch, EventWrite
 from app.serialize import event_out
 
@@ -32,7 +33,7 @@ def list_events(couple: Couple = Depends(get_current_couple), db: Session = Depe
 
 
 @router.post("/events", response_model=EventOut, status_code=201, operation_id="createEvent")
-def create_event(
+async def create_event(
     body: EventWrite,
     user: User = Depends(get_current_user),
     couple: Couple = Depends(get_current_couple),
@@ -52,8 +53,19 @@ def create_event(
         updated_at=now,
     )
     db.add(event)
+    db.flush()
+    rows = queue_for_partners(
+        db,
+        couple,
+        actor_user_id=user.id,
+        kind="event_created",
+        title="New event",
+        body=f"{user.display_name} added '{body.title}'.",
+        now=now,
+    )
     db.commit()
     db.refresh(event)
+    await publish_rows(couple.id, rows)
     return event_out(event)
 
 

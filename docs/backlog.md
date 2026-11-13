@@ -135,3 +135,11 @@ Done already: repo layout, Cursor rules, `GET /health`, draft Compose file.
 - [x] 27. In-app notice when partner joins via invite (WebSocket `partner_joined`).
   - Acceptance: after a successful join, sockets in that couple receive `partner_joined` with the updated couple. Waiting partner UI refreshes members and shows a short status notice. No push/email. Cross-couple sockets do not receive it.
   - Tests: WS test for join broadcast + outsider denial; mock client emits; frontend handles the event.
+
+- [x] 28. Invite code Copy / Paste CTAs.
+  - Acceptance: after creating an invite on Home (and Settings), a Copy code button writes the code to the clipboard and shows Copied. Join form has a Paste code button that fills the input from the clipboard when permitted.
+  - Tests: component test for copy/paste control labels and callbacks.
+
+- [x] 29. In-app notifications (no push).
+  - Acceptance: couple-scoped notifications for partner join, new check-in, new event, and new visit. `GET /notifications`, mark one/all read. LiveEvent `notification`. Cross-couple denial. UI list with unread badge. Push remains out of scope.
+  - Tests: create-on-action, list scoped to recipient, mark read, outsider 404, WS payload.

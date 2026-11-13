@@ -8,7 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import cors_origin_list
 from app.migrate import run_upgrade
-from app.routers import auth, checkins, couples, events, ideas, memories, presence, visits
+from app.routers import auth, checkins, couples, events, ideas, memories, notifications, presence, visits
 from app.schemas.health import Health, HealthStatus
 
 
@@ -39,6 +39,7 @@ app.include_router(visits.router)
 app.include_router(checkins.router)
 app.include_router(memories.router)
 app.include_router(presence.router)
+app.include_router(notifications.router)
 app.include_router(ideas.router)
 
 

@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { createApiClient } from "./api/apiClient"
 import { ApiError } from "./api/errors"
 import { createDemoClient, type MockClient } from "./api/mockClient"
-import type { Couple, Presence, User } from "./types"
+import type { AppNotification, Couple, Presence, User } from "./types"
 
 const TOKEN_KEY = "closer-token"
 type Client = Omit<MockClient, "database">
@@ -12,6 +12,8 @@ type SessionValue = {
   user: User | null
   couple: Couple | null
   presence: Presence[]
+  notifications: AppNotification[]
+  unreadCount: number
   liveTick: number
   partnerJoinedNotice: string | null
   ready: boolean
@@ -19,7 +21,10 @@ type SessionValue = {
   signOut: () => void
   refreshCouple: () => Promise<void>
   refreshUser: () => Promise<void>
+  refreshNotifications: () => Promise<void>
   updatePresence: (freeToTalk: boolean) => Promise<void>
+  markNotificationRead: (id: string) => Promise<void>
+  markAllNotificationsRead: () => Promise<void>
   clearPartnerJoinedNotice: () => void
 }
 
@@ -30,6 +35,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [couple, setCouple] = useState<Couple | null>(null)
   const [presence, setPresence] = useState<Presence[]>([])
+  const [notifications, setNotifications] = useState<AppNotification[]>([])
   const [liveTick, setLiveTick] = useState(0)
   const [partnerJoinedNotice, setPartnerJoinedNotice] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
@@ -76,8 +82,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    if (!client || !couple) return
+    if (!client || !couple) {
+      setNotifications([])
+      return
+    }
     let ignore = false
+    void client.listNotifications().then((rows) => {
+      if (!ignore) setNotifications(rows)
+    }).catch(() => {
+      if (!ignore) setNotifications([])
+    })
     void client.getPresence().then((list) => {
       if (!ignore) setPresence(list.members)
     }).catch(() => {
@@ -89,6 +103,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       if (event.type === "couple_gone") {
         setCouple(null)
         setPresence([])
+        setNotifications([])
         setPartnerJoinedNotice(null)
         return
       }
@@ -102,6 +117,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           if (!ignore) setPresence(list.members)
         }).catch(() => undefined)
         setLiveTick((value) => value + 1)
+        return
+      }
+      if (event.type === "notification") {
+        if (event.notification.recipient_user_id === viewerId) {
+          setNotifications((current) => {
+            if (current.some((item) => item.id === event.notification.id)) return current
+            return [event.notification, ...current]
+          })
+        }
         return
       }
       if (event.type === "presence") {
@@ -137,6 +161,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setUser(null)
     setCouple(null)
     setPresence([])
+    setNotifications([])
     setPartnerJoinedNotice(null)
   }
 
@@ -166,6 +191,28 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     await refreshCouple()
   }
 
+  async function refreshNotifications() {
+    if (!client || !couple) return
+    setNotifications(await client.listNotifications())
+  }
+
+  async function markNotificationRead(id: string) {
+    if (!client) return
+    const updated = await client.markNotificationRead(id)
+    setNotifications((current) => current.map((item) => (item.id === id ? updated : item)))
+  }
+
+  async function markAllNotificationsRead() {
+    if (!client) return
+    await client.markAllNotificationsRead()
+    const stamp = new Date().toISOString()
+    setNotifications((current) =>
+      current.map((item) => (item.read_at ? item : { ...item, read_at: stamp })),
+    )
+  }
+
+  const unreadCount = notifications.filter((item) => item.read_at === null).length
+
   return (
     <SessionContext.Provider
       value={{
@@ -173,6 +220,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         user,
         couple,
         presence,
+        notifications,
+        unreadCount,
         liveTick,
         partnerJoinedNotice,
         ready,
@@ -180,7 +229,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         signOut,
         refreshCouple,
         refreshUser,
+        refreshNotifications,
         updatePresence,
+        markNotificationRead,
+        markAllNotificationsRead,
         clearPartnerJoinedNotice,
       }}
     >

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.deps import get_clock, get_current_couple, get_current_user, get_db
 from app.models import CheckIn, Couple, User
+from app.notify import publish_rows, queue_for_partners
 from app.realtime import hub
 from app.schemas.api import CheckInOut, CheckInWrite
 from app.serialize import check_in_out
@@ -55,8 +56,18 @@ async def upsert_today(
         existing.mood = body.mood
         existing.note = body.note
         existing.updated_at = now
+    rows = queue_for_partners(
+        db,
+        couple,
+        actor_user_id=user.id,
+        kind="check_in",
+        title="Check-in",
+        body=f"{user.display_name} checked in ({body.mood}).",
+        now=now,
+    )
     db.commit()
     db.refresh(existing)
     saved = check_in_out(existing)
     await hub.publish(couple.id, {"type": "check_in", "check_in": saved.model_dump(mode="json")})
+    await publish_rows(couple.id, rows)
     return saved

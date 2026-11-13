@@ -122,8 +122,10 @@ def test_partner_joined_is_pushed_only_inside_the_couple(client) -> None:
             headers=auth(bello),
         )
         assert joined.status_code == 200
-        live = waiting.receive_json()
-        assert live["type"] == "partner_joined"
+        frames = [waiting.receive_json(), waiting.receive_json()]
+        types = {frame["type"] for frame in frames}
+        assert "partner_joined" in types
+        live = next(frame for frame in frames if frame["type"] == "partner_joined")
         assert len(live["couple"]["members"]) == 2
         assert any(item["user_id"] == bello_id for item in live["couple"]["members"])
         # Outsider only sees their own couple traffic; Ada's join must not appear.

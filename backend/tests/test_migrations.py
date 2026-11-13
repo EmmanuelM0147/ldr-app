@@ -20,6 +20,7 @@ EXPECTED = {
     "join_failures",
     "login_failures",
     "register_failures",
+    "notifications",
 }
 
 

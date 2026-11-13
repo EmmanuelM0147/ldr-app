@@ -134,9 +134,20 @@ Acceptance criteria:
 
 - Presence is a boolean, `free_to_talk`, with `updated_at` in UTC.
 - Either member can set their own flag and read both flags.
-- A WebSocket authenticated with the same JWT pushes presence changes, new or updated check-ins, and `partner_joined` when the second member joins via invite code.
+- A WebSocket authenticated with the same JWT pushes presence changes, new or updated check-ins, `partner_joined` when the second member joins via invite code, and `notification` frames for the in-app inbox.
 - A socket without a valid JWT is closed. Events are never sent to another couple.
-- Push notifications are out of scope; join feedback is in-app via the live socket (and UI refresh).
+- Push notifications are out of scope. In-app notifications are stored per recipient for partner join, check-ins, new events, and new visits.
+
+### In-app notifications
+
+As a member, I see alerts when my partner joins or adds shared activity.
+
+Acceptance criteria:
+
+- Each notification belongs to one recipient in a couple: kind, title, body, `created_at`, optional `read_at`.
+- Kinds: `partner_joined`, `check_in`, `event_created`, `visit_created`.
+- Either member can list only their own notifications and mark one or all as read.
+- Another couple's notification id returns 404.
 
 ### Date night ideas
 

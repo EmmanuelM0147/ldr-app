@@ -475,3 +475,17 @@ class PresenceList(ApiModel):
 
 class PresenceWrite(ApiModel):
     free_to_talk: bool
+
+
+NotificationKind = Literal["partner_joined", "check_in", "event_created", "visit_created"]
+
+
+class NotificationOut(ApiModel):
+    id: uuid.UUID
+    couple_id: uuid.UUID
+    recipient_user_id: uuid.UUID
+    kind: NotificationKind
+    title: str
+    body: str
+    created_at: datetime
+    read_at: datetime | None

@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.deps import get_clock, get_current_couple, get_current_user, get_db
 from app.models import Budget, BudgetShare, Couple, User, Visit
+from app.notify import publish_rows, queue_for_partners
 from app.schemas.api import BudgetIn, BudgetOut, CountdownOut, VisitOut, VisitPatch, VisitWrite
 from app.serialize import budget_out, visit_out
 
@@ -88,7 +89,7 @@ def list_visits(couple: Couple = Depends(get_current_couple), db: Session = Depe
 
 
 @router.post("/visits", response_model=VisitOut, status_code=201, operation_id="createVisit")
-def create_visit(
+async def create_visit(
     body: VisitWrite,
     user: User = Depends(get_current_user),
     couple: Couple = Depends(get_current_couple),
@@ -113,7 +114,17 @@ def create_visit(
     db.flush()
     if body.budget is not None:
         _apply_budget(db, couple, visit, body.budget)
+    rows = queue_for_partners(
+        db,
+        couple,
+        actor_user_id=user.id,
+        kind="visit_created",
+        title="New visit",
+        body=f"{user.display_name} added '{body.title}'.",
+        now=now,
+    )
     db.commit()
+    await publish_rows(couple.id, rows)
     return visit_out(_visit_for_couple(db, couple.id, visit.id))
 
 
