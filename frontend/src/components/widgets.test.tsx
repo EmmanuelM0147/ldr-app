@@ -25,13 +25,15 @@ describe("forms", () => {
 
   it("shows a field error when the email is already registered", async () => {
     const user = userEvent.setup()
-    const onSubmit = vi.fn().mockRejectedValue(new ApiError(409, "An account with that email already exists."))
+    const onSubmit = vi
+      .fn()
+      .mockRejectedValue(new ApiError(409, "Unable to create an account with that email."))
     render(<RegisterForm onSubmit={onSubmit} />)
     await user.type(screen.getByLabelText("Display name"), "Ada")
     await user.type(screen.getByLabelText("Email"), "ada@example.com")
     await user.type(screen.getByLabelText("Password", { exact: true }), "password123")
     await user.click(screen.getByRole("button", { name: "Create account" }))
-    expect(screen.getByRole("alert")).toHaveTextContent("That email is already registered.")
+    expect(screen.getByRole("alert")).toHaveTextContent("Unable to create an account with that email.")
   })
 
   it("preselects the detected IANA timezone on register", async () => {

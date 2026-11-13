@@ -60,7 +60,7 @@ export function RegisterForm({
     } catch (caught) {
       if (caught instanceof ApiError) {
         if (caught.status === 409) {
-          setFieldErrors({ email: "That email is already registered." })
+          setFieldErrors({ email: caught.detail || "Unable to create an account with that email." })
           return
         }
         if (caught.status === 422 && /password/i.test(caught.detail)) {

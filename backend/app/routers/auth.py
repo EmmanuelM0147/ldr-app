@@ -1,18 +1,24 @@
 import uuid
+from datetime import timedelta
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.deps import get_clock, get_current_user, get_db
 from app.media import absolute_media_path, delete_media_file, save_avatar_file
-from app.models import Membership, User
+from app.models import LoginFailure, Membership, RegisterFailure, User
 from app.schemas.api import AuthResponse, LoginRequest, RegisterRequest, UserOut, UserPatch
 from app.security import create_access_token, hash_password, verify_password
 from app.serialize import user_out
 
 router = APIRouter()
+LOGIN_FAILURE_LIMIT = 20
+REGISTER_FAILURE_LIMIT = 10
+AUTH_FAILURE_WINDOW = timedelta(hours=1)
+GENERIC_REGISTER_ERROR = "Unable to create an account with that email."
+GENERIC_LOGIN_ERROR = "Email or password is wrong."
 
 
 def _same_couple(db: Session, left: uuid.UUID, right: uuid.UUID) -> bool:
@@ -23,16 +29,57 @@ def _same_couple(db: Session, left: uuid.UUID, right: uuid.UUID) -> bool:
     return left_couple is not None and left_couple == right_couple
 
 
+def _client_ip(request: Request) -> str:
+    return request.client.host if request.client else "unknown"
+
+
+def _too_many(
+    db: Session,
+    *,
+    model: type[LoginFailure] | type[RegisterFailure],
+    ip: str,
+    email: str,
+    now,
+    limit: int,
+) -> bool:
+    since = now - AUTH_FAILURE_WINDOW
+    count = db.scalar(
+        select(func.count())
+        .select_from(model)
+        .where(
+            model.created_at >= since,
+            or_(model.ip == ip, model.email == email),
+        )
+    )
+    return count is not None and count >= limit
+
+
 @router.post("/auth/register", response_model=AuthResponse, status_code=201, operation_id="register")
 def register(
     body: RegisterRequest,
+    request: Request,
     db: Session = Depends(get_db),
     now=Depends(get_clock),
 ) -> AuthResponse:
-    if db.scalar(select(User.id).where(User.email == body.email)) is not None:
-        raise HTTPException(status_code=409, detail="An account with that email already exists.")
+    ip = _client_ip(request)
+    email = body.email
+    if _too_many(
+        db,
+        model=RegisterFailure,
+        ip=ip,
+        email=email,
+        now=now,
+        limit=REGISTER_FAILURE_LIMIT,
+    ):
+        raise HTTPException(status_code=429, detail="Too many attempts. Try again later.")
+
+    if db.scalar(select(User.id).where(User.email == email)) is not None:
+        db.add(RegisterFailure(ip=ip, email=email, created_at=now))
+        db.commit()
+        raise HTTPException(status_code=409, detail=GENERIC_REGISTER_ERROR)
+
     user = User(
-        email=body.email,
+        email=email,
         password_hash=hash_password(body.password),
         display_name=body.display_name,
         timezone=body.timezone,
@@ -47,12 +94,27 @@ def register(
 @router.post("/auth/login", response_model=AuthResponse, operation_id="login")
 def login(
     body: LoginRequest,
+    request: Request,
     db: Session = Depends(get_db),
     now=Depends(get_clock),
 ) -> AuthResponse:
-    user = db.scalar(select(User).where(User.email == body.email))
+    ip = _client_ip(request)
+    email = body.email
+    if _too_many(
+        db,
+        model=LoginFailure,
+        ip=ip,
+        email=email,
+        now=now,
+        limit=LOGIN_FAILURE_LIMIT,
+    ):
+        raise HTTPException(status_code=429, detail="Too many attempts. Try again later.")
+
+    user = db.scalar(select(User).where(User.email == email))
     if user is None or not verify_password(body.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Email or password is wrong.")
+        db.add(LoginFailure(ip=ip, email=email, created_at=now))
+        db.commit()
+        raise HTTPException(status_code=401, detail=GENERIC_LOGIN_ERROR)
     return AuthResponse(access_token=create_access_token(user.id, now), user=user_out(user))
 
 

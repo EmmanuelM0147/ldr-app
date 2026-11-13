@@ -18,6 +18,8 @@ EXPECTED = {
     "memories",
     "presence",
     "join_failures",
+    "login_failures",
+    "register_failures",
 }
 
 

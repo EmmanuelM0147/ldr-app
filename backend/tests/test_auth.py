@@ -58,7 +58,60 @@ def test_register_rejects_bad_input(client) -> None:
         json={"email": "a@b.co", "password": "password123", "display_name": "Ada", "timezone": "UTC"},
     )
     assert again.status_code == 409
+    assert again.json()["detail"] == "Unable to create an account with that email."
+    assert "exists" not in again.json()["detail"].lower()
     assert token
+
+
+def test_login_rate_limited_after_failed_attempts(client) -> None:
+    """Repeated failed logins from one client/email must return 429."""
+    register(client, "ada@example.com")
+    for _ in range(20):
+        failed = client.post(
+            "/auth/login",
+            json={"email": "ada@example.com", "password": "wrong-password"},
+        )
+        assert failed.status_code == 401, failed.text
+    blocked = client.post(
+        "/auth/login",
+        json={"email": "ada@example.com", "password": "wrong-password"},
+    )
+    assert blocked.status_code == 429
+    assert isinstance(blocked.json()["detail"], str)
+    # Correct password is also blocked until the window passes.
+    assert (
+        client.post(
+            "/auth/login",
+            json={"email": "ada@example.com", "password": "password123"},
+        ).status_code
+        == 429
+    )
+
+
+def test_register_rate_limited_after_duplicate_attempts(client) -> None:
+    register(client, "ada@example.com")
+    for _ in range(10):
+        failed = client.post(
+            "/auth/register",
+            json={
+                "email": "ada@example.com",
+                "password": "password123",
+                "display_name": "Ada",
+                "timezone": "UTC",
+            },
+        )
+        assert failed.status_code == 409, failed.text
+        assert failed.json()["detail"] == "Unable to create an account with that email."
+    blocked = client.post(
+        "/auth/register",
+        json={
+            "email": "ada@example.com",
+            "password": "password123",
+            "display_name": "Ada",
+            "timezone": "UTC",
+        },
+    )
+    assert blocked.status_code == 429
 
 
 def test_me_requires_token(client) -> None:

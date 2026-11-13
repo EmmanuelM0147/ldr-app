@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import ForeignKey, String, UniqueConstraint, Uuid
+from sqlalchemy import CheckConstraint, ForeignKey, SmallInteger, String, UniqueConstraint, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base, UtcDateTime
@@ -42,10 +42,16 @@ class Couple(Base):
 
 class Membership(Base):
     __tablename__ = "memberships"
-    __table_args__ = (UniqueConstraint("user_id"),)
+    __table_args__ = (
+        UniqueConstraint("user_id"),
+        UniqueConstraint("couple_id", "seat", name="uq_memberships_couple_seat"),
+        CheckConstraint("seat IN (1, 2)", name="ck_memberships_seat_range"),
+    )
 
     couple_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("couples.id", ondelete="CASCADE"), primary_key=True)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    # Seat 1 = creator, seat 2 = joiner. Unique per couple so a join race cannot add a third member.
+    seat: Mapped[int] = mapped_column(SmallInteger)
     joined_at: Mapped[datetime] = mapped_column(UtcDateTime)
 
     couple: Mapped[Couple] = relationship(back_populates="memberships")
@@ -172,4 +178,22 @@ class JoinFailure(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     ip: Mapped[str] = mapped_column(String(64), index=True)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, index=True)
+
+
+class LoginFailure(Base):
+    __tablename__ = "login_failures"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    ip: Mapped[str] = mapped_column(String(64), index=True)
+    email: Mapped[str] = mapped_column(String(255), index=True, default="")
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, index=True)
+
+
+class RegisterFailure(Base):
+    __tablename__ = "register_failures"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    ip: Mapped[str] = mapped_column(String(64), index=True)
+    email: Mapped[str] = mapped_column(String(255), index=True, default="")
     created_at: Mapped[datetime] = mapped_column(UtcDateTime, index=True)

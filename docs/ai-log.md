@@ -298,3 +298,10 @@ Clearer post-signup Create a space / Join with invite code screen.
 
 Prompt: Auth polish item 4
 
+
+## 2026-11-13 — Auth polish 5: auth rate limits
+
+Rate-limit login/register per IP and email; generic register error that does not reveal whether the email exists.
+
+Prompt: Auth polish item 5
+

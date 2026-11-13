@@ -188,7 +188,7 @@ export function createMockClient(options: Options = {}) {
       const timezone = input.timezone?.trim() || "UTC"
       assertTimezone(timezone)
       if (db.users.some((user) => user.email === email)) {
-        throw new ApiError(409, "An account with that email already exists.")
+        throw new ApiError(409, "Unable to create an account with that email.")
       }
       const user: StoredUser = {
         id: newId(),
@@ -313,6 +313,7 @@ export function createMockClient(options: Options = {}) {
     async deleteCurrentCouple(): Promise<void> {
       const couple = requireCouple()
       const id = couple.id
+      emit({ type: "couple_gone" })
       db.couples = db.couples.filter((item) => item.id !== id)
       db.invites = db.invites.filter((item) => item.couple_id !== id)
       db.events = db.events.filter((item) => item.couple_id !== id)
