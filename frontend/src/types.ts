@@ -19,15 +19,24 @@ export type UserPatch = {
 }
 
 export type CouplePatch = {
-  ai_opt_in?: boolean
+  ai_enabled?: boolean
 }
 
-export type DateNightIdeaRequest = {
-  vibe?: string
+export type DateIdeasRequest = {
+  duration_minutes: number
+  budget: string
+  mode: "together" | "apart"
+  mood?: string
 }
 
-export type DateNightIdea = {
-  idea: string
+export type DateIdea = {
+  title: string
+  description: string
+  est_cost: string
+}
+
+export type DateIdeas = {
+  ideas: DateIdea[]
 }
 
 export type AuthResponse = {
@@ -56,7 +65,7 @@ export type Member = {
 
 export type Couple = {
   id: string
-  ai_opt_in: boolean
+  ai_enabled: boolean
   created_at: string
   members: Member[]
 }

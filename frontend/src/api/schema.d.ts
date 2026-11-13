@@ -458,7 +458,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/ideas": {
+    "/ai/date-ideas": {
         parameters: {
             query?: never;
             header?: never;
@@ -468,10 +468,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Suggest a date-night idea
-         * @description Requires the couple's `ai_opt_in` to be true. The model API key comes from the environment. Prompt and reply text are never written to logs. No personal couple content is sent unless the optional vibe field is set.
+         * Suggest date-night ideas
+         * @description Requires the couple's `ai_enabled` to be true. Uses Google Gemini with GEMINI_API_KEY and GEMINI_MODEL from the server environment only. Only the form fields (duration, budget, mode, optional mood) are sent. Prompt and reply text are never written to logs. Limited to 10 requests per couple per UTC day. On model failure the API returns a friendly fallback idea list (200), not a 500.
          */
-        post: operations["createDateNightIdea"];
+        post: operations["createDateIdeas"];
         delete?: never;
         options?: never;
         head?: never;
@@ -522,7 +522,8 @@ export interface components {
             new_password?: string;
         };
         CouplePatch: {
-            ai_opt_in?: boolean;
+            /** @description Couple-level AI opt-in. Off by default. Either partner may change it. */
+            ai_enabled?: boolean;
         };
         CoupleDelete: {
             /**
@@ -531,12 +532,27 @@ export interface components {
              */
             confirm: "DELETE";
         };
-        DateNightIdeaRequest: {
-            /** @description Optional short mood for the suggestion. Not logged. */
-            vibe?: string;
+        DateIdeasRequest: {
+            /** @description How long the date can last, in minutes. Not logged. */
+            duration_minutes: number;
+            /** @description Budget as free text (for example "5000 NGN" or "low"). Not logged. */
+            budget: string;
+            /**
+             * @description In-person together or remote while apart.
+             * @enum {string}
+             */
+            mode: "together" | "apart";
+            /** @description Optional short mood. Treated as data, never as instructions. Not logged. */
+            mood?: string;
         };
-        DateNightIdea: {
-            idea: string;
+        DateIdea: {
+            title: string;
+            description: string;
+            /** @description Estimated cost as short text (for example "₦3,000" or "free"). */
+            est_cost: string;
+        };
+        DateIdeas: {
+            ideas: components["schemas"]["DateIdea"][];
         };
         LoginRequest: {
             /** Format: email */
@@ -580,7 +596,8 @@ export interface components {
         Couple: {
             /** Format: uuid */
             id: string;
-            ai_opt_in: boolean;
+            /** @description Couple-level AI opt-in. Default false. */
+            ai_enabled: boolean;
             /** Format: date-time */
             created_at: string;
             members: components["schemas"]["Member"][];
@@ -1834,32 +1851,41 @@ export interface operations {
             };
         };
     };
-    createDateNightIdea: {
+    createDateIdeas: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
-                "application/json": components["schemas"]["DateNightIdeaRequest"];
+                "application/json": components["schemas"]["DateIdeasRequest"];
             };
         };
         responses: {
-            /** @description One date-night suggestion */
+            /** @description Three to five date ideas (or a safe fallback list) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DateNightIdea"];
+                    "application/json": components["schemas"]["DateIdeas"];
                 };
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Missing"];
             422: components["responses"]["Invalid"];
+            /** @description Couple daily AI request limit reached */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Model provider is not configured */
             503: {
                 headers: {

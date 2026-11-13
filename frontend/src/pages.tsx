@@ -11,6 +11,7 @@ import { HomeHero } from "./components/HomeHero"
 import { eventsByDay, MonthCalendar } from "./components/MonthCalendar"
 import { PartnerHomeCards } from "./components/PartnerHomeCards"
 import { PartnerTodayCards } from "./components/PartnerTodayCards"
+import { DateIdeasCard } from "./components/DateIdeasCard"
 import { QuickActions } from "./components/QuickActions"
 import { itemsThisWeek, ThisWeekList } from "./components/ThisWeekList"
 import { MemoryDropZone, validateMemoryFile } from "./components/MemoryDropZone"
@@ -367,6 +368,7 @@ export function HomePage() {
         />
       ) : null}
       <QuickActions />
+      {!loadingHome ? <DateIdeasCard aiEnabled={couple.ai_enabled} client={client} /> : null}
       {!loadingHome ? <ThisWeekList items={week} timeZone={user.timezone} /> : null}
       {couple.members.length < 2 ? (
         <section className="card">
@@ -391,9 +393,6 @@ export function SettingsPage() {
   const [copied, setCopied] = useState(false)
   const [spaceError, setSpaceError] = useState<string | null>(null)
   const [aiBusy, setAiBusy] = useState(false)
-  const [ideaBusy, setIdeaBusy] = useState(false)
-  const [idea, setIdea] = useState<string | null>(null)
-  const [ideaError, setIdeaError] = useState<string | null>(null)
   if (!client || !user) return null
 
   async function issueInvite() {
@@ -522,14 +521,14 @@ export function SettingsPage() {
             <span>AI date-night ideas</span>
             <input
               type="checkbox"
-              checked={couple.ai_opt_in}
+              checked={couple.ai_enabled}
               disabled={aiBusy}
               onChange={(event) => {
                 const next = event.target.checked
                 setAiBusy(true)
                 setSpaceError(null)
                 void client
-                  .updateCurrentCouple({ ai_opt_in: next })
+                  .updateCurrentCouple({ ai_enabled: next })
                   .then(() => refreshCouple())
                   .catch((caught: unknown) => {
                     setSpaceError(caught instanceof ApiError ? caught.detail : "Could not update AI preference.")
@@ -539,33 +538,11 @@ export function SettingsPage() {
             />
           </label>
           <p className="muted">
-            Off by default. When on, either of you can ask for ideas. We never send personal content without this
-            switch, and prompts are not logged.
+            Off by default. Either of you can turn this off anytime. When on, Home can ask Google Gemini for date
+            ideas. We send only the form fields you enter (duration, budget, together/apart, optional mood) — never
+            names, emails, check-ins, memories, visit notes, or other couple content. Prompts and replies are not
+            logged.
           </p>
-          {couple.ai_opt_in ? (
-            <div className="stack">
-              <button
-                className="secondary"
-                type="button"
-                disabled={ideaBusy}
-                onClick={() => {
-                  setIdeaBusy(true)
-                  setIdeaError(null)
-                  void client
-                    .createDateNightIdea()
-                    .then((result) => setIdea(result.idea))
-                    .catch((caught: unknown) => {
-                      setIdeaError(caught instanceof ApiError ? caught.detail : "Could not get an idea.")
-                    })
-                    .finally(() => setIdeaBusy(false))
-                }}
-              >
-                {ideaBusy ? "Asking…" : "Suggest a date night"}
-              </button>
-              {idea ? <p className="idea">{idea}</p> : null}
-              {ideaError ? <p className="error">{ideaError}</p> : null}
-            </div>
-          ) : null}
 
           {couple.members.length < 2 ? (
             <>

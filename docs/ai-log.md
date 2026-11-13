@@ -373,3 +373,9 @@ Prompt: fix auth BrandLockup positioning (center lockup + panel)
 Password reset was not in the MVP spec (only change-password-while-signed-in). Added contract-first POST /auth/forgot-password and POST /auth/reset-password with hashed single-use 1h tokens, rate limits, and generic responses. No SMTP: AUTH_RESET_DEBUG=1 returns reset_url for local/tests; production email send is leftover. Login has a Forgot password? link; forgot + reset pages in the UI.
 
 Prompt: theres no forget password — add forgot-password path (OpenAPI + token endpoints + UI; debug reset URL without mailer)
+
+## 2026-11-13 - Gemini date ideas (google-genai)
+
+Migrated couple AI from OpenAI-compatible `/ideas` to `POST /ai/date-ideas` using pinned `google-genai==3.3.0`. Couple field `ai_enabled` (DB column still `ai_opt_in`). Env: `GEMINI_API_KEY`, `GEMINI_MODEL` (server-only). Service: 10s timeout, max output tokens, structured `DateIdeas`, 10/day per couple, fallback on malformed/timeout (no 500). Logs status+latency only. Home Date night ideas card + Settings disclosure of what is sent.
+
+Prompt: Implement opt-in AI features for Closer using Google Gemini. Update openapi.yaml FIRST. Use google-genai; GEMINI_API_KEY/GEMINI_MODEL; POST /ai/date-ideas; rate limit 10/day; Home card; Settings toggle; tests mocked; commit contract/backend/frontend; append ai-log.

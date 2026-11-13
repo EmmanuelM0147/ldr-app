@@ -24,7 +24,7 @@ export default defineConfig({
       "/check-ins": apiProxy,
       "/memories": apiProxy,
       "/presence": apiProxy,
-      "/ideas": apiProxy,
+      "/ai": apiProxy,
       "/ws": { ...apiProxy, ws: true },
     },
   },

@@ -19,8 +19,8 @@ import type {
   User,
   Visit,
   CouplePatch,
-  DateNightIdea,
-  DateNightIdeaRequest,
+  DateIdeas,
+  DateIdeasRequest,
   UserPatch,
   VisitWrite,
 } from "../types"
@@ -328,7 +328,7 @@ export function createMockClient(options: Options = {}) {
       if (coupleFor(user.id)) throw new ApiError(409, "You already have a couple space.")
       const couple: Couple = {
         id: newId(),
-        ai_opt_in: false,
+        ai_enabled: false,
         created_at: now().toISOString(),
         members: [memberFrom(user, now)],
       }
@@ -344,8 +344,8 @@ export function createMockClient(options: Options = {}) {
 
     async updateCurrentCouple(input: CouplePatch): Promise<Couple> {
       const couple = requireCouple()
-      if (input.ai_opt_in === undefined) throw new ApiError(422, "Nothing to update.")
-      couple.ai_opt_in = input.ai_opt_in
+      if (input.ai_enabled === undefined) throw new ApiError(422, "Nothing to update.")
+      couple.ai_enabled = input.ai_enabled
       persist()
       return clone(couple)
     },
@@ -660,14 +660,30 @@ export function createMockClient(options: Options = {}) {
       return listed
     },
 
-    async createDateNightIdea(input: DateNightIdeaRequest = {}): Promise<DateNightIdea> {
+    async createDateIdeas(input: DateIdeasRequest): Promise<DateIdeas> {
       const couple = requireCouple()
-      if (!couple.ai_opt_in) throw new ApiError(403, "Turn on AI ideas in settings first.")
-      const vibe = input.vibe?.trim()
-      const idea = vibe
-        ? `Plan a slow ${vibe} evening together: cook something simple, put phones away, and take a short walk after.`
-        : "Plan a picnic at a quiet park, pack a shared playlist, and leave the afternoon free for wandering."
-      return { idea }
+      if (!couple.ai_enabled) throw new ApiError(403, "Turn on AI ideas in settings first.")
+      const mood = input.mood?.trim()
+      const modeLabel = input.mode === "apart" ? "while apart" : "in person"
+      return {
+        ideas: [
+          {
+            title: mood ? `${mood} evening ${modeLabel}` : `Easy date ${modeLabel}`,
+            description: `A ${input.duration_minutes}-minute plan within about ${input.budget}: keep it simple and phone-free.`,
+            est_cost: input.budget,
+          },
+          {
+            title: "Shared meal",
+            description: "Cook or order the same dish, eat together, and leave one quiet hour after.",
+            est_cost: input.budget,
+          },
+          {
+            title: "Short walk and talk",
+            description: "Walk somewhere nearby or call while each of you walks, then share one highlight.",
+            est_cost: "free–low",
+          },
+        ],
+      }
     },
 
     subscribe(listener: (event: LiveEvent) => void) {

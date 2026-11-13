@@ -8,8 +8,8 @@ import type {
   Countdown,
   Couple,
   CouplePatch,
-  DateNightIdea,
-  DateNightIdeaRequest,
+  DateIdeas,
+  DateIdeasRequest,
   EventItem,
   EventWrite,
   ForgotPasswordResponse,
@@ -255,8 +255,8 @@ export function createApiClient(baseUrl = "http://localhost:8000"): Api {
       return unwrap<PresenceList>(api.PUT("/presence", { body: { free_to_talk: freeToTalk } }))
     },
 
-    createDateNightIdea(input: DateNightIdeaRequest = {}) {
-      return unwrap<DateNightIdea>(api.POST("/ideas", { body: input }))
+    createDateIdeas(input: DateIdeasRequest) {
+      return unwrap<DateIdeas>(api.POST("/ai/date-ideas", { body: input }))
     },
 
     subscribe(listener) {
