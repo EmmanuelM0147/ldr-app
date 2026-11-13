@@ -60,6 +60,18 @@ export function IconBook({ className, title = "Memories" }: IconProps) {
   )
 }
 
+export function IconBell({ className, title = "Notifications" }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" width="22" height="22" aria-hidden={title ? undefined : true} role="img">
+      {title ? <title>{title}</title> : null}
+      <path
+        fill="currentColor"
+        d="M12 22a2.4 2.4 0 0 0 2.4-2.4h-4.8A2.4 2.4 0 0 0 12 22Zm8-5.6V16l-1.8-1.8V10a6 6 0 0 0-4.4-5.8V3.6a1.8 1.8 0 1 0-3.6 0v.6A6 6 0 0 0 5.8 10v4.2L4 16v.4h16Z"
+      />
+    </svg>
+  )
+}
+
 export function IconEye({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">

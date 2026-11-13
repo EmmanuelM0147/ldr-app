@@ -438,3 +438,9 @@ Prompt: proceed (in-app notice when partner joins via invite code).
 Home invite Copy code CTA; join form Paste code CTA. In-app notifications table + API (list, mark one/all read), LiveEvent `notification`, producers for partner_joined / check_in / event_created / visit_created. Alerts page + unread badge. No push.
 
 Prompt: proceed then build the rest of the notification infras and in between copy/paste invite CTA.
+
+## 2026-11-13 - Notifications UX: bell + inbox
+
+Replaced header “Alerts” text with a bell icon + unread badge. Notifications page: All/Unread filters, kind labels, mark as read / mark all as read, tap row opens related screen, partner-join banner links to the inbox.
+
+Prompt: why alert instead of bell and notifications; make mark all etc. better and comprehensive.

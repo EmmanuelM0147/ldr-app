@@ -4,6 +4,8 @@ import { ApiError } from "./api/errors"
 import { AvatarMenu } from "./components/AvatarMenu"
 import { BottomNav } from "./components/BottomNav"
 import { BrandLockup } from "./components/BrandLockup"
+import { NotificationsBell } from "./components/NotificationsBell"
+import { NotificationsPanel } from "./components/NotificationsPanel"
 import { PairingStart } from "./components/PairingStart"
 import { BottomSheet } from "./components/BottomSheet"
 import { DeleteSpaceForm } from "./components/DeleteSpaceForm"
@@ -245,12 +247,7 @@ export function Shell() {
         <div className="top-bar">
           <BrandLockup size="header" to="/" />
           <div className="top-actions">
-            {couple ? (
-              <Link to="/notifications" className="alerts-link" aria-label="Notifications">
-                Alerts
-                {unreadCount > 0 ? <span className="alerts-badge">{unreadCount}</span> : null}
-              </Link>
-            ) : null}
+            {couple ? <NotificationsBell unreadCount={unreadCount} /> : null}
             {user && client ? (
               <AvatarMenu
                 userId={user.id}
@@ -272,9 +269,14 @@ export function Shell() {
       {partnerJoinedNotice ? (
         <div className="join-notice" role="status">
           <p>{partnerJoinedNotice}</p>
-          <button type="button" className="text-button" onClick={clearPartnerJoinedNotice}>
-            Dismiss
-          </button>
+          <div className="join-notice-actions">
+            <Link className="text-button" to="/notifications" onClick={clearPartnerJoinedNotice}>
+              View notifications
+            </Link>
+            <button type="button" className="text-button" onClick={clearPartnerJoinedNotice}>
+              Dismiss
+            </button>
+          </div>
         </div>
       ) : null}
       <Outlet />
@@ -444,14 +446,23 @@ export function NotificationsPage() {
   useEffect(() => {
     if (!client || !couple) return
     void refreshNotifications().catch((caught: unknown) => {
-      setError(caught instanceof ApiError ? caught.detail : "Could not load alerts.")
+      setError(caught instanceof ApiError ? caught.detail : "Could not load notifications.")
     })
-    // Load once when the couple session is ready; live socket keeps the list fresh.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- refreshNotifications is stable enough per couple session
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh once per couple session; live socket updates the list
   }, [client, couple])
 
   if (!client || !user) return null
   if (!couple) return <Navigate to="/" replace />
+
+  async function markOne(id: string) {
+    setError(null)
+    try {
+      await markNotificationRead(id)
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.detail : "Could not update that notification.")
+      throw caught
+    }
+  }
 
   async function markAll() {
     setBusy(true)
@@ -459,49 +470,22 @@ export function NotificationsPage() {
     try {
       await markAllNotificationsRead()
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.detail : "Could not update alerts.")
+      setError(caught instanceof ApiError ? caught.detail : "Could not mark notifications as read.")
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <main className="sheet">
-      <div className="row-actions notifications-head">
-        <h1>Alerts</h1>
-        {unreadCount > 0 ? (
-          <button className="secondary" type="button" disabled={busy} onClick={() => void markAll()}>
-            Mark all read
-          </button>
-        ) : null}
-      </div>
-      <p className="muted">In-app only. No push notifications.</p>
-      {error ? <ErrorState message={error} /> : null}
-      {notifications.length === 0 ? (
-        <EmptyState title="No alerts yet" body="When your partner joins or adds something shared, it shows up here." />
-      ) : (
-        <ul className="notification-list">
-          {notifications.map((item) => (
-            <li key={item.id} className={item.read_at ? "notification-item is-read" : "notification-item"}>
-              <div>
-                <p className="notification-title">{item.title}</p>
-                <p>{item.body}</p>
-                <p className="muted">{formatWhen(item.created_at, user.timezone)}</p>
-              </div>
-              {!item.read_at ? (
-                <button
-                  className="text-button"
-                  type="button"
-                  onClick={() => void markNotificationRead(item.id).catch(() => undefined)}
-                >
-                  Mark read
-                </button>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      )}
-    </main>
+    <NotificationsPanel
+      notifications={notifications}
+      unreadCount={unreadCount}
+      timeZone={user.timezone}
+      busy={busy}
+      error={error}
+      onMarkRead={markOne}
+      onMarkAllRead={markAll}
+    />
   )
 }
 
