@@ -6,7 +6,7 @@ A private two-person app for couples in long-distance relationships. Shared visi
 
 ## Why this exists
 
-When you live in different cities, chat apps already handle talking — what gets lost is the shared plan: when you next meet, what the trip costs, how the other person is feeling today, and whether they are free to talk right now. Closer is for exactly two people who want one private couple space for that plan and daily pulse, not another messenger or video call tool.
+When you live in different cities, chat apps already handle talking. What gets lost is the shared plan: when you next meet, what the trip costs, how the other person is feeling today, and whether they are free to talk right now. Closer is for exactly two people who want one private couple space for that plan and daily pulse, not another messenger or video call tool.
 
 ## Features
 
@@ -15,22 +15,23 @@ When you live in different cities, chat apps already handle talking — what get
 - Daily check-in with mood and a shared prompt
 - Memory timeline with photos/videos and "on this day"
 - Real-time presence ("free to talk")
-- Opt-in AI features: date-night ideas (weekly recap not in MVP)
+- Opt-in AI date ideas via Google Gemini (`POST /ai/date-ideas`), gated by couple `ai_enabled`
+- Auth polish: IANA timezone select, login/register rate limits, optional registration allowlist, forgot/reset password (token flow)
 - Delete-my-space: removes all couple data and media
 
 ## Screenshots
 
-Real captures go under [`docs/screenshots/`](docs/screenshots/README.md) (see capture steps there). Slots:
+Capture steps and expected filenames live under [`docs/screenshots/`](docs/screenshots/README.md). Until PNGs are committed, slots only:
 
-- Home (countdown + partner cards) — `docs/screenshots/home.png`
-- Calendar — `docs/screenshots/calendar.png`
-- Visits — `docs/screenshots/visits.png`
-- Check-in — `docs/screenshots/check-in.png`
-- Memories — `docs/screenshots/memories.png`
+- Home (countdown + partner cards) - `docs/screenshots/home.png`
+- Calendar - `docs/screenshots/calendar.png`
+- Visits - `docs/screenshots/visits.png`
+- Check-in - `docs/screenshots/check-in.png`
+- Memories - `docs/screenshots/memories.png`
 
 ## Architecture
 
-React PWA → FastAPI → PostgreSQL. Presence and check-in updates go over an authenticated WebSocket (`/ws`). Memory and avatar media are stored under `MEDIA_ROOT` on the API host (local disk in Compose; object storage is a later deploy choice). Date ideas call Google Gemini only when the couple has opted in (`ai_enabled`). **`docs/openapi.yaml` is the API contract** — update it before changing endpoints.
+React PWA → FastAPI → PostgreSQL. Presence and check-in updates go over an authenticated WebSocket (`/ws`). Memory and avatar media are stored under `MEDIA_ROOT` on the API host (local disk in Compose; object storage is a later deploy choice). Date ideas call Google Gemini only when the couple has opted in (`ai_enabled`). **`docs/openapi.yaml` is the API contract** - update it before changing endpoints.
 
 ```
 ┌─────────────┐     HTTPS / WS      ┌─────────────┐     SQL      ┌──────────┐
@@ -40,7 +41,7 @@ React PWA → FastAPI → PostgreSQL. Presence and check-in updates go over an a
                                     └──────┬──────┘
                                            │ opt-in only
                                            ▼
-                                      Gemini API (ideas)
+                                      Gemini API (date ideas)
 ```
 
 | Layer | Tech |
@@ -49,6 +50,7 @@ React PWA → FastAPI → PostgreSQL. Presence and check-in updates go over an a
 | Backend | FastAPI, SQLAlchemy, Alembic |
 | Database | PostgreSQL (SQLite for early unit tests) |
 | Real-time | WebSockets |
+| AI | Google Gemini (`google-genai`), server-only keys |
 | Tests | pytest, Vitest, Playwright |
 | Infra | Docker Compose, GitHub Actions; AWS deploy planned |
 
@@ -56,15 +58,19 @@ React PWA → FastAPI → PostgreSQL. Presence and check-in updates go over an a
 
 ```bash
 cp .env.example .env
-# Required: set JWT_SECRET to a strong random string (≥32 chars). Example:
+# Required: set JWT_SECRET to a strong random string (≥32 chars). Placeholders are rejected at boot.
 #   python -c "import secrets; print(secrets.token_urlsafe(48))"
 # Optional: REGISTRATION_ALLOWED_EMAILS=you@example.com,partner@example.com
 #   When set, only those emails can register; empty keeps registration open.
+# Optional AI: GEMINI_API_KEY and GEMINI_MODEL (server-only; never sent to the frontend).
+# Local password-reset testing: AUTH_RESET_DEBUG=1 may return reset_url in JSON (SMTP not wired yet).
 docker compose up --build
 # frontend: http://localhost:5173   api docs: http://localhost:8000/docs
 ```
 
-Without Compose, point `DATABASE_URL` at Postgres (or leave it unset for SQLite), set `JWT_SECRET`, run Alembic + Uvicorn from `backend/`, and `npm run dev` in `frontend/`. Host-API + Compose-DB fallback commands are in [`docs/demo.md`](docs/demo.md).
+Env vars are documented in [`.env.example`](.env.example). Demo walkthrough and host-API fallback commands are in [`docs/demo.md`](docs/demo.md). Prompt history for this repo is in [`docs/ai-log.md`](docs/ai-log.md).
+
+Without Compose, point `DATABASE_URL` at Postgres (or leave it unset for SQLite), set `JWT_SECRET`, run Alembic + Uvicorn from `backend/`, and `npm run dev` in `frontend/`.
 
 Run tests:
 
@@ -98,24 +104,26 @@ This project was built with AI tooling under an explicit engineering process.
 
 **Where it went wrong and how I caught it:**
 
-- Visit/event lookups drafted as "load by id" until rules and tests forced `couple_id` in the same query — caught by cross-couple 404 tests and the Closer agent rule.
-- Optional visit budget with a default currency treated blank amounts as a zero split — caught in the polish pass; form parsing now ignores empty amounts and requires shares to sum to the total.
-- Password field toggle sat inside a `<label>`, so Playwright `getByLabel("Password")` also hit "Show password" — caught in e2e; label structure and exact matching fixed.
+- Visit/event lookups drafted as "load by id" until rules and tests forced `couple_id` in the same query. Caught by cross-couple 404 tests and the Closer agent rule.
+- Optional visit budget with a default currency treated blank amounts as a zero split. Caught in the polish pass; form parsing now ignores empty amounts and requires shares to sum to the total.
+- Password field toggle sat inside a `<label>`, so Playwright `getByLabel("Password")` also hit "Show password". Caught in e2e; label structure and exact matching fixed.
 
 **What I reviewed by hand:** auth, JWT handling, invite hashing/expiry/rate limits, couple_id scoping, delete-space cascades, media path isolation, env-only secrets, and AI opt-in gating (no model call when off).
 
 ## Security and privacy
 
 - Every query is scoped to the couple; cross-couple access is tested on data endpoints (404).
-- Passwords are argon2id hashes; JWTs expire in 60 minutes.
-- Invite codes are single-use, expire in 7 days, stored as SHA-256, and rate-limited.
-- AI features are opt-in per couple; prompts and replies are not logged; no call when opt-in is off.
+- Passwords are argon2id hashes; JWTs expire in 60 minutes. `JWT_SECRET` must be a strong random string (≥32 chars); known placeholders are rejected at boot.
+- Invite codes are single-use, expire in 7 days, stored as SHA-256, and rate-limited. Login/register attempts are also rate-limited.
+- Optional `REGISTRATION_ALLOWED_EMAILS` restricts who can create accounts (useful for demos and closed betas).
+- Forgot/reset password uses hashed, single-use, short-lived tokens. SMTP email delivery is not wired yet; for local/tests only, `AUTH_RESET_DEBUG=1` may include `reset_url` in the forgot-password response. Never enable that in production.
+- AI date ideas are opt-in per couple (`ai_enabled`). Only form fields (duration, budget, mode, optional mood) are sent to Gemini via server-side `GEMINI_API_KEY` / `GEMINI_MODEL`. Prompt and reply text are not logged; no call when opt-in is off. Limited to 10 requests per couple per UTC day.
 - Delete-my-space removes couple-owned rows and media; both user accounts remain.
-- Media lives on the API filesystem under `MEDIA_ROOT` today — encrypt volume/backups at the host or move to managed object storage for production. No end-to-end encryption of couple content.
+- Media lives on the API filesystem under `MEDIA_ROOT` today. Encrypt volume/backups at the host or move to managed object storage for production. No end-to-end encryption of couple content.
 
 ## Testing
 
-- **Backend:** pytest for auth, pairing, events, visits/budgets, check-ins, memories, presence/WS, ideas (Gemini mocked), and cross-couple denial.
+- **Backend:** pytest for auth (including forgot/reset), pairing, events, visits/budgets, check-ins, memories, presence/WS, date ideas (Gemini mocked), and cross-couple denial.
 - **Frontend:** Vitest for formatters, tokens/contrast, forms, and key components.
 - **E2E:** Playwright mock flows (home, calendar-add, visit-add) and Compose pairing (`user A` invites, `user B` joins, both see shared data).
 - **CI:** GitHub Actions runs backend lint + pytest, frontend typecheck + Vitest, Docker image builds, then gated deploy on `main`. Playwright e2e stays local (`npm run test:e2e` / `test:e2e:compose`).
@@ -126,14 +134,15 @@ This project was built with AI tooling under an explicit engineering process.
 - No push notifications; presence is in-app WebSocket only.
 - One couple space per user; no chat or video (by design).
 - Media is local disk in Compose, not yet object storage / CDN.
+- Password-reset email (SMTP) is not wired; local debug URL only.
 - Live demo URL, demo video, and screenshot gallery are still outstanding.
-- AWS resources (ECR/ECS/RDS) must be provisioned and GitHub secrets set before `deploy` succeeds — see `docs/deploy.md`.
+- AWS resources (ECR/ECS/RDS) must be provisioned and GitHub secrets set before `deploy` succeeds. See `docs/deploy.md`.
 
 ## Project structure
 
 ```
 /backend   FastAPI app, models, migrations, tests
 /frontend  React PWA, unit + e2e tests
-/docs      spec.md, backlog.md, openapi.yaml, ai-log.md
+/docs      spec.md, backlog.md, openapi.yaml, ai-log.md, demo.md
 AGENTS.md  rules for coding agents
 ```
