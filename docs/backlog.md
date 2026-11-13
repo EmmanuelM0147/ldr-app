@@ -123,3 +123,9 @@ Done already: repo layout, Cursor rules, `GET /health`, draft Compose file.
 - [x] 25. After QA fixes, write `README.md` with what it does, architecture, how to run, a link to `docs/ai-log.md`, and a privacy section.
   - Acceptance: a newcomer can run the stack from the README alone.
   - Tests: commands in the README match Compose and pytest.
+
+## Post-MVP auth
+
+- [x] 26. Forgot / reset password (token flow; email delivery deferred).
+  - Acceptance: `POST /auth/forgot-password` always returns a generic 200; `POST /auth/reset-password` accepts a single-use expiring token. Rate-limited. `AUTH_RESET_DEBUG=1` may return `reset_url` for local/tests. Login links to forgot + reset pages.
+  - Tests: forgot generic/no enumeration, debug URL, reset + reuse denied, rate limit. SMTP not required.

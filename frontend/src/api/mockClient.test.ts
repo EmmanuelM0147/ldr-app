@@ -23,6 +23,22 @@ describe("mock client", () => {
     expect(signedIn.user.display_name).toBe("Ada")
   })
 
+  it("resets a password with a forgot-password token", async () => {
+    const client = createMockClient()
+    await client.register(ada)
+    client.useToken(null)
+    const unknown = await client.forgotPassword("nobody@example.com")
+    expect(unknown.reset_url).toBeNull()
+    const forgot = await client.forgotPassword("ada@example.com")
+    expect(forgot.detail).toMatch(/registered/i)
+    expect(forgot.reset_url).toContain("/reset-password?token=")
+    const token = forgot.reset_url!.split("token=")[1]
+    await client.resetPassword(token, "password456")
+    await expect(client.login("ada@example.com", "password123")).rejects.toMatchObject({ status: 401 })
+    await client.login("ada@example.com", "password456")
+    await expect(client.resetPassword(token, "password789")).rejects.toMatchObject({ status: 400 })
+  })
+
   it("rejects a reused invite code", async () => {
     const db = emptyDatabase()
     const owner = createMockClient({ db })

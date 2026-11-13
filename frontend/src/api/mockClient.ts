@@ -7,6 +7,7 @@ import type {
   Couple,
   EventItem,
   EventWrite,
+  ForgotPasswordResponse,
   InviteCreated,
   LiveEvent,
   Memory,
@@ -14,6 +15,7 @@ import type {
   Member,
   Presence,
   RegisterRequest,
+  ResetPasswordResponse,
   User,
   Visit,
   CouplePatch,
@@ -45,6 +47,7 @@ export type Database = {
   presence: Presence[]
   inviteCreates: { user_id: string; at: string }[]
   joinFailures: string[]
+  passwordResets: { token: string; user_id: string; expires_at: string; used_at: string | null }[]
 }
 
 type Store = {
@@ -75,6 +78,7 @@ export function emptyDatabase(): Database {
     presence: [],
     inviteCreates: [],
     joinFailures: [],
+    passwordResets: [],
   }
 }
 
@@ -210,6 +214,42 @@ export function createMockClient(options: Options = {}) {
         throw new ApiError(401, "Email or password is wrong.")
       }
       return auth(user)
+    },
+
+    async forgotPassword(email: string): Promise<ForgotPasswordResponse> {
+      const normalized = email.trim().toLowerCase()
+      const detail = "If that email is registered, use the reset link to choose a new password."
+      const user = db.users.find((item) => item.email === normalized)
+      if (!user) return { detail, reset_url: null }
+      const token = newCode()
+      db.passwordResets.push({
+        token,
+        user_id: user.id,
+        expires_at: new Date(now().getTime() + HOUR_MS).toISOString(),
+        used_at: null,
+      })
+      return {
+        detail,
+        reset_url: `http://localhost:5173/reset-password?token=${token}`,
+      }
+    },
+
+    async resetPassword(token: string, newPassword: string): Promise<ResetPasswordResponse> {
+      if (newPassword.length < 8 || newPassword.length > 72) {
+        throw new ApiError(422, "Password must be 8 to 72 characters.")
+      }
+      const row = db.passwordResets.find((item) => item.token === token.trim())
+      if (!row || row.used_at || new Date(row.expires_at).getTime() <= now().getTime()) {
+        throw new ApiError(400, "Invalid or expired reset link.")
+      }
+      const user = db.users.find((item) => item.id === row.user_id)
+      if (!user) throw new ApiError(400, "Invalid or expired reset link.")
+      user.password_mark = `mock:${newPassword}`
+      row.used_at = now().toISOString()
+      for (const other of db.passwordResets) {
+        if (other.user_id === user.id && other.used_at === null) other.used_at = now().toISOString()
+      }
+      return { detail: "Password updated. You can sign in." }
     },
 
     async getMe(): Promise<User> {
@@ -646,6 +686,7 @@ const DEMO_KEY = "closer-mock-db"
 export async function createDemoClient(storage?: Store): Promise<MockClient> {
   const raw = storage?.getItem(DEMO_KEY)
   const db = raw ? (JSON.parse(raw) as Database) : await seedDatabase(new Date())
+  if (!db.passwordResets) db.passwordResets = []
   if (!raw && storage) storage.setItem(DEMO_KEY, JSON.stringify(db))
   return createMockClient({
     db,

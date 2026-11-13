@@ -37,6 +37,15 @@ export type AuthResponse = {
   user: User
 }
 
+export type ForgotPasswordResponse = {
+  detail: string
+  reset_url?: string | null
+}
+
+export type ResetPasswordResponse = {
+  detail: string
+}
+
 export type Member = {
   user_id: string
   display_name: string

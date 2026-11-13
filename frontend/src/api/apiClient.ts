@@ -12,11 +12,13 @@ import type {
   DateNightIdeaRequest,
   EventItem,
   EventWrite,
+  ForgotPasswordResponse,
   InviteCreated,
   LiveEvent,
   Memory,
   MemoryWrite,
   PresenceList,
+  ResetPasswordResponse,
   User,
   UserPatch,
   Visit,
@@ -73,6 +75,16 @@ export function createApiClient(baseUrl = "http://localhost:8000"): Api {
 
     login(email, password) {
       return unwrap<AuthResponse>(api.POST("/auth/login", { body: { email, password } }))
+    },
+
+    forgotPassword(email: string) {
+      return unwrap<ForgotPasswordResponse>(api.POST("/auth/forgot-password", { body: { email } }))
+    },
+
+    resetPassword(token: string, newPassword: string) {
+      return unwrap<ResetPasswordResponse>(
+        api.POST("/auth/reset-password", { body: { token, new_password: newPassword } }),
+      )
     },
 
     getMe() {

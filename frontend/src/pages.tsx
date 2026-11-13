@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react"
-import { Link, Navigate, Outlet, useNavigate } from "react-router-dom"
+import { Link, Navigate, Outlet, useNavigate, useSearchParams } from "react-router-dom"
 import { ApiError } from "./api/errors"
 import { AvatarMenu } from "./components/AvatarMenu"
 import { BottomNav } from "./components/BottomNav"
@@ -15,6 +15,7 @@ import { QuickActions } from "./components/QuickActions"
 import { itemsThisWeek, ThisWeekList } from "./components/ThisWeekList"
 import { MemoryDropZone, validateMemoryFile } from "./components/MemoryDropZone"
 import { MemoryTimeline, OnThisDay, onThisDay } from "./components/MemoryTimeline"
+import { PasswordField } from "./components/PasswordField"
 import { PasswordSettingsForm } from "./components/PasswordSettingsForm"
 import { ProfilePhotoForm } from "./components/ProfilePhotoForm"
 import { ProfileSettingsForm } from "./components/ProfileSettingsForm"
@@ -56,8 +57,148 @@ export function LoginPage() {
         }}
       />
       <p className="muted">
+        <Link to="/forgot-password">Forgot password?</Link>
+      </p>
+      <p className="muted">
         New here? <Link to="/register">Create an account</Link>
       </p>
+    </main>
+  )
+}
+
+export function ForgotPasswordPage() {
+  const { client, user, ready } = useSession()
+  const [done, setDone] = useState(false)
+  const [detail, setDetail] = useState<string | null>(null)
+  const [debugUrl, setDebugUrl] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  if (!ready || !client) return <p className="sheet muted">Opening your space…</p>
+  if (user) return <Navigate to="/" replace />
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!client) return
+    const email = String(new FormData(event.currentTarget).get("email") ?? "")
+    setError(null)
+    setDebugUrl(null)
+    try {
+      const result = await client.forgotPassword(email)
+      setDetail(result.detail)
+      setDebugUrl(result.reset_url ?? null)
+      setDone(true)
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.detail : "Could not start a reset.")
+    }
+  }
+
+  return (
+    <main className="sheet auth-sheet">
+      <BrandLockup size="auth" />
+      <p className="auth-lede">Reset your password.</p>
+      {done ? (
+        <div className="stack">
+          <p>{detail}</p>
+          <p className="muted">
+            Email delivery is not wired yet. For local demo, enable AUTH_RESET_DEBUG on the API
+            or ask whoever runs the server for a reset link.
+          </p>
+          {debugUrl ? (
+            <p>
+              Local debug link:{" "}
+              <Link to={debugUrl.replace(/^https?:\/\/[^/]+/, "") || "/reset-password"}>Open reset form</Link>
+            </p>
+          ) : null}
+          <p className="muted">
+            <Link to="/login">Back to sign in</Link>
+          </p>
+        </div>
+      ) : (
+        <form onSubmit={onSubmit} className="stack">
+          <div className="field">
+            <label htmlFor="forgot-email">Email</label>
+            <input
+              id="forgot-email"
+              name="email"
+              type="email"
+              required
+              autoComplete="email"
+              autoFocus
+            />
+          </div>
+          {error ? <p className="error">{error}</p> : null}
+          <button className="primary" type="submit">
+            Send reset link
+          </button>
+          <p className="muted">
+            <Link to="/login">Back to sign in</Link>
+          </p>
+        </form>
+      )}
+    </main>
+  )
+}
+
+export function ResetPasswordPage() {
+  const { client, user, ready } = useSession()
+  const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const token = (params.get("token") ?? "").trim()
+  const [error, setError] = useState<string | null>(null)
+  const [done, setDone] = useState(false)
+
+  if (!ready || !client) return <p className="sheet muted">Opening your space…</p>
+  if (user) return <Navigate to="/" replace />
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!client) return
+    const password = String(new FormData(event.currentTarget).get("password") ?? "")
+    setError(null)
+    try {
+      await client.resetPassword(token, password)
+      setDone(true)
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.detail : "Could not reset the password.")
+    }
+  }
+
+  return (
+    <main className="sheet auth-sheet">
+      <BrandLockup size="auth" />
+      <p className="auth-lede">Choose a new password.</p>
+      {!token ? (
+        <div className="stack">
+          <p className="error">This reset link is missing a token.</p>
+          <p className="muted">
+            <Link to="/forgot-password">Request a new link</Link>
+          </p>
+        </div>
+      ) : done ? (
+        <div className="stack">
+          <p>Password updated. You can sign in.</p>
+          <button className="primary" type="button" onClick={() => navigate("/login")}>
+            Sign in
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={onSubmit} className="stack">
+          <PasswordField
+            label="New password"
+            name="password"
+            required
+            minLength={8}
+            autoComplete="new-password"
+          />
+          {error ? <p className="error">{error}</p> : null}
+          <button className="primary" type="submit">
+            Update password
+          </button>
+          <p className="muted">
+            <Link to="/login">Back to sign in</Link>
+          </p>
+        </form>
+      )}
     </main>
   )
 }

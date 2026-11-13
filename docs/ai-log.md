@@ -367,3 +367,9 @@ Prompt: proceed Option 1 auth logo
 Centered auth mark + wordmark + lede; `.auth-sheet` uses min-height 100dvh + flex center so login/register sit in the viewport (outside `.shell`). Form labels stay left-aligned.
 
 Prompt: fix auth BrandLockup positioning (center lockup + panel)
+
+## 2026-11-13 - Forgot password
+
+Password reset was not in the MVP spec (only change-password-while-signed-in). Added contract-first POST /auth/forgot-password and POST /auth/reset-password with hashed single-use 1h tokens, rate limits, and generic responses. No SMTP: AUTH_RESET_DEBUG=1 returns reset_url for local/tests; production email send is leftover. Login has a Forgot password? link; forgot + reset pages in the UI.
+
+Prompt: theres no forget password — add forgot-password path (OpenAPI + token endpoints + UI; debug reset URL without mailer)
