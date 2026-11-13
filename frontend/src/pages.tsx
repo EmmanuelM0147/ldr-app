@@ -31,7 +31,7 @@ import {
   LoginForm,
   RegisterForm,
 } from "./components/widgets"
-import { formatDateEnGb, formatDay, formatWhen, localDate } from "./format"
+import { formatDateEnGb, formatDay, formatWhen, localDate, zonedDateTimeLocalToUtc } from "./format"
 import { partnerAccent } from "./partnerAccent"
 import { checkInStreak, DAILY_PROMPT, moodLabel } from "./mood"
 import { useSession } from "./session"
@@ -64,7 +64,6 @@ export function LoginPage() {
 export function RegisterPage() {
   const { client, user, ready, signIn } = useSession()
   const navigate = useNavigate()
-  const [error, setError] = useState<string | null>(null)
   if (!ready || !client) return <p className="sheet muted">Opening your space…</p>
   if (user) return <Navigate to="/" replace />
   return (
@@ -74,17 +73,11 @@ export function RegisterPage() {
       <RegisterForm
         onSubmit={async (values) => {
           if (!client) return
-          setError(null)
-          try {
-            const auth = await client.register(values)
-            await signIn(auth.access_token, auth.user)
-            navigate("/")
-          } catch (caught) {
-            setError(caught instanceof ApiError ? caught.detail : "Could not create the account.")
-          }
+          const auth = await client.register(values)
+          await signIn(auth.access_token, auth.user)
+          navigate("/")
         }}
       />
-      {error ? <p className="error">{error}</p> : null}
       <p className="muted">
         Already registered? <Link to="/login">Sign in</Link>
       </p>
@@ -627,6 +620,7 @@ export function CalendarPage() {
       </button>
       <BottomSheet open={sheetOpen} title="Add event" onClose={() => setSheetOpen(false)}>
         <EventForm
+          timeZone={user.timezone}
           onCreate={(input) => {
             void client
               ?.createEvent(input)
@@ -679,13 +673,14 @@ export function VisitsPage() {
   const members = couple.members
   const me = members.find((member) => member.user_id === user.id)
   const them = members.find((member) => member.user_id !== user.id)
+  const timeZone = user.timezone
 
   function addVisit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = event.currentTarget
     const data = new FormData(form)
-    const starts = new Date(String(data.get("starts_at"))).toISOString()
-    const ends = new Date(String(data.get("ends_at"))).toISOString()
+    const starts = zonedDateTimeLocalToUtc(String(data.get("starts_at") ?? ""), timeZone)
+    const ends = zonedDateTimeLocalToUtc(String(data.get("ends_at") ?? ""), timeZone)
     if (new Date(ends).getTime() <= new Date(starts).getTime()) {
       setError("End must be after the start.")
       return
@@ -837,7 +832,11 @@ export function CheckInsPage() {
   const mine = items.find((item) => item.user_id === user.id && item.local_date === today) ?? null
   const myDates = items.filter((item) => item.user_id === user.id).map((item) => item.local_date)
   const streak = checkInStreak(myDates, today)
-  const earlier = items.filter((item) => item.local_date !== today)
+  const earlier = items.filter((item) => {
+    const memberZone =
+      couple.members.find((member) => member.user_id === item.user_id)?.timezone ?? user.timezone
+    return item.local_date !== localDate(memberZone)
+  })
   return (
     <main className="sheet">
       <h1>Check-in</h1>
@@ -849,7 +848,7 @@ export function CheckInsPage() {
       <p className="streak" aria-label="Check-in streak">
         Your streak: <strong>{streak}</strong> {streak === 1 ? "day" : "days"}
       </p>
-      <PartnerTodayCards members={couple.members} items={items} today={today} />
+      <PartnerTodayCards members={couple.members} items={items} />
       <CheckInForm
         key={mine?.id ?? "new"}
         existing={mine}

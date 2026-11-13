@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react"
+import { ApiError } from "../api/errors"
 import { countdownParts, formatWhen, zonedLocalDateTimeToUtc } from "../format"
 import { MOOD_CHIPS } from "../mood"
 import { detectTimezone, isValidIanaTimezone } from "../timezones"
@@ -6,6 +7,13 @@ import type { Budget, CheckIn, CheckInWrite, Countdown, EventWrite, Mood } from 
 import { CURRENCY_OPTIONS } from "../visitHints"
 import { PasswordField } from "./PasswordField"
 import { TimezoneSelect } from "./TimezoneSelect"
+
+type RegisterFieldErrors = {
+  email?: string
+  password?: string
+  display_name?: string
+  timezone?: string
+}
 
 export function RegisterForm({
   onSubmit,
@@ -18,40 +26,87 @@ export function RegisterForm({
   }) => Promise<void>
 }) {
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<RegisterFieldErrors>({})
   const [timezone, setTimezone] = useState(() => detectTimezone())
+  const [passwordValue, setPasswordValue] = useState("")
+  const passwordLongEnough = passwordValue.length >= 8
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const data = new FormData(event.currentTarget)
     const password = String(data.get("password") ?? "")
     const zone = String(data.get("timezone") ?? timezone).trim() || "UTC"
+    const nextFields: RegisterFieldErrors = {}
     if (password.length < 8) {
-      setError("Password must be at least 8 characters.")
-      return
+      nextFields.password = "Password must be at least 8 characters."
     }
     if (!isValidIanaTimezone(zone)) {
-      setError("Enter a valid IANA timezone, such as Africa/Lagos.")
+      nextFields.timezone = "Enter a valid IANA timezone, such as Africa/Lagos."
+    }
+    if (Object.keys(nextFields).length > 0) {
+      setFieldErrors(nextFields)
+      setError(null)
       return
     }
+    setFieldErrors({})
     setError(null)
-    await onSubmit({
-      email: String(data.get("email") ?? ""),
-      password,
-      display_name: String(data.get("display_name") ?? ""),
-      timezone: zone,
-    })
+    try {
+      await onSubmit({
+        email: String(data.get("email") ?? ""),
+        password,
+        display_name: String(data.get("display_name") ?? ""),
+        timezone: zone,
+      })
+    } catch (caught) {
+      if (caught instanceof ApiError) {
+        if (caught.status === 409) {
+          setFieldErrors({ email: "That email is already registered." })
+          return
+        }
+        if (caught.status === 422 && /password/i.test(caught.detail)) {
+          setFieldErrors({ password: caught.detail })
+          return
+        }
+        setError(caught.detail)
+        return
+      }
+      setError(caught instanceof Error ? caught.message : "Could not create the account.")
+    }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="stack">
-      <Field label="Display name" name="display_name" required />
-      <Field label="Email" name="email" type="email" required />
-      <PasswordField label="Password" name="password" required autoComplete="new-password" />
+    <form onSubmit={(event) => void handleSubmit(event)} className="stack" noValidate>
+      <Field label="Display name" name="display_name" required error={fieldErrors.display_name} />
+      <Field label="Email" name="email" type="email" required autoComplete="email" error={fieldErrors.email} />
+      <PasswordField
+        label="Password"
+        name="password"
+        required
+        autoComplete="new-password"
+        minLength={8}
+        error={fieldErrors.password}
+        onChange={setPasswordValue}
+      />
+      <ul className="password-rules" aria-live="polite">
+        <li className={passwordLongEnough ? "ok" : undefined}>At least 8 characters</li>
+      </ul>
       <TimezoneSelect value={timezone} onChange={setTimezone} />
-      {error ? <p className="error">{error}</p> : null}
+      {fieldErrors.timezone ? (
+        <p className="error" role="alert">
+          {fieldErrors.timezone}
+        </p>
+      ) : null}
+      {error ? (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      ) : null}
       <button className="primary" type="submit">
         Create account
       </button>
+      <p className="muted hint privacy-note">
+        We only use your email to sign you in. Your couple space stays private to the two of you.
+      </p>
     </form>
   )
 }
@@ -336,6 +391,9 @@ function Field({
   defaultValue,
   step,
   min,
+  autoComplete,
+  error,
+  autoFocus,
 }: {
   label: string
   name: string
@@ -344,11 +402,29 @@ function Field({
   defaultValue?: string
   step?: string
   min?: string
+  autoComplete?: string
+  error?: string
+  autoFocus?: boolean
 }) {
   return (
     <label className="field">
       <span>{label}</span>
-      <input name={name} type={type} required={required} defaultValue={defaultValue} step={step} min={min} />
+      <input
+        name={name}
+        type={type}
+        required={required}
+        defaultValue={defaultValue}
+        step={step}
+        min={min}
+        autoComplete={autoComplete}
+        autoFocus={autoFocus}
+        aria-invalid={error ? true : undefined}
+      />
+      {error ? (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      ) : null}
     </label>
   )
 }

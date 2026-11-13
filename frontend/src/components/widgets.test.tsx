@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { ApiError } from "../api/errors"
 import { createMockClient } from "../api/mockClient"
 import type { CheckIn, Countdown, Memory } from "../types"
 import { MemoryTimeline } from "./MemoryTimeline"
@@ -10,12 +11,27 @@ describe("forms", () => {
     const user = userEvent.setup()
     const onSubmit = vi.fn()
     render(<RegisterForm onSubmit={onSubmit} />)
+    expect(screen.getByText("At least 8 characters")).toBeInTheDocument()
+    expect(
+      screen.getByText(/We only use your email to sign you in/i),
+    ).toBeInTheDocument()
     await user.type(screen.getByLabelText("Display name"), "Ada")
     await user.type(screen.getByLabelText("Email"), "ada@example.com")
-    await user.type(screen.getByLabelText("Password"), "short")
+    await user.type(screen.getByLabelText("Password", { exact: true }), "short")
     await user.click(screen.getByRole("button", { name: "Create account" }))
-    expect(screen.getByText("Password must be at least 8 characters.")).toBeInTheDocument()
+    expect(screen.getByRole("alert")).toHaveTextContent("Password must be at least 8 characters.")
     expect(onSubmit).not.toHaveBeenCalled()
+  })
+
+  it("shows a field error when the email is already registered", async () => {
+    const user = userEvent.setup()
+    const onSubmit = vi.fn().mockRejectedValue(new ApiError(409, "An account with that email already exists."))
+    render(<RegisterForm onSubmit={onSubmit} />)
+    await user.type(screen.getByLabelText("Display name"), "Ada")
+    await user.type(screen.getByLabelText("Email"), "ada@example.com")
+    await user.type(screen.getByLabelText("Password", { exact: true }), "password123")
+    await user.click(screen.getByRole("button", { name: "Create account" }))
+    expect(screen.getByRole("alert")).toHaveTextContent("That email is already registered.")
   })
 
   it("preselects the detected IANA timezone on register", async () => {

@@ -677,6 +677,23 @@ input, textarea, select {
 
 .hint { margin: 0; font-size: var(--text-sm); }
 
+.password-rules {
+  list-style: none;
+  margin: calc(-1 * var(--space-2)) 0 0;
+  padding: 0;
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.password-rules .ok {
+  color: var(--color-partner-b);
+}
+
+.privacy-note {
+  margin: 0;
+  text-align: center;
+}
+
 .visit-card-top {
   display: flex;
   justify-content: space-between;
@@ -1068,7 +1085,8 @@ img.avatar-photo {
 }
 
 .shell:has(.tabs) .zone {
-  margin-bottom: var(--space-3);
+  /* Same clearance as .sheet so the timezone line is not under the fixed nav. */
+  margin-bottom: var(--nav-clearance);
 }
 
 .partner-a { color: var(--color-partner-a); }

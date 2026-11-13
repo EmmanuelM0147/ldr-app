@@ -277,3 +277,10 @@ Auto-detect IANA timezone via Intl, searchable timezone select on register (show
 
 Prompt: Auth polish. One commit each... 1. Register: auto-detect timezone via Intl...
 
+
+## 2026-11-13 — Auth polish 2: register field errors
+
+Inline password rule, field-level email/password errors, privacy note under Create account.
+
+Prompt: Auth polish item 2
+

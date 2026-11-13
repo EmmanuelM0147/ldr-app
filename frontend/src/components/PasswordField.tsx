@@ -7,15 +7,20 @@ export function PasswordField({
   required = false,
   minLength,
   autoComplete,
+  onChange,
+  error,
 }: {
   label: string
   name: string
   required?: boolean
   minLength?: number
   autoComplete?: string
+  onChange?: (value: string) => void
+  error?: string
 }) {
   const [visible, setVisible] = useState(false)
   const inputId = useId()
+  const errorId = useId()
   const toggleLabel = visible ? "Hide password" : "Show password"
 
   return (
@@ -29,6 +34,9 @@ export function PasswordField({
           required={required}
           minLength={minLength}
           autoComplete={autoComplete}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
+          onChange={(event) => onChange?.(event.target.value)}
         />
         <button
           type="button"
@@ -40,6 +48,11 @@ export function PasswordField({
           {visible ? <IconEyeOff /> : <IconEye />}
         </button>
       </div>
+      {error ? (
+        <p id={errorId} className="error" role="alert">
+          {error}
+        </p>
+      ) : null}
     </div>
   )
 }
