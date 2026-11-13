@@ -31,7 +31,7 @@ REQUIRED: dict[str, set[str]] = {
     "/memories/{memory_id}/media": {"get"},
     "/presence": {"get", "put"},
     "/ws": {"get"},
-    "/ideas": {"post"},
+    "/ai/date-ideas": {"post"},
 }
 
 

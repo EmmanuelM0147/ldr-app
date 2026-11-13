@@ -832,28 +832,31 @@ paths:
       responses:
         "101":
           description: Switching protocols
-  /ideas:
+  /ai/date-ideas:
     post:
       tags: [ai]
-      operationId: createDateNightIdea
-      summary: Suggest a date-night idea
+      operationId: createDateIdeas
+      summary: Suggest date-night ideas
       description: >
-        Requires the couple's `ai_opt_in` to be true. The model API key comes from
-        the environment. Prompt and reply text are never written to logs.
-        No personal couple content is sent unless the optional vibe field is set.
+        Requires the couple's `ai_enabled` to be true. Uses Google Gemini with
+        GEMINI_API_KEY and GEMINI_MODEL from the server environment only.
+        Only the form fields (duration, budget, mode, optional mood) are sent.
+        Prompt and reply text are never written to logs. Limited to 10 requests
+        per couple per UTC day. On model failure the API returns a friendly
+        fallback idea list (200), not a 500.
       requestBody:
-        required: false
+        required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/DateNightIdeaRequest"
+              $ref: "#/components/schemas/DateIdeasRequest"
       responses:
         "200":
-          description: One date-night suggestion
+          description: Three to five date ideas (or a safe fallback list)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DateNightIdea"
+                $ref: "#/components/schemas/DateIdeas"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -862,6 +865,12 @@ paths:
           $ref: "#/components/responses/Missing"
         "422":
           $ref: "#/components/responses/Invalid"
+        "429":
+          description: Couple daily AI request limit reached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "503":
           description: Model provider is not configured
           content:
@@ -1031,8 +1040,9 @@ components:
       type: object
       additionalProperties: false
       properties:
-        ai_opt_in:
+        ai_enabled:
           type: boolean
+          description: Couple-level AI opt-in. Off by default. Either partner may change it.
     CoupleDelete:
       type: object
       additionalProperties: false
@@ -1042,23 +1052,58 @@ components:
           type: string
           description: Must be exactly DELETE (typed confirmation; not UI-only).
           enum: [DELETE]
-    DateNightIdeaRequest:
+    DateIdeasRequest:
       type: object
       additionalProperties: false
+      required: [duration_minutes, budget, mode]
       properties:
-        vibe:
+        duration_minutes:
+          type: integer
+          minimum: 15
+          maximum: 720
+          description: How long the date can last, in minutes. Not logged.
+        budget:
+          type: string
+          minLength: 1
+          maxLength: 80
+          description: Budget as free text (for example "5000 NGN" or "low"). Not logged.
+        mode:
+          type: string
+          enum: [together, apart]
+          description: In-person together or remote while apart.
+        mood:
           type: string
           maxLength: 80
-          description: Optional short mood for the suggestion. Not logged.
-    DateNightIdea:
+          description: Optional short mood. Treated as data, never as instructions. Not logged.
+    DateIdea:
       type: object
       additionalProperties: false
-      required: [idea]
+      required: [title, description, est_cost]
       properties:
-        idea:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+        description:
           type: string
           minLength: 1
           maxLength: 1000
+        est_cost:
+          type: string
+          minLength: 1
+          maxLength: 80
+          description: Estimated cost as short text (for example "₦3,000" or "free").
+    DateIdeas:
+      type: object
+      additionalProperties: false
+      required: [ideas]
+      properties:
+        ideas:
+          type: array
+          minItems: 1
+          maxItems: 5
+          items:
+            $ref: "#/components/schemas/DateIdea"
     LoginRequest:
       type: object
       additionalProperties: false
@@ -1148,13 +1193,14 @@ components:
     Couple:
       type: object
       additionalProperties: false
-      required: [id, ai_opt_in, created_at, members]
+      required: [id, ai_enabled, created_at, members]
       properties:
         id:
           type: string
           format: uuid
-        ai_opt_in:
+        ai_enabled:
           type: boolean
+          description: Couple-level AI opt-in. Default false.
         created_at:
           type: string
           format: date-time

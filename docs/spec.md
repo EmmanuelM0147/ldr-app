@@ -56,7 +56,7 @@ Acceptance criteria:
 - I can change my password with the current password plus a new password (min 8 characters).
 - Email is shown but not changed here.
 - My partner in the same couple can see my profile photo; other couples cannot.
-- Either member can turn couple AI opt-in on or off.
+- Either member can turn couple AI (`ai_enabled`) on or off.
 - Either member can delete the couple space from settings with typed confirmation.
 
 ### Delete the couple space
@@ -139,14 +139,15 @@ Acceptance criteria:
 
 ### Date night ideas
 
-As a couple, we turn on ideas and ask for a date-night suggestion.
+As a couple, we turn on AI and ask for date-night ideas.
 
 Acceptance criteria:
 
-- AI is off until either member opts the couple in. Either member can turn it off.
-- The ideas endpoint returns 403 and makes no outbound model call when opt-in is false.
-- The model API key comes from the environment only.
-- Request and response text are not written to logs.
+- AI is off (`ai_enabled` false) until either member opts the couple in. Either member can turn it off.
+- `POST /ai/date-ideas` returns 403 and makes no outbound model call when AI is off.
+- Request body: duration, budget, mode (`together` or `apart`), optional mood. Response: 3–5 ideas with title, description, and estimated cost.
+- The Gemini API key and model come from `GEMINI_API_KEY` and `GEMINI_MODEL` on the server only.
+- Prompt and response text are not written to logs (status and latency only). Per-couple limit of 10 requests per UTC day.
 
 ## Non-goals
 
@@ -160,7 +161,7 @@ Acceptance criteria:
 All ids are UUIDs. All timestamps are UTC.
 
 - **User.** `email` unique, `password_hash`, `display_name`, `timezone`, `created_at`.
-- **Couple.** `ai_opt_in` default false, `created_at`.
+- **Couple.** `ai_enabled` default false, `created_at`.
 - **Membership.** `couple_id`, `user_id`, `joined_at`. Unique on `user_id`. At most two rows per couple.
 - **Invite.** `couple_id`, `code_hash`, `created_by`, `expires_at`, `used_at` nullable, `created_at`.
 - **Event.** `couple_id`, `created_by`, `title`, `starts_at`, `ends_at` nullable, `location` nullable, `notes` nullable, `created_at`, `updated_at`.
@@ -176,5 +177,5 @@ All ids are UUIDs. All timestamps are UTC.
 - Passwords are hashed. Invite codes are hashed. JWTs expire in 60 minutes.
 - Invite creation and failed joins are rate-limited.
 - Personal content (notes, memories, visit text, model prompts and replies) is not logged.
-- No model call runs unless that couple's `ai_opt_in` is true.
+- No model call runs unless that couple's `ai_enabled` is true.
 - Deleting the couple space deletes all couple-owned data. Both user accounts remain.
