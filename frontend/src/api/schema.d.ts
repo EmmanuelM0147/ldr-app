@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** API root */
+        get: operations["getRoot"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -446,8 +463,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * WebSocket for presence and check-in changes
-         * @description After the upgrade, the first text frame is JSON `{"token":"<access token>"}`. The server closes the socket with code 1008 when that token is missing or invalid, or when the caller has no couple space. Later frames from the server are LiveEvent values, sent only to sockets in that couple. When the caller's last socket for the couple disconnects, their `free_to_talk` flag is cleared and the couple is notified. When either member deletes the space, connected peers receive `{"type":"couple_gone"}` before memberships are removed.
+         * WebSocket for couple live updates
+         * @description After the upgrade, the first text frame is JSON `{"token":"<access token>"}`. The server closes the socket with code 1008 when that token is missing or invalid, or when the caller has no couple space. Later frames from the server are LiveEvent values, sent only to sockets in that couple. When the caller's last socket for the couple disconnects, their `free_to_talk` flag is cleared and the couple is notified. When a second member joins via invite code, connected peers receive `partner_joined` with the updated couple. When either member deletes the space, connected peers receive `{"type":"couple_gone"}` before memberships are removed.
          */
         get: operations["coupleEvents"];
         put?: never;
@@ -794,6 +811,13 @@ export interface components {
             check_in: components["schemas"]["CheckIn"];
         } | {
             /**
+             * @description A second member joined the space via invite code.
+             * @enum {string}
+             */
+            type: "partner_joined";
+            couple: components["schemas"]["Couple"];
+        } | {
+            /**
              * @description The couple space was deleted; clients should clear local couple state.
              * @enum {string}
              */
@@ -877,6 +901,30 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getRoot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description API is reachable; points at docs and health */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        service: string;
+                        docs: string;
+                        health: string;
+                    };
+                };
+            };
+        };
+    };
     getHealth: {
         parameters: {
             query?: never;

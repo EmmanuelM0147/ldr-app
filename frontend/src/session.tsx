@@ -13,12 +13,14 @@ type SessionValue = {
   couple: Couple | null
   presence: Presence[]
   liveTick: number
+  partnerJoinedNotice: string | null
   ready: boolean
   signIn: (token: string, user: User) => Promise<void>
   signOut: () => void
   refreshCouple: () => Promise<void>
   refreshUser: () => Promise<void>
   updatePresence: (freeToTalk: boolean) => Promise<void>
+  clearPartnerJoinedNotice: () => void
 }
 
 const SessionContext = createContext<SessionValue | null>(null)
@@ -29,6 +31,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [couple, setCouple] = useState<Couple | null>(null)
   const [presence, setPresence] = useState<Presence[]>([])
   const [liveTick, setLiveTick] = useState(0)
+  const [partnerJoinedNotice, setPartnerJoinedNotice] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
@@ -81,10 +84,24 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       if (!ignore) setPresence([])
     })
     const known = new Set(couple.members.map((member) => member.user_id))
+    const viewerId = user?.id
     const stop = client.subscribe((event) => {
       if (event.type === "couple_gone") {
         setCouple(null)
         setPresence([])
+        setPartnerJoinedNotice(null)
+        return
+      }
+      if (event.type === "partner_joined") {
+        setCouple(event.couple)
+        const joiner = event.couple.members.find((member) => member.user_id !== viewerId)
+        setPartnerJoinedNotice(
+          joiner ? `${joiner.display_name} joined your space.` : "Your partner joined your space.",
+        )
+        void client.getPresence().then((list) => {
+          if (!ignore) setPresence(list.members)
+        }).catch(() => undefined)
+        setLiveTick((value) => value + 1)
         return
       }
       if (event.type === "presence") {
@@ -99,7 +116,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       ignore = true
       stop()
     }
-  }, [client, couple])
+  }, [client, couple, user?.id])
 
   async function signIn(token: string, nextUser: User) {
     if (!client) return
@@ -120,6 +137,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setUser(null)
     setCouple(null)
     setPresence([])
+    setPartnerJoinedNotice(null)
+  }
+
+  function clearPartnerJoinedNotice() {
+    setPartnerJoinedNotice(null)
   }
 
   async function updatePresence(freeToTalk: boolean) {
@@ -152,12 +174,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         couple,
         presence,
         liveTick,
+        partnerJoinedNotice,
         ready,
         signIn,
         signOut,
         refreshCouple,
         refreshUser,
         updatePresence,
+        clearPartnerJoinedNotice,
       }}
     >
       {children}

@@ -156,7 +156,7 @@ def create_invite(
 
 
 @router.post("/couples/join", response_model=CoupleOut, operation_id="joinCouple")
-def join_couple(
+async def join_couple(
     body: JoinRequest,
     request: Request,
     user: User = Depends(get_current_user),
@@ -197,15 +197,21 @@ def join_couple(
         _record_failure(db, ip, now)
         raise HTTPException(status_code=400, detail="That invite code is not valid.")
 
-    db.add(Membership(couple_id=invite.couple_id, user_id=user.id, seat=2, joined_at=now))
-    db.add(Presence(user_id=user.id, couple_id=invite.couple_id, free_to_talk=False, updated_at=now))
+    couple_id = invite.couple_id
+    db.add(Membership(couple_id=couple_id, user_id=user.id, seat=2, joined_at=now))
+    db.add(Presence(user_id=user.id, couple_id=couple_id, free_to_talk=False, updated_at=now))
     try:
         db.commit()
     except IntegrityError as exc:
         db.rollback()
         # Seat 2 already taken (concurrent join) or user already in a couple.
         raise HTTPException(status_code=409, detail="This space already has two people.") from exc
-    return couple_out(_load_couple(db, invite.couple_id))
+    saved = couple_out(_load_couple(db, couple_id))
+    await hub.publish(
+        couple_id,
+        {"type": "partner_joined", "couple": saved.model_dump(mode="json")},
+    )
+    return saved
 
 
 def _record_failure(db: Session, ip: str, now: object) -> None:

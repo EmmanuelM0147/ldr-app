@@ -217,6 +217,12 @@ Hardened `e2e/pairing.spec.ts` (Arrives/Leaves, traveler, exact Check-in heading
 
 Prompt: proceed (backlog task 23)
 
+## 2026-11-13 — README clarity pass
+
+Rewrote `README.md`: quick-start first, scannable features/architecture/privacy, accurate run/test commands, links to demo/deploy/ai-log. Same facts as before; less wall-of-text.
+
+Prompt: update the readme and make it clearer
+
 ## 2026-11-12 — Profile photo upload
 
 Added `POST/DELETE /me/avatar` and couple-scoped `GET /users/{id}/avatar`. Settings can upload or remove a JPEG/PNG/WebP photo; Home and the avatar menu show it. Cross-couple fetch returns 404.
@@ -420,3 +426,9 @@ Prompt: Vercel register Failed to fetch + logs with invalid connection option "s
 After URL fix, register returned `UndefinedTable register_failures` (DB reachable, migrations never run). Cold-start lifespan runs `alembic upgrade head` for non-SQLite; alembic env uses NullPool + Supabase ssl/prepare_threshold connect_args. 503 detail includes a short SQLAlchemy hint.
 
 Prompt: continue from Vercel register failure / logs; get hosted register working.
+
+## 2026-11-13 - Partner joined live notice
+
+Contract: `LiveEvent` variant `partner_joined` with updated `Couple`. Join publishes on the couple hub. Session refreshes members, shows dismissible in-shell status (“{name} joined your space.”). Mock bus is couple-scoped across shared-db clients. No push/email.
+
+Prompt: proceed (in-app notice when partner joins via invite code).

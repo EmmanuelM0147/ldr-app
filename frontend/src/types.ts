@@ -190,6 +190,7 @@ export type PresenceList = {
 export type LiveEvent =
   | { type: "presence"; members: Presence[] }
   | { type: "check_in"; check_in: CheckIn }
+  | { type: "partner_joined"; couple: Couple }
   | { type: "couple_gone" }
 
 export type RegisterRequest = {

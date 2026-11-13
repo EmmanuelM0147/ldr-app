@@ -134,8 +134,9 @@ Acceptance criteria:
 
 - Presence is a boolean, `free_to_talk`, with `updated_at` in UTC.
 - Either member can set their own flag and read both flags.
-- A WebSocket authenticated with the same JWT pushes presence changes and new or updated check-ins to the other member.
+- A WebSocket authenticated with the same JWT pushes presence changes, new or updated check-ins, and `partner_joined` when the second member joins via invite code.
 - A socket without a valid JWT is closed. Events are never sent to another couple.
+- Push notifications are out of scope; join feedback is in-app via the live socket (and UI refresh).
 
 ### Date night ideas
 

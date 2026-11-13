@@ -103,6 +103,37 @@ def test_stale_free_to_talk_is_cleared_by_ttl(client, db_factory) -> None:
     assert {item["user_id"]: item["free_to_talk"] for item in listed["members"]}[ada_id] is False
 
 
+def test_partner_joined_is_pushed_only_inside_the_couple(client) -> None:
+    ada = register(client, "ada@example.com", name="Ada")
+    assert client.post("/couples", headers=auth(ada)).status_code == 201
+    invite = client.post("/couples/current/invites", headers=auth(ada))
+    assert invite.status_code == 201
+    bello = register(client, "bello@example.com", name="Bello")
+    chi = register(client, "chi@example.com", name="Chi")
+    assert client.post("/couples", headers=auth(chi)).status_code == 201
+    bello_id = client.get("/me", headers=auth(bello)).json()["id"]
+
+    with client.websocket_connect("/ws") as waiting, client.websocket_connect("/ws") as outsider:
+        waiting.send_text(json.dumps({"token": ada}))
+        outsider.send_text(json.dumps({"token": chi}))
+        joined = client.post(
+            "/couples/join",
+            json={"code": invite.json()["code"]},
+            headers=auth(bello),
+        )
+        assert joined.status_code == 200
+        live = waiting.receive_json()
+        assert live["type"] == "partner_joined"
+        assert len(live["couple"]["members"]) == 2
+        assert any(item["user_id"] == bello_id for item in live["couple"]["members"])
+        # Outsider only sees their own couple traffic; Ada's join must not appear.
+        other = client.put("/presence", json={"free_to_talk": True}, headers=auth(chi))
+        assert other.status_code == 200
+        leaked = outsider.receive_json()
+        assert leaked["type"] == "presence"
+        assert bello_id not in {item["user_id"] for item in leaked["members"]}
+
+
 def test_socket_stays_inside_the_couple(client) -> None:
     ada = register(client, "ada@example.com", name="Ada")
     bello = _couple(client, ada, "bello@example.com", "Bello")

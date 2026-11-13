@@ -78,4 +78,30 @@ describe("mock client", () => {
     stop()
     expect(events).toContain("couple_gone")
   })
+
+  it("emits partner_joined when the invite is used", async () => {
+    const db = emptyDatabase()
+    const owner = createMockClient({ db })
+    const partner = createMockClient({ db })
+    await owner.register(ada)
+    await owner.createCouple()
+    const invite = await owner.createInvite()
+    await partner.register({
+      email: "bello@example.com",
+      password: "password123",
+      display_name: "Bello",
+      timezone: "UTC",
+    })
+    const events: Array<{ type: string; members?: number }> = []
+    const stop = owner.subscribe((event) => {
+      if (event.type === "partner_joined") {
+        events.push({ type: event.type, members: event.couple.members.length })
+      } else {
+        events.push({ type: event.type })
+      }
+    })
+    await partner.joinCouple(invite.code)
+    stop()
+    expect(events).toContainEqual({ type: "partner_joined", members: 2 })
+  })
 })

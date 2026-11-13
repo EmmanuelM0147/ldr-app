@@ -236,7 +236,7 @@ export function RequireAuth() {
 }
 
 export function Shell() {
-  const { client, user, couple, signOut } = useSession()
+  const { client, user, couple, signOut, partnerJoinedNotice, clearPartnerJoinedNotice } = useSession()
   const partner = couple?.members.find((member) => member.user_id !== user?.id)
   return (
     <div className="shell">
@@ -260,6 +260,14 @@ export function Shell() {
           </p>
         ) : null}
       </header>
+      {partnerJoinedNotice ? (
+        <div className="join-notice" role="status">
+          <p>{partnerJoinedNotice}</p>
+          <button type="button" className="text-button" onClick={clearPartnerJoinedNotice}>
+            Dismiss
+          </button>
+        </div>
+      ) : null}
       <Outlet />
       <footer className="zone">Times shown in {user?.timezone ?? "UTC"}</footer>
       {couple ? <BottomNav /> : null}

@@ -129,14 +129,52 @@ function clone<T>(value: T): T {
   return structuredClone(value)
 }
 
+type LivePeer = {
+  dispatch: (event: LiveEvent) => void
+  userId: () => string | null
+}
+
+const livePeers = new WeakMap<object, Set<LivePeer>>()
+
+function peersFor(db: object): Set<LivePeer> {
+  let peers = livePeers.get(db)
+  if (!peers) {
+    peers = new Set()
+    livePeers.set(db, peers)
+  }
+  return peers
+}
+
 export function createMockClient(options: Options = {}) {
   const now = options.now ?? (() => new Date())
   const db = options.db ?? emptyDatabase()
   let token: string | null = null
   const listeners = new Set<(event: LiveEvent) => void>()
 
-  const emit = (event: LiveEvent) => {
+  const emitLocal = (event: LiveEvent) => {
     for (const listener of listeners) listener(event)
+  }
+
+  const peer: LivePeer = {
+    dispatch: emitLocal,
+    userId: () => {
+      const session = db.sessions.find((item) => item.token === token)
+      return session?.user_id ?? null
+    },
+  }
+  peersFor(db).add(peer)
+
+  const emit = (event: LiveEvent, coupleId?: string) => {
+    emitLocal(event)
+    if (!coupleId) return
+    const couple = db.couples.find((item) => item.id === coupleId)
+    if (!couple) return
+    const memberIds = new Set(couple.members.map((member) => member.user_id))
+    for (const other of peersFor(db)) {
+      if (other === peer) continue
+      const userId = other.userId()
+      if (userId && memberIds.has(userId)) other.dispatch(event)
+    }
   }
 
   const persist = () => {
@@ -353,7 +391,7 @@ export function createMockClient(options: Options = {}) {
     async deleteCurrentCouple(): Promise<void> {
       const couple = requireCouple()
       const id = couple.id
-      emit({ type: "couple_gone" })
+      emit({ type: "couple_gone" }, id)
       db.couples = db.couples.filter((item) => item.id !== id)
       db.invites = db.invites.filter((item) => item.couple_id !== id)
       db.events = db.events.filter((item) => item.couple_id !== id)
@@ -410,7 +448,9 @@ export function createMockClient(options: Options = {}) {
       couple.members.push(memberFrom(user, now))
       db.presence.push({ user_id: user.id, free_to_talk: false, updated_at: now().toISOString() })
       persist()
-      return clone(couple)
+      const updated = clone(couple)
+      emit({ type: "partner_joined", couple: updated }, couple.id)
+      return updated
     },
 
     async listEvents(): Promise<EventItem[]> {
@@ -564,7 +604,7 @@ export function createMockClient(options: Options = {}) {
         existing.note = note
         existing.updated_at = stamp
         persist()
-        emit({ type: "check_in", check_in: clone(existing) })
+        emit({ type: "check_in", check_in: clone(existing) }, couple.id)
         return clone(existing)
       }
       const created: CheckIn = {
@@ -579,7 +619,7 @@ export function createMockClient(options: Options = {}) {
       }
       db.checkIns.push(created)
       persist()
-      emit({ type: "check_in", check_in: clone(created) })
+      emit({ type: "check_in", check_in: clone(created) }, couple.id)
       return clone(created)
     },
 
@@ -645,7 +685,7 @@ export function createMockClient(options: Options = {}) {
 
     async setPresence(freeToTalk: boolean) {
       const user = currentUser()
-      requireCouple()
+      const couple = requireCouple()
       const stamp = now().toISOString()
       const row = db.presence.find((item) => item.user_id === user.id)
       if (row) {
@@ -656,7 +696,7 @@ export function createMockClient(options: Options = {}) {
       }
       persist()
       const listed = await this.getPresence()
-      emit({ type: "presence", members: listed.members })
+      emit({ type: "presence", members: listed.members }, couple.id)
       return listed
     },
 

@@ -129,3 +129,9 @@ Done already: repo layout, Cursor rules, `GET /health`, draft Compose file.
 - [x] 26. Forgot / reset password (token flow; email delivery deferred).
   - Acceptance: `POST /auth/forgot-password` always returns a generic 200; `POST /auth/reset-password` accepts a single-use expiring token. Rate-limited. `AUTH_RESET_DEBUG=1` may return `reset_url` for local/tests. Login links to forgot + reset pages.
   - Tests: forgot generic/no enumeration, debug URL, reset + reuse denied, rate limit. SMTP not required.
+
+## Live join feedback
+
+- [x] 27. In-app notice when partner joins via invite (WebSocket `partner_joined`).
+  - Acceptance: after a successful join, sockets in that couple receive `partner_joined` with the updated couple. Waiting partner UI refreshes members and shows a short status notice. No push/email. Cross-couple sockets do not receive it.
+  - Tests: WS test for join broadcast + outsider denial; mock client emits; frontend handles the event.

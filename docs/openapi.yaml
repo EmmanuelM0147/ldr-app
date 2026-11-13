@@ -840,7 +840,7 @@ paths:
     get:
       tags: [presence]
       operationId: coupleEvents
-      summary: WebSocket for presence and check-in changes
+      summary: WebSocket for couple live updates
       description: >
         After the upgrade, the first text frame is JSON `{"token":"<access token>"}`.
         The server closes the socket with code 1008 when that token is missing
@@ -848,6 +848,8 @@ paths:
         the server are LiveEvent values, sent only to sockets in that couple.
         When the caller's last socket for the couple disconnects, their
         `free_to_talk` flag is cleared and the couple is notified.
+        When a second member joins via invite code, connected peers receive
+        `partner_joined` with the updated couple.
         When either member deletes the space, connected peers receive
         `{"type":"couple_gone"}` before memberships are removed.
       responses:
@@ -1654,6 +1656,16 @@ components:
               enum: [check_in]
             check_in:
               $ref: "#/components/schemas/CheckIn"
+        - type: object
+          additionalProperties: false
+          required: [type, couple]
+          properties:
+            type:
+              type: string
+              enum: [partner_joined]
+              description: A second member joined the space via invite code.
+            couple:
+              $ref: "#/components/schemas/Couple"
         - type: object
           additionalProperties: false
           required: [type]
