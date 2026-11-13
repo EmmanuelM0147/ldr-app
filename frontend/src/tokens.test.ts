@@ -58,8 +58,23 @@ describe("design tokens", () => {
     expect(css).toContain('[data-theme="light"]')
   })
 
-  it("keeps secondary text at WCAG AA against the paper background", () => {
-    expect(contrast("#5a5046", "#f3ecdf")).toBeGreaterThanOrEqual(4.5)
-    expect(contrast("#c4b5a4", "#1a1511")).toBeGreaterThanOrEqual(4.5)
+  it("aliases text and elevated tokens to ink/muted/bg-elevated", () => {
+    expect(css).toContain("--color-text: var(--color-ink)")
+    expect(css).toContain("--color-text-muted: var(--color-muted)")
+    expect(css).toContain("--color-elevated: var(--color-bg-elevated)")
+    expect(css).toContain("--color-partner-a-ink")
+  })
+
+  it("keeps secondary text at WCAG AA against paper and elevated surfaces", () => {
+    expect(contrast("#52483f", "#f3ecdf")).toBeGreaterThanOrEqual(4.5)
+    expect(contrast("#52483f", "#fffaf3")).toBeGreaterThanOrEqual(4.5)
+    expect(contrast("#52483f", "#ebe2d3")).toBeGreaterThanOrEqual(4.5)
+    expect(contrast("#d0c3b4", "#1a1511")).toBeGreaterThanOrEqual(4.5)
+    expect(contrast("#d0c3b4", "#241c16")).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it("keeps partner-a ink readable on soft terracotta chips", () => {
+    // Approximate soft chip: 14% partner-a over elevated cream.
+    expect(contrast("#8a3424", "#f5e0d7")).toBeGreaterThanOrEqual(4.5)
   })
 })

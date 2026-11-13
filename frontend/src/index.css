@@ -434,7 +434,7 @@ input, textarea, select {
 
 .partner-avatar.partner-a {
   background: var(--color-partner-a-soft);
-  color: var(--color-partner-a);
+  color: var(--color-partner-a-ink);
 }
 
 .partner-avatar.partner-b {
@@ -695,7 +695,7 @@ input, textarea, select {
 
 .chip-soon {
   background: var(--color-partner-a-soft);
-  color: var(--color-partner-a);
+  color: var(--color-partner-a-ink);
 }
 
 .chip-muted {
@@ -729,7 +729,7 @@ input, textarea, select {
   padding: var(--space-4);
   border: 2px dashed color-mix(in srgb, var(--color-ink) 28%, transparent);
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--color-elevated) 80%, var(--color-bg));
+  background: color-mix(in srgb, var(--color-bg-elevated) 80%, var(--color-bg));
   cursor: pointer;
   text-align: center;
 }
@@ -973,7 +973,7 @@ a.button-link {
   align-items: center;
   justify-content: center;
   background: var(--color-partner-a-soft);
-  color: var(--color-partner-a);
+  color: var(--color-partner-a-ink);
   font-family: var(--font-serif);
   font-size: var(--text-lg);
   overflow: hidden;

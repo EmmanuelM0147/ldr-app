@@ -6,8 +6,8 @@
   --color-bg-elevated: #fffaf3;
   --color-bg-muted: #ebe2d3;
   --color-ink: #241910;
-  /* Secondary text: ≥4.5:1 on --color-bg (WCAG AA) */
-  --color-muted: #5a5046;
+  /* Secondary text: ≥4.5:1 on --color-bg / elevated / muted surfaces (WCAG AA) */
+  --color-muted: #52483f;
   --color-line: #d9cbb8;
   --color-focus: #8a3424;
 
@@ -15,6 +15,8 @@
   --color-accent: #b6402a;
   --color-accent-soft: rgba(182, 64, 42, 0.12);
   --color-partner-a: #b6402a;
+  /* Text on partner-a soft chips (≥4.5:1); brand fill stays --color-partner-a */
+  --color-partner-a-ink: #8a3424;
   --color-partner-a-soft: rgba(182, 64, 42, 0.14);
   --color-partner-b: #1d5c4a;
   --color-partner-b-soft: rgba(29, 92, 74, 0.14);
@@ -22,7 +24,10 @@
   --color-danger: #9b2c1a;
   --color-on-accent: #fffaf3;
 
-  /* Legacy aliases used by existing screens */
+  /* Legacy / compatibility aliases */
+  --color-text: var(--color-ink);
+  --color-text-muted: var(--color-muted);
+  --color-elevated: var(--color-bg-elevated);
   --paper: var(--color-bg);
   --ink: var(--color-ink);
   --muted: var(--color-muted);
@@ -92,12 +97,13 @@
     --color-bg-elevated: #241c16;
     --color-bg-muted: #2d241c;
     --color-ink: #f3ecdf;
-    --color-muted: #c4b5a4;
+    --color-muted: #d0c3b4;
     --color-line: #3d3228;
     --color-focus: #e08a74;
     --color-accent: #d55a42;
     --color-accent-soft: rgba(213, 90, 66, 0.18);
     --color-partner-a: #d55a42;
+    --color-partner-a-ink: #f0a090;
     --color-partner-a-soft: rgba(213, 90, 66, 0.2);
     --color-partner-b: #4fa88a;
     --color-partner-b-soft: rgba(79, 168, 138, 0.2);
@@ -116,12 +122,13 @@
   --color-bg-elevated: #fffaf3;
   --color-bg-muted: #ebe2d3;
   --color-ink: #241910;
-  --color-muted: #5a5046;
+  --color-muted: #52483f;
   --color-line: #d9cbb8;
   --color-focus: #8a3424;
   --color-accent: #b6402a;
   --color-accent-soft: rgba(182, 64, 42, 0.12);
   --color-partner-a: #b6402a;
+  --color-partner-a-ink: #8a3424;
   --color-partner-a-soft: rgba(182, 64, 42, 0.14);
   --color-partner-b: #1d5c4a;
   --color-partner-b-soft: rgba(29, 92, 74, 0.14);
@@ -139,12 +146,13 @@
   --color-bg-elevated: #241c16;
   --color-bg-muted: #2d241c;
   --color-ink: #f3ecdf;
-  --color-muted: #c4b5a4;
+  --color-muted: #d0c3b4;
   --color-line: #3d3228;
   --color-focus: #e08a74;
   --color-accent: #d55a42;
   --color-accent-soft: rgba(213, 90, 66, 0.18);
   --color-partner-a: #d55a42;
+  --color-partner-a-ink: #f0a090;
   --color-partner-a-soft: rgba(213, 90, 66, 0.2);
   --color-partner-b: #4fa88a;
   --color-partner-b-soft: rgba(79, 168, 138, 0.2);
