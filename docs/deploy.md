@@ -128,7 +128,7 @@ Use **two** Vercel projects from the same GitHub repo. Do not put frontend and A
 | `PUBLIC_APP_URL` | optional | Frontend origin for reset-link debug |
 | `AUTH_RESET_DEBUG` | no | Leave unset/`0` in production |
 
-The API runs `alembic upgrade head` on cold start (skipped for SQLite). You can still migrate manually:
+The API runs `alembic upgrade head` on cold start (skipped for SQLite). Confirm register returns `201` (not `503`) after the first cold start. You can still migrate manually:
 
 ```bash
 cd backend
