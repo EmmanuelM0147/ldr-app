@@ -33,10 +33,46 @@ describe("PartnerTodayCards", () => {
         updated_at: "2026-11-12T08:00:00.000Z",
       },
     ]
-    render(<PartnerTodayCards members={members} items={items} today="2026-11-12" />)
+    render(
+      <PartnerTodayCards
+        members={members}
+        items={items}
+        now={new Date("2026-11-12T12:00:00.000Z")}
+      />,
+    )
     expect(screen.getByText("Ada")).toBeInTheDocument()
     expect(screen.getByText("🌟 Great")).toBeInTheDocument()
     expect(screen.getByText("Bello")).toBeInTheDocument()
     expect(screen.getByText("No check-in yet today.")).toBeInTheDocument()
+  })
+
+  it("uses each partner's own local calendar date (FUNC-01)", () => {
+    // Lagos (UTC+1) is already 13 Nov; London (GMT) is still 12 Nov.
+    const now = new Date("2026-11-12T23:30:00.000Z")
+    const items: CheckIn[] = [
+      {
+        id: "1",
+        couple_id: "c",
+        user_id: "ada",
+        local_date: "2026-11-13",
+        mood: "great",
+        note: "Ada after midnight",
+        created_at: "2026-11-12T23:30:00.000Z",
+        updated_at: "2026-11-12T23:30:00.000Z",
+      },
+      {
+        id: "2",
+        couple_id: "c",
+        user_id: "bello",
+        local_date: "2026-11-12",
+        mood: "good",
+        note: "Bello still Tuesday",
+        created_at: "2026-11-12T23:30:00.000Z",
+        updated_at: "2026-11-12T23:30:00.000Z",
+      },
+    ]
+    render(<PartnerTodayCards members={members} items={items} now={now} />)
+    expect(screen.getByText("Ada after midnight")).toBeInTheDocument()
+    expect(screen.getByText("Bello still Tuesday")).toBeInTheDocument()
   })
 })

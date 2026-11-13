@@ -1,5 +1,6 @@
 import json
 import uuid
+from datetime import UTC, datetime, timedelta
 
 import jwt
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
@@ -15,9 +16,33 @@ from app.security import read_user_id
 from app.serialize import presence_out
 
 router = APIRouter()
+# free_to_talk without a refresh/disconnect older than this is treated as offline.
+PRESENCE_TTL = timedelta(minutes=30)
 
 
-def _members(db: Session, couple_id: uuid.UUID) -> PresenceList:
+def _expire_stale(db: Session, couple_id: uuid.UUID, now: datetime) -> bool:
+    """Clear free_to_talk flags past the TTL. Returns True if anything changed."""
+    changed = False
+    cutoff = now - PRESENCE_TTL
+    rows = db.scalars(
+        select(Presence).where(Presence.couple_id == couple_id, Presence.free_to_talk.is_(True))
+    ).all()
+    for row in rows:
+        updated = row.updated_at
+        if updated.tzinfo is None:
+            updated = updated.replace(tzinfo=UTC)
+        if updated < cutoff:
+            row.free_to_talk = False
+            row.updated_at = now
+            changed = True
+    if changed:
+        db.commit()
+    return changed
+
+
+def _members(db: Session, couple_id: uuid.UUID, now: datetime | None = None) -> PresenceList:
+    stamp = now if now is not None else datetime.now(UTC)
+    _expire_stale(db, couple_id, stamp)
     rows = db.scalars(select(Presence).where(Presence.couple_id == couple_id).order_by(Presence.user_id)).all()
     return PresenceList(members=[presence_out(row) for row in rows])
 
@@ -26,12 +51,27 @@ def _payload(body: PresenceList) -> dict[str, object]:
     return {"type": "presence", "members": [item.model_dump(mode="json") for item in body.members]}
 
 
+def _clear_presence(user_id: uuid.UUID, couple_id: uuid.UUID) -> PresenceList | None:
+    db = session_factory(get_engine())()
+    try:
+        row = db.scalar(select(Presence).where(Presence.user_id == user_id, Presence.couple_id == couple_id))
+        if row is None or not row.free_to_talk:
+            return None
+        row.free_to_talk = False
+        row.updated_at = datetime.now(UTC)
+        db.commit()
+        return _members(db, couple_id)
+    finally:
+        db.close()
+
+
 @router.get("/presence", response_model=PresenceList, operation_id="getPresence")
 def get_presence(
     couple: Couple = Depends(get_current_couple),
     db: Session = Depends(get_db),
+    now=Depends(get_clock),
 ) -> PresenceList:
-    return _members(db, couple.id)
+    return _members(db, couple.id, now)
 
 
 @router.put("/presence", response_model=PresenceList, operation_id="setPresence")
@@ -50,7 +90,7 @@ async def set_presence(
         row.free_to_talk = body.free_to_talk
         row.updated_at = now
     db.commit()
-    listed = _members(db, couple.id)
+    listed = _members(db, couple.id, now)
     await hub.publish(couple.id, _payload(listed))
     return listed
 
@@ -94,11 +134,15 @@ async def couple_events(websocket: WebSocket) -> None:
     if couple_id is None or not known_user:
         await websocket.close(code=1008)
         return
-    hub.join(couple_id, websocket)
+    hub.join(couple_id, user_id, websocket)
     try:
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:
         pass
     finally:
-        hub.leave(couple_id, websocket)
+        cleared_user = hub.leave(couple_id, websocket)
+        if cleared_user is not None:
+            listed = _clear_presence(cleared_user, couple_id)
+            if listed is not None:
+                await hub.publish(couple_id, _payload(listed))

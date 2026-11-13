@@ -1,3 +1,4 @@
+import { localDate } from "../format"
 import { moodLabel } from "../mood"
 import { partnerAccent } from "../partnerAccent"
 import type { CheckIn, Member } from "../types"
@@ -5,16 +6,18 @@ import type { CheckIn, Member } from "../types"
 export function PartnerTodayCards({
   members,
   items,
-  today,
+  now = new Date(),
 }: {
   members: Member[]
   items: CheckIn[]
-  today: string
+  now?: Date
 }) {
   return (
     <section className="pair" aria-label="Both check-ins today">
       {members.map((member) => {
-        const entry = items.find((item) => item.user_id === member.user_id && item.local_date === today) ?? null
+        const memberToday = localDate(member.timezone, now)
+        const entry =
+          items.find((item) => item.user_id === member.user_id && item.local_date === memberToday) ?? null
         const accent = partnerAccent(
           member.user_id,
           members.map((item) => item.user_id),

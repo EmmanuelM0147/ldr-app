@@ -37,7 +37,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       const next =
         import.meta.env.VITE_USE_MOCK === "1"
           ? await createDemoClient(window.sessionStorage)
-          : createApiClient(import.meta.env.VITE_API_URL ?? "http://localhost:8000")
+          : createApiClient(import.meta.env.VITE_API_URL || window.location.origin)
       if (cancelled) return
       setClient(next)
       const token = window.sessionStorage.getItem(TOKEN_KEY)
@@ -77,6 +77,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     })
     const known = new Set(couple.members.map((member) => member.user_id))
     const stop = client.subscribe((event) => {
+      if (event.type === "couple_gone") {
+        setCouple(null)
+        setPresence([])
+        return
+      }
       if (event.type === "presence") {
         setPresence(event.members)
         if (event.members.some((member) => !known.has(member.user_id))) {

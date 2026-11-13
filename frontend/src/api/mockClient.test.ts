@@ -48,4 +48,18 @@ describe("mock client", () => {
     })
     await expect(outsider.joinCouple(invite.code)).rejects.toMatchObject({ status: 400 })
   })
+
+  it("emits couple_gone when the space is deleted (FUNC-22)", async () => {
+    const db = emptyDatabase()
+    const owner = createMockClient({ db })
+    await owner.register(ada)
+    await owner.createCouple()
+    const events: string[] = []
+    const stop = owner.subscribe((event) => {
+      events.push(event.type)
+    })
+    await owner.deleteCurrentCouple()
+    stop()
+    expect(events).toContain("couple_gone")
+  })
 })

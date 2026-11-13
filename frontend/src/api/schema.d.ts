@@ -387,7 +387,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Both members' free-to-talk flags */
+        /**
+         * Both members' free-to-talk flags
+         * @description Returns both members' flags. A `free_to_talk` flag older than 30 minutes (no refresh) is cleared to false before the response.
+         */
         get: operations["getPresence"];
         /** Set the caller's free-to-talk flag */
         put: operations["setPresence"];
@@ -407,7 +410,7 @@ export interface paths {
         };
         /**
          * WebSocket for presence and check-in changes
-         * @description After the upgrade, the first text frame is JSON `{"token":"<access token>"}`. The server closes the socket with code 1008 when that token is missing or invalid, or when the caller has no couple space. Later frames from the server are LiveEvent values, sent only to sockets in that couple.
+         * @description After the upgrade, the first text frame is JSON `{"token":"<access token>"}`. The server closes the socket with code 1008 when that token is missing or invalid, or when the caller has no couple space. Later frames from the server are LiveEvent values, sent only to sockets in that couple. When the caller's last socket for the couple disconnects, their `free_to_talk` flag is cleared and the couple is notified. When either member deletes the space, connected peers receive `{"type":"couple_gone"}` before memberships are removed.
          */
         get: operations["coupleEvents"];
         put?: never;
@@ -712,6 +715,12 @@ export interface components {
             /** @enum {string} */
             type: "check_in";
             check_in: components["schemas"]["CheckIn"];
+        } | {
+            /**
+             * @description The couple space was deleted; clients should clear local couple state.
+             * @enum {string}
+             */
+            type: "couple_gone";
         };
     };
     responses: {
@@ -861,6 +870,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             422: components["responses"]["Invalid"];
+            429: components["responses"]["Limited"];
         };
     };
     getMe: {

@@ -63,6 +63,46 @@ def test_socket_rejects_a_bad_token(client) -> None:
         _expect_closed(socket)
 
 
+def test_websocket_disconnect_clears_free_to_talk(client) -> None:
+    """FUNC-15: closing the live socket must not leave free_to_talk sticky."""
+    ada = register(client, "ada@example.com", name="Ada")
+    bello = _couple(client, ada, "bello@example.com", "Bello")
+    ada_id = client.get("/me", headers=auth(ada)).json()["id"]
+    assert client.put("/presence", json={"free_to_talk": True}, headers=auth(ada)).status_code == 200
+
+    with client.websocket_connect("/ws") as socket:
+        socket.send_text(json.dumps({"token": ada}))
+        # Partner sees Ada free while connected.
+        listed = client.get("/presence", headers=auth(bello)).json()
+        assert {item["user_id"]: item["free_to_talk"] for item in listed["members"]}[ada_id] is True
+
+    after = client.get("/presence", headers=auth(bello)).json()
+    assert {item["user_id"]: item["free_to_talk"] for item in after["members"]}[ada_id] is False
+
+
+def test_stale_free_to_talk_is_cleared_by_ttl(client, db_factory) -> None:
+    """FUNC-15: free_to_talk older than the TTL is treated as offline."""
+    import uuid
+    from datetime import UTC, datetime, timedelta
+
+    from sqlalchemy import select
+
+    from app.models import Presence
+
+    ada = register(client, "ada@example.com", name="Ada")
+    bello = _couple(client, ada, "bello@example.com", "Bello")
+    ada_id = client.get("/me", headers=auth(ada)).json()["id"]
+    assert client.put("/presence", json={"free_to_talk": True}, headers=auth(ada)).status_code == 200
+    with db_factory() as db:
+        row = db.scalar(select(Presence).where(Presence.user_id == uuid.UUID(ada_id)))
+        assert row is not None
+        row.updated_at = datetime.now(UTC) - timedelta(minutes=31)
+        db.commit()
+
+    listed = client.get("/presence", headers=auth(bello)).json()
+    assert {item["user_id"]: item["free_to_talk"] for item in listed["members"]}[ada_id] is False
+
+
 def test_socket_stays_inside_the_couple(client) -> None:
     ada = register(client, "ada@example.com", name="Ada")
     bello = _couple(client, ada, "bello@example.com", "Bello")

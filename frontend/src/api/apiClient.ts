@@ -251,15 +251,45 @@ export function createApiClient(baseUrl = "http://localhost:8000"): Api {
       if (!token) return () => undefined
       const url = new URL("/ws", baseUrl)
       url.protocol = url.protocol === "https:" ? "wss:" : "ws:"
-      const socket = new WebSocket(url)
-      socket.addEventListener("open", () => {
-        socket.send(JSON.stringify({ token }))
-      })
-      socket.addEventListener("message", (message) => {
-        if (typeof message.data !== "string") return
-        listener(JSON.parse(message.data) as LiveEvent)
-      })
-      return () => socket.close()
+      let stopped = false
+      let socket: WebSocket | null = null
+      let retryTimer: ReturnType<typeof setTimeout> | null = null
+      let attempt = 0
+
+      function clearRetry() {
+        if (retryTimer !== null) {
+          clearTimeout(retryTimer)
+          retryTimer = null
+        }
+      }
+
+      function connect() {
+        if (stopped) return
+        const next = new WebSocket(url)
+        socket = next
+        next.addEventListener("open", () => {
+          attempt = 0
+          next.send(JSON.stringify({ token }))
+        })
+        next.addEventListener("message", (message) => {
+          if (typeof message.data !== "string") return
+          listener(JSON.parse(message.data) as LiveEvent)
+        })
+        next.addEventListener("close", () => {
+          if (stopped) return
+          const delayMs = Math.min(30_000, 1000 * 2 ** attempt)
+          attempt += 1
+          clearRetry()
+          retryTimer = setTimeout(connect, delayMs)
+        })
+      }
+
+      connect()
+      return () => {
+        stopped = true
+        clearRetry()
+        socket?.close()
+      }
     },
   }
 }

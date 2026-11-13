@@ -1,8 +1,10 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime, timedelta
 
+import pytest
 from sqlalchemy import func, select
 
-from app.models import Event, Invite, User
+from app.models import Event, Invite, Membership, User
 from app.security import hash_invite_code
 from tests.conftest import auth, register
 
@@ -42,6 +44,55 @@ def test_create_invite_join_and_reject_a_third(client, db_factory) -> None:
     assert already.status_code == 409
 
 
+def test_db_rejects_third_membership_for_couple(client, db_factory) -> None:
+    """SEC-02: memberships must be capped at two seats even if join checks race."""
+    from datetime import datetime
+
+    from sqlalchemy.exc import IntegrityError
+
+    owner = register(client, "ada@example.com", name="Ada")
+    register(client, "bello@example.com", name="Bello")
+    register(client, "chi@example.com", name="Chi")
+    client.post("/couples", headers=auth(owner))
+    now = datetime.now(UTC)
+    with db_factory() as db:
+        couple_id = db.scalar(select(Membership.couple_id))
+        assert couple_id is not None
+        bello = db.scalar(select(User).where(User.email == "bello@example.com"))
+        chi = db.scalar(select(User).where(User.email == "chi@example.com"))
+        assert bello is not None and chi is not None
+        db.add(Membership(couple_id=couple_id, user_id=bello.id, joined_at=now, seat=2))
+        db.commit()
+        db.add(Membership(couple_id=couple_id, user_id=chi.id, joined_at=now, seat=2))
+        with pytest.raises(IntegrityError):
+            db.commit()
+        db.rollback()
+        assert db.scalar(select(func.count()).select_from(Membership)) == 2
+
+
+def test_concurrent_join_same_invite_caps_at_two_members(client, db_factory) -> None:
+    """SEC-02: two clients racing on one unused invite must not create a third member."""
+    owner = register(client, "ada@example.com", name="Ada")
+    client.post("/couples", headers=auth(owner))
+    code = client.post("/couples/current/invites", headers=auth(owner)).json()["code"]
+    partner_a = register(client, "bello@example.com", name="Bello")
+    partner_b = register(client, "chi@example.com", name="Chi")
+
+    def attempt(token: str) -> int:
+        return client.post("/couples/join", json={"code": code}, headers=auth(token)).status_code
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = [pool.submit(attempt, partner_a), pool.submit(attempt, partner_b)]
+        statuses = sorted(future.result() for future in as_completed(futures))
+
+    assert statuses.count(200) == 1, statuses
+    assert statuses[0] == 200
+    assert statuses[1] in {400, 409}, statuses
+    with db_factory() as db:
+        count = db.scalar(select(func.count()).select_from(Membership))
+    assert count == 2
+
+
 def test_invite_rate_limit_and_bad_codes(client, db_factory) -> None:
     owner = register(client, "ada@example.com")
     client.post("/couples", headers=auth(owner))
@@ -79,6 +130,26 @@ def test_expired_and_reused_codes(client, db_factory) -> None:
         db.commit()
     reused = client.post("/couples/join", json={"code": fresh}, headers=auth(partner))
     assert reused.status_code == 400
+
+
+def test_delete_notifies_partner_over_websocket(client) -> None:
+    """FUNC-22: remaining partner gets couple_gone so the UI can clear the space."""
+    import json
+
+    owner = register(client, "ada@example.com", name="Ada")
+    partner = register(client, "bello@example.com", name="Bello")
+    client.post("/couples", headers=auth(owner))
+    code = client.post("/couples/current/invites", headers=auth(owner)).json()["code"]
+    client.post("/couples/join", json={"code": code}, headers=auth(partner))
+
+    with client.websocket_connect("/ws") as socket:
+        socket.send_text(json.dumps({"token": partner}))
+        deleted = client.delete("/couples/current", headers=auth(owner))
+        assert deleted.status_code == 204
+        event = socket.receive_json()
+        assert event == {"type": "couple_gone"}
+
+    assert client.get("/couples/current", headers=auth(partner)).status_code == 404
 
 
 def test_delete_keeps_users_and_other_couple(client, db_factory) -> None:

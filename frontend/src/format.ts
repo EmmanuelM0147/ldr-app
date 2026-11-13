@@ -7,6 +7,53 @@ export function localDate(timeZone: string, now = new Date()): string {
   }).format(now)
 }
 
+function wallPartsInZone(instant: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(instant)
+  const map = Object.fromEntries(
+    parts.filter((part) => part.type !== "literal").map((part) => [part.type, part.value]),
+  )
+  return {
+    year: Number(map.year),
+    month: Number(map.month),
+    day: Number(map.day),
+    hour: Number(map.hour),
+    minute: Number(map.minute),
+    second: Number(map.second),
+  }
+}
+
+/**
+ * Convert a civil date+time in an IANA zone to a UTC ISO string.
+ * Does not use the browser's local timezone.
+ */
+export function zonedLocalDateTimeToUtc(date: string, time: string, timeZone: string): string {
+  const [year, month, day] = date.split("-").map(Number)
+  const [hour = 0, minute = 0, second = 0] = time.split(":").map(Number)
+  const wantAsUtc = Date.UTC(year, month - 1, day, hour, minute, second)
+  let utcMs = wantAsUtc
+  for (let i = 0; i < 3; i += 1) {
+    const got = wallPartsInZone(new Date(utcMs), timeZone)
+    const gotAsUtc = Date.UTC(got.year, got.month - 1, got.day, got.hour, got.minute, got.second)
+    utcMs += wantAsUtc - gotAsUtc
+  }
+  return new Date(utcMs).toISOString()
+}
+
+/** Parse `<input type="datetime-local">` values in the profile IANA zone. */
+export function zonedDateTimeLocalToUtc(value: string, timeZone: string): string {
+  const [date, time = "00:00"] = value.split("T")
+  return zonedLocalDateTimeToUtc(date, time, timeZone)
+}
+
 function enGbParts(
   value: Date,
   timeZone: string,
