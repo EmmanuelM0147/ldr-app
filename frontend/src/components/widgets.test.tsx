@@ -18,6 +18,22 @@ describe("forms", () => {
     expect(onSubmit).not.toHaveBeenCalled()
   })
 
+  it("preselects the detected IANA timezone on register", async () => {
+    const user = userEvent.setup()
+    const onSubmit = vi.fn().mockResolvedValue(undefined)
+    const detected = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+    render(<RegisterForm onSubmit={onSubmit} />)
+    expect(screen.getByText(new RegExp(`Detected:\\s*${detected}`))).toBeInTheDocument()
+    expect(screen.getByLabelText("Timezone")).toHaveValue(detected)
+    await user.type(screen.getByLabelText("Display name"), "Ada")
+    await user.type(screen.getByLabelText("Email"), "ada@example.com")
+    await user.type(screen.getByLabelText("Password", { exact: true }), "password123")
+    await user.click(screen.getByRole("button", { name: "Create account" }))
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ timezone: detected, email: "ada@example.com" }),
+    )
+  })
+
   it("signs in through the mock client", async () => {
     const user = userEvent.setup()
     const client = createMockClient()
@@ -41,7 +57,7 @@ describe("forms", () => {
   it("rejects an event that ends before it starts", async () => {
     const user = userEvent.setup()
     const onCreate = vi.fn()
-    render(<EventForm onCreate={onCreate} />)
+    render(<EventForm onCreate={onCreate} timeZone="UTC" />)
     await user.type(screen.getByLabelText("Title"), "Flight")
     const dates = screen.getAllByLabelText("Date")
     const times = screen.getAllByLabelText("Time")
@@ -58,6 +74,26 @@ describe("forms", () => {
     expect(onCreate).not.toHaveBeenCalled()
   })
 
+  it("stores event times in the profile IANA timezone (FUNC-02)", async () => {
+    const user = userEvent.setup()
+    const onCreate = vi.fn()
+    render(<EventForm onCreate={onCreate} timeZone="Africa/Lagos" />)
+    await user.type(screen.getByLabelText("Title"), "Call")
+    const dates = screen.getAllByLabelText("Date")
+    const times = screen.getAllByLabelText("Time")
+    await user.clear(dates[0])
+    await user.type(dates[0], "2026-12-01")
+    await user.clear(times[0])
+    await user.type(times[0], "10:00")
+    await user.click(screen.getByRole("button", { name: "Add event" }))
+    expect(onCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Call",
+        starts_at: "2026-12-01T09:00:00.000Z",
+      }),
+    )
+  })
+
   it("rejects a budget that does not add up", async () => {
     const user = userEvent.setup()
     const onSave = vi.fn()
@@ -66,7 +102,7 @@ describe("forms", () => {
     await user.type(screen.getByLabelText("Your share"), "40")
     await user.type(screen.getByLabelText("Their share"), "50")
     await user.click(screen.getByRole("button", { name: "Save split" }))
-    expect(screen.getByText("The two shares must add up to the total.")).toBeInTheDocument()
+    expect(screen.getByText("Your share plus their share must equal the total.")).toBeInTheDocument()
     expect(onSave).not.toHaveBeenCalled()
   })
 

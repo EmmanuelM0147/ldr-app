@@ -5,7 +5,7 @@ async function register(page: Page, input: { email: string; name: string; passwo
   await page.getByLabel("Display name").fill(input.name)
   await page.getByLabel("Email").fill(input.email)
   await page.getByLabel("Password", { exact: true }).fill(input.password)
-  await page.getByLabel("Timezone").fill("UTC")
+  await page.getByLabel("Timezone").selectOption("UTC")
   await page.getByRole("button", { name: "Create account" }).click()
   await expect(page.getByRole("heading", { name: /Start with just the two of you/i })).toBeVisible()
 }

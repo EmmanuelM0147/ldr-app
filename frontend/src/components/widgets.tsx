@@ -1,9 +1,11 @@
 import { useEffect, useState, type FormEvent } from "react"
-import { countdownParts, formatWhen } from "../format"
+import { countdownParts, formatWhen, zonedLocalDateTimeToUtc } from "../format"
 import { MOOD_CHIPS } from "../mood"
+import { detectTimezone, isValidIanaTimezone } from "../timezones"
 import type { Budget, CheckIn, CheckInWrite, Countdown, EventWrite, Mood } from "../types"
 import { CURRENCY_OPTIONS } from "../visitHints"
 import { PasswordField } from "./PasswordField"
+import { TimezoneSelect } from "./TimezoneSelect"
 
 export function RegisterForm({
   onSubmit,
@@ -16,19 +18,18 @@ export function RegisterForm({
   }) => Promise<void>
 }) {
   const [error, setError] = useState<string | null>(null)
+  const [timezone, setTimezone] = useState(() => detectTimezone())
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const data = new FormData(event.currentTarget)
     const password = String(data.get("password") ?? "")
-    const timezone = String(data.get("timezone") ?? "UTC").trim() || "UTC"
+    const zone = String(data.get("timezone") ?? timezone).trim() || "UTC"
     if (password.length < 8) {
       setError("Password must be at least 8 characters.")
       return
     }
-    try {
-      Intl.DateTimeFormat("en-US", { timeZone: timezone })
-    } catch {
+    if (!isValidIanaTimezone(zone)) {
       setError("Enter a valid IANA timezone, such as Africa/Lagos.")
       return
     }
@@ -37,7 +38,7 @@ export function RegisterForm({
       email: String(data.get("email") ?? ""),
       password,
       display_name: String(data.get("display_name") ?? ""),
-      timezone,
+      timezone: zone,
     })
   }
 
@@ -46,7 +47,7 @@ export function RegisterForm({
       <Field label="Display name" name="display_name" required />
       <Field label="Email" name="email" type="email" required />
       <PasswordField label="Password" name="password" required autoComplete="new-password" />
-      <Field label="Timezone" name="timezone" defaultValue="UTC" required />
+      <TimezoneSelect value={timezone} onChange={setTimezone} />
       {error ? <p className="error">{error}</p> : null}
       <button className="primary" type="submit">
         Create account
@@ -85,16 +86,26 @@ export function LoginForm({
   )
 }
 
-export function EventForm({ onCreate }: { onCreate: (input: EventWrite) => void }) {
+export function EventForm({
+  onCreate,
+  timeZone,
+}: {
+  onCreate: (input: EventWrite) => void
+  timeZone: string
+}) {
   const [error, setError] = useState<string | null>(null)
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const data = new FormData(event.currentTarget)
-    const starts = combineLocalDateTime(String(data.get("starts_date") ?? ""), String(data.get("starts_time") ?? ""))
+    const starts = zonedLocalDateTimeToUtc(
+      String(data.get("starts_date") ?? ""),
+      String(data.get("starts_time") ?? ""),
+      timeZone,
+    )
     const endDate = String(data.get("ends_date") ?? "").trim()
     const endTime = String(data.get("ends_time") ?? "").trim()
-    const ends = endDate ? combineLocalDateTime(endDate, endTime || "00:00") : null
+    const ends = endDate ? zonedLocalDateTimeToUtc(endDate, endTime || "00:00", timeZone) : null
     if (ends && new Date(ends).getTime() <= new Date(starts).getTime()) {
       setError("End must be after the start.")
       return
@@ -123,7 +134,7 @@ export function EventForm({ onCreate }: { onCreate: (input: EventWrite) => void 
         <Field label="Date" name="ends_date" type="date" />
         <Field label="Time" name="ends_time" type="time" />
       </fieldset>
-      <p className="muted hint">Dates use day/month/year order when shown in en-GB.</p>
+      <p className="muted hint">Times are in {timeZone}. Dates show day/month/year in en-GB.</p>
       <Field label="Place" name="location" />
       <Field label="Notes" name="notes" />
       {error ? <p className="error">{error}</p> : null}
@@ -340,8 +351,4 @@ function Field({
       <input name={name} type={type} required={required} defaultValue={defaultValue} step={step} min={min} />
     </label>
   )
-}
-
-function combineLocalDateTime(date: string, time: string): string {
-  return new Date(`${date}T${time}`).toISOString()
 }

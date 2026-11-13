@@ -270,3 +270,10 @@ Prompt: (README template for Closer â€” Why / Features / Architecture / Run / AI
 Expanded `.github/workflows/test.yml`: frontend tests, `build-images` after backend+frontend, `deploy` on `main` needing all three (ECR push + ECS roll via OIDC). Wrote `docs/deploy.md` (secrets, variables, rollback). Added `scripts/check_workflow_order.py`. No AWS keys in repo.
 
 Prompt: proceed
+
+## 2026-11-13 — Auth polish 1: register timezone
+
+Auto-detect IANA timezone via Intl, searchable timezone select on register (shows detected zone). Server already validates IANA via ZoneInfo.
+
+Prompt: Auth polish. One commit each... 1. Register: auto-detect timezone via Intl...
+
