@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { moodLabel } from "../mood"
 import type { CheckIn, Member, Presence } from "../types"
 import { UserAvatar } from "./UserAvatar"
 
@@ -62,21 +63,32 @@ export function PartnerHomeCards({
                 <p className="muted partner-place">{cityFromTimezone(member.timezone)}</p>
               </div>
             </div>
-            <p className="partner-time" aria-live="polite">
-              {localTime(member.timezone, now)}
-            </p>
-            <p className="presence">
-              <span>
-                <i className={free ? "dot on" : "dot"} />
-                {free ? "Free to talk" : "Busy"}
-              </span>
-              {mine ? (
-                <button className="secondary" type="button" onClick={() => onTogglePresence(!free)}>
-                  {free ? "Mark busy" : "I'm free"}
-                </button>
-              ) : null}
-            </p>
-            <p className="muted">Latest mood: {mood ?? "none yet"}</p>
+
+            <dl className="partner-facts">
+              <div className="partner-fact">
+                <dt>Local time</dt>
+                <dd className="partner-time" aria-live="polite">
+                  {localTime(member.timezone, now)}
+                </dd>
+              </div>
+              <div className="partner-fact">
+                <dt>Status</dt>
+                <dd className="partner-status">
+                  <i className={free ? "dot on" : "dot"} aria-hidden />
+                  <span>{free ? "Free to talk" : "Busy"}</span>
+                </dd>
+              </div>
+              <div className="partner-fact">
+                <dt>Latest mood</dt>
+                <dd>{mood ? moodLabel(mood) : "None yet"}</dd>
+              </div>
+            </dl>
+
+            {mine ? (
+              <button className="secondary partner-presence-btn" type="button" onClick={() => onTogglePresence(!free)}>
+                {free ? "Mark busy" : "I'm free"}
+              </button>
+            ) : null}
           </article>
         )
       })}
