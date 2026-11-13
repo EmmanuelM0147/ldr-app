@@ -49,9 +49,14 @@ Remove-Item Env:VITE_API_URL -ErrorAction SilentlyContinue
 npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
-## Still outstanding for a public live demo
+## Public hosted demo (Vercel)
 
-- Publish a stable URL (AWS/Render/etc.) — needs secrets + one verified deploy; not done from this pass.
+- App: https://frontend-kohl-one-76.vercel.app  
+- API: https://backend-lilac-nine-81.vercel.app  
+- Env checklist: [`docs/deploy.md`](deploy.md) (JWT, CORS, `DATABASE_URL` / `POSTGRES_URL`, frontend `VITE_API_URL`).
+
+## Still outstanding
+
 - Demo video link in the README.
-- Real PNGs under `docs/screenshots/` (see that folder’s README for capture steps).
+- Prefer AWS/ECS (or similar) if you need reliable WebSocket presence; Vercel serverless sockets are flaky.
 - Optional: set `REGISTRATION_ALLOWED_EMAILS` on the public host so random signups stay closed.

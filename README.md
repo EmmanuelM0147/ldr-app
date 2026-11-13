@@ -1,27 +1,67 @@
 # Closer
 
-A private two-person app for couples in long-distance relationships. Shared visit calendar and countdown, visit planner with cost split, daily check-ins, a memory timeline, and a "free to talk" presence signal.
+A private **two-person** app for couples in a long-distance relationship.
 
-**Live demo:** _not published yet_  ·  **Demo video:** _not published yet_  ·  **Repo:** https://github.com/EmmanuelM0147/ldr-app
+Shared visit calendar and countdown, trip budget split, daily check-ins, a memory timeline (with photos/videos), in-app notifications, and a "free to talk" presence signal. **Not** a chat or video app.
+
+**Repo:** https://github.com/EmmanuelM0147/ldr-app  
+**Live demo:** [app](https://frontend-kohl-one-76.vercel.app) · [API](https://backend-lilac-nine-81.vercel.app)  
+**Demo video:** not published yet
+
+Hosted on Vercel (frontend + FastAPI) with Supabase Postgres. Presence/WebSocket is best locally or on AWS/ECS; see [`docs/deploy.md`](docs/deploy.md).
+
+---
+
+## Quick start
+
+You need Docker Desktop (or Docker Engine + Compose).
+
+```bash
+# 1. Env
+cp .env.example .env
+
+# 2. Required secret (≥32 chars; placeholders like change-me are rejected)
+python -c "import secrets; print(secrets.token_urlsafe(48))"
+# Paste the value into .env as JWT_SECRET=...
+
+# 3. Run
+docker compose up --build
+```
+
+| Service  | URL                         |
+| -------- | --------------------------- |
+| App      | http://localhost:5173       |
+| API docs | http://localhost:8000/docs  |
+
+First visit: register → create a couple space → share the invite code with your partner (or a second browser/profile).
+
+More env notes: [`.env.example`](.env.example). Demo tips and a host-API fallback: [`docs/demo.md`](docs/demo.md).
+
+---
 
 ## Why this exists
 
-When you live in different cities, chat apps already handle talking. What gets lost is the shared plan: when you next meet, what the trip costs, how the other person is feeling today, and whether they are free to talk right now. Closer is for exactly two people who want one private couple space for that plan and daily pulse, not another messenger or video call tool.
+Chat apps already handle talking. What gets messy across cities is the **shared plan**: when you next meet, what the trip costs, how each of you feels today, and whether the other person is free to talk. Closer is one private couple space for that plan and daily pulse.
+
+---
 
 ## Features
 
-- Invite-code pairing: exactly two members per couple space
-- Shared calendar and visit planner with countdown and cost split
-- Daily check-in with mood and a shared prompt
-- Memory timeline with photos/videos and "on this day"
-- Real-time presence ("free to talk")
-- Opt-in AI date ideas via Google Gemini (`POST /ai/date-ideas`), gated by couple `ai_enabled`
-- Auth polish: IANA timezone select, login/register rate limits, optional registration allowlist, forgot/reset password (token flow)
-- Delete-my-space: removes all couple data and media
+- **Pairing** — invite code with copy/paste CTAs; exactly two members per space; live notice when a partner joins
+- **Calendar & visits** — shared events, visit countdown, optional cost split
+- **Check-ins** — daily mood (+ optional note) both partners can see
+- **Memories** — timeline with photos/videos and "on this day"
+- **Notifications** — in-app inbox (bell + unread badge): partner join, check-ins, new events/visits; mark one/all read. No push
+- **Presence** — "free to talk" over an authenticated WebSocket
+- **Opt-in AI** — date ideas via Google Gemini (`POST /ai/date-ideas`), only when the couple enables AI
+- **Account** — timezone-aware profiles, rate-limited auth, forgot/reset password (email SMTP not wired yet)
+- **Delete space** — removes all couple data and media; user accounts remain
+
+---
 
 ## Screenshots
 
-Captured from the local PWA (~390×844). Capture notes: [`docs/screenshots/`](docs/screenshots/README.md).
+From the local PWA (~390×844). How they were captured: [`docs/screenshots/`](docs/screenshots/README.md).
 
 | Home | Calendar | Visits |
 | --- | --- | --- |
@@ -31,122 +71,135 @@ Captured from the local PWA (~390×844). Capture notes: [`docs/screenshots/`](do
 | --- | --- |
 | ![Check-in](docs/screenshots/check-in.png) | ![Memories](docs/screenshots/memories.png) |
 
-Optional: [login](docs/screenshots/login.png) · [settings (AI disclosure)](docs/screenshots/settings.png)
+Also: [login](docs/screenshots/login.png) · [settings](docs/screenshots/settings.png)
+
+---
 
 ## Architecture
 
-React PWA → FastAPI → PostgreSQL. Presence and check-in updates go over an authenticated WebSocket (`/ws`). Memory and avatar media are stored under `MEDIA_ROOT` on the API host (local disk in Compose; object storage is a later deploy choice). Date ideas call Google Gemini only when the couple has opted in (`ai_enabled`). **`docs/openapi.yaml` is the API contract** - update it before changing endpoints.
-
 ```
-┌─────────────┐     HTTPS / WS      ┌─────────────┐     SQL      ┌──────────┐
-│ React PWA   │ ──────────────────► │ FastAPI     │ ───────────► │ Postgres │
-│ (Vite/TS)   │ ◄────────────────── │ SQLAlchemy  │              └──────────┘
-└─────────────┘   JSON + media      │ Alembic     │──► MEDIA_ROOT
-                                    └──────┬──────┘
-                                           │ opt-in only
-                                           ▼
-                                      Gemini API (date ideas)
+React PWA  ──HTTPS / WS──►  FastAPI (+ Alembic)  ──SQL──►  PostgreSQL
+                              │
+                              ├── MEDIA_ROOT (avatars, memory files)
+                              └── Gemini (date ideas, opt-in only)
 ```
 
-| Layer | Tech |
-|---|---|
-| Frontend | React, Vite, TypeScript, PWA |
-| Backend | FastAPI, SQLAlchemy, Alembic |
-| Database | PostgreSQL (SQLite for early unit tests) |
-| Real-time | WebSockets |
-| AI | Google Gemini (`google-genai`), server-only keys |
-| Tests | pytest, Vitest, Playwright |
-| Infra | Docker Compose, GitHub Actions; AWS deploy planned |
+| Layer     | Stack                                              |
+| --------- | -------------------------------------------------- |
+| Frontend  | React, Vite, TypeScript, PWA                       |
+| Backend   | FastAPI, SQLAlchemy, Alembic                       |
+| Database  | PostgreSQL (SQLite only for some unit tests)       |
+| Real-time | WebSocket `/ws` (JWT; presence, check-ins, partner join, notifications) |
+| AI        | Google Gemini (`google-genai`), server-side keys   |
+| Tests     | pytest, Vitest, Playwright                         |
+| Infra     | Docker Compose, GitHub Actions → AWS (see deploy)  |
 
-## Run it locally
+**Contract:** [`docs/openapi.yaml`](docs/openapi.yaml) is the source of truth — update it before changing endpoints.
+
+Product intent: [`docs/spec.md`](docs/spec.md). Task history: [`docs/backlog.md`](docs/backlog.md). Agent prompts: [`docs/ai-log.md`](docs/ai-log.md).
+
+---
+
+## Develop without full Compose rebuild
+
+Preferred day-to-day path is still `docker compose up --build`.
+
+If you only need Postgres in Docker and want the API/UI on the host:
 
 ```bash
-cp .env.example .env
-# Required: set JWT_SECRET to a strong random string (≥32 chars). Placeholders are rejected at boot.
-#   python -c "import secrets; print(secrets.token_urlsafe(48))"
-# Optional: REGISTRATION_ALLOWED_EMAILS=you@example.com,partner@example.com
-#   When set, only those emails can register; empty keeps registration open.
-# Optional AI: GEMINI_API_KEY and GEMINI_MODEL (server-only; never sent to the frontend).
-# Local password-reset testing: AUTH_RESET_DEBUG=1 may return reset_url in JSON (SMTP not wired yet).
-docker compose up --build
-# frontend: http://localhost:5173   api docs: http://localhost:8000/docs
+docker compose up -d db
+
+# backend (from backend/, with venv active)
+# DATABASE_URL=postgresql+psycopg://closer:closer@localhost:5433/closer
+# JWT_SECRET=... CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+alembic upgrade head
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+
+# frontend (from frontend/)
+# VITE_API_URL=http://localhost:8000   # or leave unset and use the Vite proxy
+npm install
+npm run dev
 ```
 
-Env vars are documented in [`.env.example`](.env.example). Demo walkthrough and host-API fallback commands are in [`docs/demo.md`](docs/demo.md). Prompt history for this repo is in [`docs/ai-log.md`](docs/ai-log.md).
+PowerShell-oriented steps: [`docs/demo.md`](docs/demo.md).
 
-Without Compose, point `DATABASE_URL` at Postgres (or leave it unset for SQLite), set `JWT_SECRET`, run Alembic + Uvicorn from `backend/`, and `npm run dev` in `frontend/`.
+---
 
-Run tests:
+## Tests
 
 ```bash
+# Backend
 cd backend && pytest
+
+# Frontend unit
 cd frontend && npm test
-cd frontend && npm run test:e2e          # mock API
-cd frontend && npm run test:e2e:compose  # pairing against Compose stack
+
+# E2E against mock API
+cd frontend && npm run test:e2e
+
+# E2E pairing against Compose (stack must be up)
+cd frontend && npm run test:e2e:compose
 ```
+
+CI (`.github/workflows/test.yml`): Ruff + pytest, frontend typecheck + Vitest, image builds; deploy on `main` only after those pass.
+
+---
 
 ## Deployment
 
-GitHub Actions (`.github/workflows/test.yml`) runs backend Ruff + pytest and frontend typecheck + Vitest, then builds API/web images. On pushes to `main`, a `deploy` job (needs those jobs) pushes to ECR and rolls ECS services when secrets are configured. Secrets, variables, first-time AWS setup, optional **Vercel** two-project demo wiring (`VITE_API_URL`, `CORS_ORIGINS`, Postgres), and rollback are in [`docs/deploy.md`](docs/deploy.md). Local Compose remains the default for day-to-day work.
+Local Compose is the default for demos.
 
-## How I used AI tools
+Production path: GitHub Actions builds images, then a gated `deploy` job pushes to ECR and updates ECS when secrets are set. Secrets, AWS setup, optional Vercel wiring, and rollback: [`docs/deploy.md`](docs/deploy.md).
 
-This project was built with AI tooling under an explicit engineering process.
-
-**Tools:** Cursor (Agent mode), Composer / Claude-family models in Cursor, Vitest and Playwright for verification.
-
-**Workflow**
-
-1. Spec first: `docs/spec.md` written with an AI "product manager" pass, then reviewed and edited by me.
-2. Backlog: `docs/backlog.md` broken into small, testable tasks.
-3. Rules: `AGENTS.md` and `.cursor/rules` keep every session aligned (contract-first, tests per task, security rules).
-4. Contract-first: `docs/openapi.yaml` defined before endpoints; frontend built against it (mock client first, then generated client).
-5. Independent QA: separate chats review security, edge cases, and accessibility (findings fixed with tests; keep notes in `docs/qa-log.md` when you run a formal pass).
-6. Every prompt logged in `docs/ai-log.md`.
-
-**What AI did well:** turning the charter into a concrete OpenAPI contract and backlog; scaffolding couple-scoped CRUD with cross-couple denial tests; wiring presence over WebSockets; keeping UI work iterative (tokens → PWA → screens → polish) without inventing chat.
-
-**Where it went wrong and how I caught it:**
-
-- Visit/event lookups drafted as "load by id" until rules and tests forced `couple_id` in the same query. Caught by cross-couple 404 tests and the Closer agent rule.
-- Optional visit budget with a default currency treated blank amounts as a zero split. Caught in the polish pass; form parsing now ignores empty amounts and requires shares to sum to the total.
-- Password field toggle sat inside a `<label>`, so Playwright `getByLabel("Password")` also hit "Show password". Caught in e2e; label structure and exact matching fixed.
-
-**What I reviewed by hand:** auth, JWT handling, invite hashing/expiry/rate limits, couple_id scoping, delete-space cascades, media path isolation, env-only secrets, and AI opt-in gating (no model call when off).
+---
 
 ## Security and privacy
 
-- Every query is scoped to the couple; cross-couple access is tested on data endpoints (404).
-- Passwords are argon2id hashes; JWTs expire in 60 minutes. `JWT_SECRET` must be a strong random string (≥32 chars); known placeholders are rejected at boot.
-- Invite codes are single-use, expire in 7 days, stored as SHA-256, and rate-limited. Login/register attempts are also rate-limited.
-- Optional `REGISTRATION_ALLOWED_EMAILS` restricts who can create accounts (useful for demos and closed betas).
-- Forgot/reset password uses hashed, single-use, short-lived tokens. SMTP email delivery is not wired yet; for local/tests only, `AUTH_RESET_DEBUG=1` may include `reset_url` in the forgot-password response. Never enable that in production.
-- AI date ideas are opt-in per couple (`ai_enabled`). Only form fields (duration, budget, mode, optional mood) are sent to Gemini via server-side `GEMINI_API_KEY` / `GEMINI_MODEL`. Prompt and reply text are not logged; no call when opt-in is off. Limited to 10 requests per couple per UTC day.
-- Delete-my-space removes couple-owned rows and media; both user accounts remain.
-- Media lives on the API filesystem under `MEDIA_ROOT` today. Encrypt volume/backups at the host or move to managed object storage for production. No end-to-end encryption of couple content.
+- Every data query is scoped to the caller’s couple; other couples get **404**. Cross-couple denial is tested on data endpoints.
+- Passwords: **argon2id**. JWTs expire in **60 minutes**. `JWT_SECRET` must be ≥32 characters (placeholders rejected at boot).
+- Invite codes: single-use, 7-day expiry, SHA-256 at rest, rate-limited. Login/register are rate-limited too.
+- Optional `REGISTRATION_ALLOWED_EMAILS` locks who can sign up (demos / closed beta).
+- Forgot/reset password uses hashed, single-use, short-lived tokens. **SMTP is not wired**; `AUTH_RESET_DEBUG=1` may return `reset_url` locally — never in production.
+- AI date ideas are **off until the couple opts in** (`ai_enabled`). Only short form fields go to Gemini via `GEMINI_API_KEY` / `GEMINI_MODEL`. Prompts and replies are not logged; no model call when opt-in is off (limit: 10/couple/UTC day).
+- Delete space removes couple-owned rows and media under `MEDIA_ROOT`. User accounts remain.
+- Media is on the API host filesystem today — encrypt volumes/backups or move to object storage for production. No E2E encryption of couple content.
 
-## Testing
+---
 
-- **Backend:** pytest for auth (including forgot/reset), pairing, events, visits/budgets, check-ins, memories, presence/WS, date ideas (Gemini mocked), and cross-couple denial.
-- **Frontend:** Vitest for formatters, tokens/contrast, forms, and key components.
-- **E2E:** Playwright mock flows (home, calendar-add, visit-add) and Compose pairing (`user A` invites, `user B` joins, both see shared data).
-- **CI:** GitHub Actions runs backend lint + pytest, frontend typecheck + Vitest, Docker image builds, then gated deploy on `main`. Playwright e2e stays local (`npm run test:e2e` / `test:e2e:compose`).
+## How AI was used on this project
 
-## Limitations and next steps
+Built with Cursor (Agent) under an explicit process: spec → backlog → contract-first OpenAPI → one backlog task at a time with tests → prompts logged in [`docs/ai-log.md`](docs/ai-log.md). Rules live in `AGENTS.md` and `.cursor/rules`.
 
-- No end-to-end encryption; operator of the API can read stored content.
-- No push notifications; presence is in-app WebSocket only.
-- One couple space per user; no chat or video (by design).
-- Media is local disk in Compose, not yet object storage / CDN.
-- Password-reset email (SMTP) is not wired; local debug URL only.
-- Live demo URL and demo video are still outstanding (screenshot gallery is in `docs/screenshots/`).
-- AWS resources (ECR/ECS/RDS) must be provisioned and GitHub secrets set before `deploy` succeeds. See `docs/deploy.md`.
+**Worked well:** OpenAPI + backlog from the charter; couple-scoped CRUD with denial tests; WebSocket presence; iterative UI without inventing chat.
 
-## Project structure
+**Caught with tests/rules (not left as-is):**
+
+- Loading visits/events by id alone → fixed to always filter by `couple_id`
+- Empty budget fields treated as a zero split → ignore blanks; shares must sum to total
+- Password “show” control nested in the label broke Playwright → structure/exact match fixed
+
+Auth, invites, scoping, delete cascades, media isolation, secrets-in-env, and AI opt-in gating were reviewed by hand. Formal QA notes: [`docs/qa-log.md`](docs/qa-log.md) / [`docs/qa-report.md`](docs/qa-report.md).
+
+---
+
+## Limitations
+
+- No end-to-end encryption (the API operator can read stored content)
+- No push notifications (in-app inbox + WebSocket only)
+- One couple space per user; no chat or video (by design)
+- Media is local disk in Compose / ephemeral on Vercel, not object storage/CDN yet
+- Password-reset email (SMTP) not wired
+- Demo video still outstanding
+- Vercel serverless WebSocket for presence is unreliable; prefer Compose or AWS/ECS for realtime demos
+- AWS (ECR/ECS/RDS) + GitHub secrets required before the full CI deploy path succeeds
+
+---
+
+## Project layout
 
 ```
-/backend   FastAPI app, models, migrations, tests
-/frontend  React PWA, unit + e2e tests
-/docs      spec.md, backlog.md, openapi.yaml, ai-log.md, demo.md
-AGENTS.md  rules for coding agents
+backend/    FastAPI app, models, migrations, pytest
+frontend/   React PWA, Vitest, Playwright
+docs/       spec, backlog, openapi.yaml, ai-log, demo, deploy, screenshots
+AGENTS.md   rules for coding agents
 ```

@@ -143,3 +143,11 @@ Done already: repo layout, Cursor rules, `GET /health`, draft Compose file.
 - [x] 29. In-app notifications (no push).
   - Acceptance: couple-scoped notifications for partner join, new check-in, new event, and new visit. `GET /notifications`, mark one/all read. LiveEvent `notification`. Cross-couple denial. UI list with unread badge. Push remains out of scope.
   - Tests: create-on-action, list scoped to recipient, mark read, outsider 404, WS payload.
+
+- [x] 30. Notifications UX polish (bell + inbox).
+  - Acceptance: header bell with unread badge; Notifications page with All/Unread, mark one/all read, kind labels, deep links. No "Alerts" label.
+  - Tests: bell accessible name; panel filter + mark-all.
+
+- [x] 31. README / demo docs reflect Vercel live URLs and notifications.
+  - Acceptance: README lists live app + API, notifications feature, WS caveat; `docs/demo.md` updated.
+  - Tests: n/a (docs).

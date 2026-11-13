@@ -444,3 +444,9 @@ Prompt: proceed then build the rest of the notification infras and in between co
 Replaced header “Alerts” text with a bell icon + unread badge. Notifications page: All/Unread filters, kind labels, mark as read / mark all as read, tap row opens related screen, partner-join banner links to the inbox.
 
 Prompt: why alert instead of bell and notifications; make mark all etc. better and comprehensive.
+
+## 2026-11-13 - README + demo docs for live Vercel
+
+Documented live app/API URLs, notifications + invite CTAs in features, honest Vercel WS limitation. Updated `docs/demo.md`. Committed `backend/.gitignore` for Vercel link artifacts.
+
+Prompt: proceed.
