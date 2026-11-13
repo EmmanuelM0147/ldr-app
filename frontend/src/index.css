@@ -374,6 +374,20 @@ input, textarea, select {
   gap: var(--space-2);
 }
 
+.home-hero--empty {
+  gap: var(--space-1);
+  padding-block: var(--space-3);
+}
+
+.home-hero--empty h1 {
+  font-size: var(--text-xl);
+  margin: 0;
+}
+
+.home-hero--empty .home-cta {
+  margin-top: var(--space-1);
+}
+
 .home-cta {
   display: inline-flex;
   align-items: center;

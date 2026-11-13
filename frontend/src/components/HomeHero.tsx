@@ -5,10 +5,10 @@ import type { Countdown } from "../types"
 export function HomeHero({ countdown, timeZone }: { countdown: Countdown | null; timeZone: string }) {
   if (!countdown || !countdown.visit || countdown.seconds_until === null) {
     return (
-      <section className="hero home-hero" aria-label="Next visit">
+      <section className="hero home-hero home-hero--empty" aria-label="Next visit">
         <p className="kicker">Next visit</p>
-        <h1>Plan the next time you are together</h1>
-        <p className="muted">No visit on the calendar yet. Add one and the countdown starts here.</p>
+        <h1>No visit planned yet</h1>
+        <p className="muted">Add one to start the countdown.</p>
         <Link className="primary home-cta" to="/visits">
           Plan a visit
         </Link>

@@ -19,12 +19,14 @@ const visit: Visit = {
 }
 
 describe("HomeHero", () => {
-  it("shows a plan-visit CTA when there is no countdown", () => {
-    render(
+  it("shows a compact empty state with a plan-visit CTA", () => {
+    const { container } = render(
       <MemoryRouter>
         <HomeHero countdown={null} timeZone="UTC" />
       </MemoryRouter>,
     )
+    expect(container.querySelector(".home-hero--empty")).not.toBeNull()
+    expect(screen.getByRole("heading", { name: "No visit planned yet" })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Plan a visit" })).toHaveAttribute("href", "/visits")
   })
 
