@@ -12,6 +12,7 @@ import { PartnerHomeCards } from "./components/PartnerHomeCards"
 import { PartnerTodayCards } from "./components/PartnerTodayCards"
 import { QuickActions } from "./components/QuickActions"
 import { itemsThisWeek, ThisWeekList } from "./components/ThisWeekList"
+import { MemoryDropZone, validateMemoryFile } from "./components/MemoryDropZone"
 import { MemoryTimeline, OnThisDay, onThisDay } from "./components/MemoryTimeline"
 import { PasswordSettingsForm } from "./components/PasswordSettingsForm"
 import { ProfilePhotoForm } from "./components/ProfilePhotoForm"
@@ -923,6 +924,13 @@ export function MemoriesPage() {
       setError("Add a note or choose a photo or video.")
       return
     }
+    if (file) {
+      const checked = validateMemoryFile(file)
+      if (!checked.ok) {
+        setError(checked.error)
+        return
+      }
+    }
     setError(null)
     void client
       ?.createMemory({
@@ -974,11 +982,7 @@ export function MemoriesPage() {
             <span>What you want to keep</span>
             <textarea name="body" rows={4} />
           </label>
-          <label className="field">
-            <span>Photo or video</span>
-            <input name="media" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" />
-          </label>
-          <p className="muted">Photos up to 10 MiB. Videos up to 40 MiB (MP4 or WebM).</p>
+          <MemoryDropZone />
           <button className="primary" type="submit">
             Save memory
           </button>
