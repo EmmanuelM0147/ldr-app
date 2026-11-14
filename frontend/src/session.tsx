@@ -95,19 +95,20 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setNotifications([])
       return
     }
+    const api = client
     let ignore = false
-    void client.listNotifications().then((rows) => {
+    void api.listNotifications().then((rows) => {
       if (!ignore) setNotifications(rows)
     }).catch(() => {
       if (!ignore) setNotifications([])
     })
-    void client.getPresence().then((list) => {
+    void api.getPresence().then((list) => {
       if (!ignore) setPresence(list.members)
     }).catch(() => {
       if (!ignore) setPresence([])
     })
     const viewerId = user?.id
-    const stop = client.subscribe((event) => {
+    const stop = api.subscribe((event) => {
       if (event.type === "couple_gone") {
         setCouple(null)
         setPresence([])
@@ -120,7 +121,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         setCouple(event.couple)
         const notice = partnerJoinedMessage(previous, event.couple, viewerId)
         if (notice) setPartnerJoinedNotice(notice)
-        void client.getPresence().then((list) => {
+        void api.getPresence().then((list) => {
           if (!ignore) setPresence(list.members)
         }).catch(() => undefined)
         setLiveTick((value) => value + 1)
@@ -136,7 +137,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         setPresence(event.members)
         const known = new Set((coupleRef.current?.members ?? []).map((member) => member.user_id))
         if (event.members.some((member) => !known.has(member.user_id))) {
-          void client.getCurrentCouple().then(setCouple).catch(() => undefined)
+          void api.getCurrentCouple().then(setCouple).catch(() => undefined)
         }
       }
       if (event.type === "check_in") setLiveTick((value) => value + 1)
@@ -146,8 +147,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       if (ignore || document.visibilityState === "hidden") return
       try {
         const [rows, nextCouple] = await Promise.all([
-          client.listNotifications(),
-          client.getCurrentCouple(),
+          api.listNotifications(),
+          api.getCurrentCouple(),
         ])
         if (ignore) return
         setNotifications((current) => {
