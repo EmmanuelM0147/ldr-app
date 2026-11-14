@@ -145,9 +145,10 @@ As a member, I see alerts when my partner joins or adds shared activity.
 Acceptance criteria:
 
 - Each notification belongs to one recipient in a couple: kind, title, body, `created_at`, optional `read_at`.
-- Kinds: `partner_joined`, `check_in`, `event_created`, `visit_created`.
+- Kinds: `partner_joined`, `check_in`, `event_created`, `visit_created`, `memory_created`.
 - Either member can list only their own notifications and mark one or all as read.
 - Another couple's notification id returns 404.
+- Clients may poll `GET /notifications` and `GET /couples/current` while the tab is visible so the inbox stays fresh when the WebSocket is unavailable (for example on some serverless hosts).
 
 ### Date night ideas
 

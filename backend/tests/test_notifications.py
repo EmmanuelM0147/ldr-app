@@ -69,7 +69,7 @@ def test_notifications_are_couple_scoped_and_markable(client) -> None:
     assert all(item["read_at"] is not None for item in remaining)
 
 
-def test_event_and_visit_notify_partner(client) -> None:
+def test_event_visit_and_memory_notify_partner(client) -> None:
     ada, bello = _pair(client)
     event = client.post(
         "/events",
@@ -91,9 +91,17 @@ def test_event_and_visit_notify_partner(client) -> None:
         headers=auth(ada),
     )
     assert visit.status_code == 201
+    memory = client.post(
+        "/memories",
+        json={"title": "Sunset", "body": "On the balcony."},
+        headers=auth(ada),
+    )
+    assert memory.status_code == 201
     kinds = {item["kind"] for item in client.get("/notifications", headers=auth(bello)).json()}
     assert "event_created" in kinds
     assert "visit_created" in kinds
+    assert "memory_created" in kinds
     ada_kinds = {item["kind"] for item in client.get("/notifications", headers=auth(ada)).json()}
     assert "event_created" not in ada_kinds
     assert "visit_created" not in ada_kinds
+    assert "memory_created" not in ada_kinds

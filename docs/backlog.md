@@ -151,3 +151,7 @@ Done already: repo layout, Cursor rules, `GET /health`, draft Compose file.
 - [x] 31. README / demo docs reflect Vercel live URLs and notifications.
   - Acceptance: README lists live app + API, notifications feature, WS caveat; `docs/demo.md` updated.
   - Tests: n/a (docs).
+
+- [x] 32. Live sync poll fallback + memory notifications.
+  - Acceptance: while the tab is visible, poll notifications + current couple every ~20s so join/inbox update without WebSocket. `memory_created` notifications on memory create/upload. Kind deep-links to Memories.
+  - Tests: liveSync helpers; backend memory notify.

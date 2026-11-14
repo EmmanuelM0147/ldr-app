@@ -450,3 +450,9 @@ Prompt: why alert instead of bell and notifications; make mark all etc. better a
 Documented live app/API URLs, notifications + invite CTAs in features, honest Vercel WS limitation. Updated `docs/demo.md`. Committed `backend/.gitignore` for Vercel link artifacts.
 
 Prompt: proceed.
+
+## 2026-11-14 - Poll fallback + memory notifications
+
+Session polls notifications and couple every 20s while the tab is visible (pauses when hidden) so the hosted demo still updates if WebSocket fails. Added `memory_created` notification kind on memory create/upload. liveSync helpers unit-tested.
+
+Prompt: proceed.

@@ -12,6 +12,7 @@ const KIND_META: Record<
   check_in: { label: "Check-in", href: "/check-ins" },
   event_created: { label: "Event", href: "/calendar" },
   visit_created: { label: "Visit", href: "/visits" },
+  memory_created: { label: "Memory", href: "/memories" },
 }
 
 type Filter = "all" | "unread"

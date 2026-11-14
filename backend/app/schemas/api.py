@@ -477,7 +477,13 @@ class PresenceWrite(ApiModel):
     free_to_talk: bool
 
 
-NotificationKind = Literal["partner_joined", "check_in", "event_created", "visit_created"]
+NotificationKind = Literal[
+    "partner_joined",
+    "check_in",
+    "event_created",
+    "visit_created",
+    "memory_created",
+]
 
 
 class NotificationOut(ApiModel):

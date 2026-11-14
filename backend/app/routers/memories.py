@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.deps import get_clock, get_current_couple, get_current_user, get_db
 from app.media import absolute_media_path, delete_media_file, save_memory_file
 from app.models import Couple, Memory, User
+from app.notify import publish_rows, queue_for_partners
 from app.schemas.api import MemoryOut, MemoryPatch, MemoryWrite
 from app.serialize import memory_out
 
@@ -60,7 +61,7 @@ def list_memories(
 
 
 @router.post("/memories", response_model=MemoryOut, status_code=201, operation_id="createMemory")
-def create_memory(
+async def create_memory(
     body: MemoryWrite,
     user: User = Depends(get_current_user),
     couple: Couple = Depends(get_current_couple),
@@ -76,8 +77,20 @@ def create_memory(
         updated_at=now,
     )
     db.add(memory)
+    db.flush()
+    label = body.title or "a memory"
+    rows = queue_for_partners(
+        db,
+        couple,
+        actor_user_id=user.id,
+        kind="memory_created",
+        title="New memory",
+        body=f"{user.display_name} added '{label}'.",
+        now=now,
+    )
     db.commit()
     db.refresh(memory)
+    await publish_rows(couple.id, rows)
     return memory_out(memory)
 
 
@@ -97,10 +110,11 @@ async def create_memory_with_media(
     now=Depends(get_clock),
 ) -> MemoryOut:
     kind, content_type, filename, relative = await save_memory_file(couple.id, file)
+    cleaned_title = _clean_title(title)
     memory = Memory(
         couple_id=couple.id,
         author_id=user.id,
-        title=_clean_title(title),
+        title=cleaned_title,
         body=_clean_body(body, allow_empty=True),
         media_kind=kind,
         media_content_type=content_type,
@@ -110,8 +124,20 @@ async def create_memory_with_media(
         updated_at=now,
     )
     db.add(memory)
+    db.flush()
+    label = cleaned_title or "a photo"
+    rows = queue_for_partners(
+        db,
+        couple,
+        actor_user_id=user.id,
+        kind="memory_created",
+        title="New memory",
+        body=f"{user.display_name} added '{label}'.",
+        now=now,
+    )
     db.commit()
     db.refresh(memory)
+    await publish_rows(couple.id, rows)
     return memory_out(memory)
 
 

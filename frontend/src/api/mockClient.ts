@@ -697,6 +697,13 @@ export function createMockClient(options: Options = {}) {
         updated_at: stamp,
       }
       db.memories.push(memory)
+      notifyPartners(
+        couple,
+        user.id,
+        "memory_created",
+        "New memory",
+        `${user.display_name} added '${memory.title ?? "a memory"}'.`,
+      )
       persist()
       return clone(memory)
     },

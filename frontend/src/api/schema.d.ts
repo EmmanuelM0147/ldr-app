@@ -856,7 +856,7 @@ export interface components {
             free_to_talk: boolean;
         };
         /** @enum {string} */
-        NotificationKind: "partner_joined" | "check_in" | "event_created" | "visit_created";
+        NotificationKind: "partner_joined" | "check_in" | "event_created" | "visit_created" | "memory_created";
         Notification: {
             /** Format: uuid */
             id: string;

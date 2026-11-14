@@ -187,7 +187,12 @@ export type PresenceList = {
   members: Presence[]
 }
 
-export type NotificationKind = "partner_joined" | "check_in" | "event_created" | "visit_created"
+export type NotificationKind =
+  | "partner_joined"
+  | "check_in"
+  | "event_created"
+  | "visit_created"
+  | "memory_created"
 
 export type AppNotification = {
   id: string

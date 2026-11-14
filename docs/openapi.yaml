@@ -1696,7 +1696,7 @@ components:
           type: boolean
     NotificationKind:
       type: string
-      enum: [partner_joined, check_in, event_created, visit_created]
+      enum: [partner_joined, check_in, event_created, visit_created, memory_created]
     Notification:
       type: object
       additionalProperties: false

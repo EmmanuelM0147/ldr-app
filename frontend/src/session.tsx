@@ -1,7 +1,13 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react"
 import { createApiClient } from "./api/apiClient"
 import { ApiError } from "./api/errors"
 import { createDemoClient, type MockClient } from "./api/mockClient"
+import {
+  LIVE_POLL_MS,
+  mergeNotifications,
+  newestUnreadPartnerJoined,
+  partnerJoinedMessage,
+} from "./liveSync"
 import type { AppNotification, Couple, Presence, User } from "./types"
 
 const TOKEN_KEY = "closer-token"
@@ -81,6 +87,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const coupleRef = useRef(couple)
+  coupleRef.current = couple
+
   useEffect(() => {
     if (!client || !couple) {
       setNotifications([])
@@ -97,7 +106,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }).catch(() => {
       if (!ignore) setPresence([])
     })
-    const known = new Set(couple.members.map((member) => member.user_id))
     const viewerId = user?.id
     const stop = client.subscribe((event) => {
       if (event.type === "couple_gone") {
@@ -108,11 +116,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         return
       }
       if (event.type === "partner_joined") {
+        const previous = coupleRef.current
         setCouple(event.couple)
-        const joiner = event.couple.members.find((member) => member.user_id !== viewerId)
-        setPartnerJoinedNotice(
-          joiner ? `${joiner.display_name} joined your space.` : "Your partner joined your space.",
-        )
+        const notice = partnerJoinedMessage(previous, event.couple, viewerId)
+        if (notice) setPartnerJoinedNotice(notice)
         void client.getPresence().then((list) => {
           if (!ignore) setPresence(list.members)
         }).catch(() => undefined)
@@ -121,26 +128,69 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       }
       if (event.type === "notification") {
         if (event.notification.recipient_user_id === viewerId) {
-          setNotifications((current) => {
-            if (current.some((item) => item.id === event.notification.id)) return current
-            return [event.notification, ...current]
-          })
+          setNotifications((current) => mergeNotifications(current, [event.notification]))
         }
         return
       }
       if (event.type === "presence") {
         setPresence(event.members)
+        const known = new Set((coupleRef.current?.members ?? []).map((member) => member.user_id))
         if (event.members.some((member) => !known.has(member.user_id))) {
           void client.getCurrentCouple().then(setCouple).catch(() => undefined)
         }
       }
       if (event.type === "check_in") setLiveTick((value) => value + 1)
     })
+
+    async function pollLiveState() {
+      if (ignore || document.visibilityState === "hidden") return
+      try {
+        const [rows, nextCouple] = await Promise.all([
+          client.listNotifications(),
+          client.getCurrentCouple(),
+        ])
+        if (ignore) return
+        setNotifications((current) => {
+          const joined = newestUnreadPartnerJoined(current, rows)
+          if (joined?.body) setPartnerJoinedNotice(joined.body)
+          return mergeNotifications(current, rows)
+        })
+        setCouple((previous) => {
+          const notice = partnerJoinedMessage(previous, nextCouple, viewerId)
+          if (notice) {
+            setPartnerJoinedNotice(notice)
+            setLiveTick((value) => value + 1)
+          }
+          if (
+            previous &&
+            previous.id === nextCouple.id &&
+            previous.members.length === nextCouple.members.length &&
+            previous.ai_enabled === nextCouple.ai_enabled
+          ) {
+            return previous
+          }
+          return nextCouple
+        })
+      } catch {
+        // Keep last-known state when poll fails (offline / transient).
+      }
+    }
+
+    const pollId = window.setInterval(() => {
+      void pollLiveState()
+    }, LIVE_POLL_MS)
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void pollLiveState()
+    }
+    document.addEventListener("visibilitychange", onVisible)
+
     return () => {
       ignore = true
       stop()
+      window.clearInterval(pollId)
+      document.removeEventListener("visibilitychange", onVisible)
     }
-  }, [client, couple, user?.id])
+  }, [client, couple?.id, user?.id])
 
   async function signIn(token: string, nextUser: User) {
     if (!client) return
