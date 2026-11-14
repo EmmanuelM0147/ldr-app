@@ -246,6 +246,7 @@ def reset_password(
         raise HTTPException(status_code=400, detail=GENERIC_RESET_INVALID)
 
     user.password_hash = hash_password(body.new_password)
+    user.password_changed_at = now
     row.used_at = now
     for other in db.scalars(
         select(PasswordResetToken).where(
@@ -270,6 +271,7 @@ def update_me(
     body: UserPatch,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    now=Depends(get_clock),
 ) -> UserOut:
     changes = body.model_dump(exclude_unset=True)
     if not changes:
@@ -280,6 +282,7 @@ def update_me(
         if current_password is None or not verify_password(current_password, user.password_hash):
             raise HTTPException(status_code=422, detail="Current password is wrong.")
         user.password_hash = hash_password(new_password)
+        user.password_changed_at = now
     elif current_password is not None:
         raise HTTPException(status_code=422, detail="Provide a new password to change it.")
     for key, value in changes.items():

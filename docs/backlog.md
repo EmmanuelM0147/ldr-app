@@ -155,3 +155,15 @@ Done already: repo layout, Cursor rules, `GET /health`, draft Compose file.
 - [x] 32. Live sync poll fallback + memory notifications.
   - Acceptance: while the tab is visible, poll notifications + current couple every ~20s so join/inbox update without WebSocket. `memory_created` notifications on memory create/upload. Kind deep-links to Memories.
   - Tests: liveSync helpers; backend memory notify.
+
+- [x] 33. SEC-04 invalidate JWTs after password change/reset.
+  - Acceptance: `password_changed_at` set on change/reset; tokens with earlier `iat` get 401; Settings signs out after change.
+  - Tests: change + reset invalidate prior bearer.
+
+- [x] 34. SEC-06 reject spoofed upload Content-Type (magic bytes).
+  - Acceptance: avatar and memory uploads sniff magic bytes; mismatch or unknown → 422. OpenAPI notes sniffing.
+  - Tests: sniff helpers; spoofed JPEG → 422 on avatar and memory upload.
+
+- [x] 35. SEC-07 delete space clears on-disk memory media.
+  - Acceptance: delete removes memory files and the couple media folder; path escape refused on delete.
+  - Tests: upload → delete → file/folder gone + DB rows zero; escape delete no-op.

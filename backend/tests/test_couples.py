@@ -178,6 +178,52 @@ def test_delete_notifies_partner_over_websocket(client) -> None:
     assert client.get("/couples/current", headers=auth(partner)).status_code == 404
 
 
+def test_delete_removes_couple_media_from_disk(client, db_factory) -> None:
+    """SEC-07: deleting the space removes memory files under MEDIA_ROOT."""
+    import uuid
+    from pathlib import Path
+
+    from app.media import media_root
+    from app.models import Couple, Memory
+
+    owner = register(client, "ada@example.com", name="Ada")
+    client.post("/couples", headers=auth(owner))
+    couple = client.get("/couples/current", headers=auth(owner)).json()
+    couple_uuid = uuid.UUID(couple["id"])
+
+    png = (
+        b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00"
+        b"\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+    uploaded = client.post(
+        "/memories/upload",
+        data={"title": "Gate", "body": ""},
+        files={"file": ("gate.png", png, "image/png")},
+        headers=auth(owner),
+    )
+    assert uploaded.status_code == 201, uploaded.text
+
+    folder = media_root() / str(couple_uuid)
+    assert folder.is_dir()
+    files = list(folder.iterdir())
+    assert len(files) == 1
+    assert files[0].is_file()
+    media_path = Path(files[0])
+
+    deleted = _delete_couple(client, owner)
+    assert deleted.status_code == 204
+    assert not media_path.exists()
+    assert not folder.exists()
+
+    with db_factory() as db:
+        assert db.get(Couple, couple_uuid) is None
+        assert (
+            db.scalar(select(func.count()).select_from(Memory).where(Memory.couple_id == couple_uuid))
+            == 0
+        )
+
+
 def test_delete_keeps_users_and_other_couple(client, db_factory) -> None:
     owner = register(client, "ada@example.com", name="Ada")
     partner = register(client, "bello@example.com", name="Bello")

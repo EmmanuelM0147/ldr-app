@@ -40,3 +40,18 @@ def create_access_token(user_id: uuid.UUID, now: datetime) -> str:
 def read_user_id(token: str) -> uuid.UUID:
     payload = jwt.decode(token, get_settings().jwt_secret, algorithms=["HS256"])
     return uuid.UUID(str(payload["sub"]))
+
+
+def read_token_issued_at(token: str) -> datetime:
+    """Return the token `iat` as an aware UTC datetime."""
+    payload = jwt.decode(token, get_settings().jwt_secret, algorithms=["HS256"])
+    raw = payload.get("iat")
+    if raw is None:
+        raise ValueError("Token is missing iat.")
+    if isinstance(raw, datetime):
+        issued = raw
+    else:
+        issued = datetime.fromtimestamp(int(raw), tz=UTC)
+    if issued.tzinfo is None:
+        return issued.replace(tzinfo=UTC)
+    return issued.astimezone(UTC)

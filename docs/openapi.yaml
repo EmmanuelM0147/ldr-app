@@ -214,7 +214,7 @@ paths:
                 file:
                   type: string
                   format: binary
-                  description: JPEG, PNG, or WebP up to 5 MiB
+                  description: JPEG, PNG, or WebP up to 5 MiB. Bytes must match the declared Content-Type (magic sniff).
       responses:
         "200":
           description: Updated user with avatar_url
@@ -310,7 +310,7 @@ paths:
               $ref: "#/components/schemas/CoupleDelete"
       responses:
         "204":
-          description: Space and couple-owned rows deleted. User accounts remain.
+          description: Space, couple-owned rows, and on-disk memory media deleted. User accounts and avatars remain.
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -709,7 +709,7 @@ paths:
                 file:
                   type: string
                   format: binary
-                  description: JPEG, PNG, WebP (10 MiB) or MP4, WebM (40 MiB)
+                  description: JPEG, PNG, WebP (10 MiB) or MP4, WebM (40 MiB). Bytes must match the declared Content-Type (magic sniff).
       responses:
         "201":
           description: Memory saved with media

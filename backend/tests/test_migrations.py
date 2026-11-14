@@ -20,6 +20,9 @@ EXPECTED = {
     "join_failures",
     "login_failures",
     "register_failures",
+    "password_reset_tokens",
+    "password_reset_failures",
+    "ai_daily_usage",
     "notifications",
 }
 
@@ -44,7 +47,8 @@ def test_upgrade_and_downgrade(tmp_path) -> None:
 
 def _postgres_available(url: str) -> bool:
     try:
-        engine = create_engine(url)
+        # Short connect timeout so the suite does not hang when nothing listens on 5433.
+        engine = create_engine(url, connect_args={"connect_timeout": 2})
         with engine.connect() as connection:
             connection.execute(text("SELECT 1"))
         engine.dispose()

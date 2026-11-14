@@ -54,6 +54,7 @@ Acceptance criteria:
 - I can change my display name and IANA timezone.
 - I can upload or remove a profile photo (JPEG, PNG, or WebP, max 5 MiB).
 - I can change my password with the current password plus a new password (min 8 characters).
+- Changing or resetting the password invalidates previously issued access tokens; the client must sign in again.
 - Email is shown but not changed here.
 - My partner in the same couple can see my profile photo; other couples cannot.
 - Either member can turn couple AI (`ai_enabled`) on or off.
@@ -173,7 +174,7 @@ Acceptance criteria:
 
 All ids are UUIDs. All timestamps are UTC.
 
-- **User.** `email` unique, `password_hash`, `display_name`, `timezone`, `created_at`.
+- **User.** `email` unique, `password_hash`, `display_name`, `timezone`, `password_changed_at` (nullable; set on change/reset to invalidate older JWTs), `created_at`.
 - **Couple.** `ai_enabled` default false, `created_at`.
 - **Membership.** `couple_id`, `user_id`, `joined_at`. Unique on `user_id`. At most two rows per couple.
 - **Invite.** `couple_id`, `code_hash`, `created_by`, `expires_at`, `used_at` nullable, `created_at`.

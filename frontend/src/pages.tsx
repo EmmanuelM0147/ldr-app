@@ -584,11 +584,17 @@ export function SettingsPage() {
 
       <section className="card">
         <h2>Password</h2>
-        <p className="muted">Change with your current password. New password must be at least 8 characters.</p>
+        <p className="muted">
+          Change with your current password. New password must be at least 8 characters. You will be signed out
+          afterward and need to sign in again.
+        </p>
         <PasswordSettingsForm
           onSave={async (values) => {
             try {
               await client.updateMe(values)
+              // SEC-04: server invalidates this bearer after a password change.
+              signOut()
+              navigate("/login", { replace: true })
             } catch (caught) {
               throw new Error(caught instanceof ApiError ? caught.detail : "Could not change password.")
             }

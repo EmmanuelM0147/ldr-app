@@ -12,7 +12,7 @@ from app.config import resolved_database_url
 from app.db import session_factory
 from app.db_url import supabase_connect_args
 from app.models import Couple, Membership, User
-from app.security import read_user_id
+from app.security import read_token_issued_at, read_user_id
 
 _bearer = HTTPBearer(auto_error=False)
 _engine = None
@@ -61,11 +61,18 @@ def get_current_user(
         raise HTTPException(status_code=401, detail="Sign in again.")
     try:
         user_id = read_user_id(creds.credentials)
+        issued_at = read_token_issued_at(creds.credentials)
     except (jwt.PyJWTError, ValueError) as exc:
         raise HTTPException(status_code=401, detail="Sign in again.") from exc
     user = db.get(User, user_id)
     if user is None:
         raise HTTPException(status_code=401, detail="Sign in again.")
+    changed = user.password_changed_at
+    if changed is not None:
+        bound = changed if changed.tzinfo is not None else changed.replace(tzinfo=UTC)
+        # Reject tokens minted before the latest password change (SEC-04).
+        if issued_at < bound.astimezone(UTC):
+            raise HTTPException(status_code=401, detail="Sign in again.")
     return user
 
 

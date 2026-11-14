@@ -224,8 +224,27 @@ def test_update_me_profile_and_password(client) -> None:
         headers=headers,
     )
     assert changed.status_code == 200
+    # SEC-04: the bearer used to change the password is no longer valid.
+    assert client.get("/me", headers=headers).status_code == 401
     assert client.post("/auth/login", json={"email": "ada@example.com", "password": "password456"}).status_code == 200
     assert client.post("/auth/login", json={"email": "ada@example.com", "password": "password123"}).status_code == 401
+
+
+def test_password_reset_invalidates_existing_access_token(client, monkeypatch) -> None:
+    """SEC-04: reset also revokes JWTs minted before the change."""
+    token = register(client, "ada@example.com")
+    headers = {"Authorization": f"Bearer {token}"}
+    assert client.get("/me", headers=headers).status_code == 200
+    monkeypatch.setenv("AUTH_RESET_DEBUG", "1")
+    forgot = client.post("/auth/forgot-password", json={"email": "ada@example.com"})
+    assert forgot.status_code == 200
+    reset_url = forgot.json()["reset_url"]
+    assert reset_url
+    reset_token = reset_url.rsplit("token=", 1)[1]
+    ok = client.post("/auth/reset-password", json={"token": reset_token, "new_password": "password456"})
+    assert ok.status_code == 200
+    assert client.get("/me", headers=headers).status_code == 401
+    assert client.post("/auth/login", json={"email": "ada@example.com", "password": "password456"}).status_code == 200
 
 
 def test_avatar_upload_partner_and_cross_couple_denial(client) -> None:

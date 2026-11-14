@@ -456,3 +456,21 @@ Prompt: proceed.
 Session polls notifications and couple every 20s while the tab is visible (pauses when hidden) so the hosted demo still updates if WebSocket fails. Added `memory_created` notification kind on memory create/upload. liveSync helpers unit-tested.
 
 Prompt: proceed.
+
+## 2026-11-14 - SEC-04 password change invalidates JWTs
+
+`password_changed_at` on users; reject bearer tokens with `iat` before that stamp after change or reset. Settings signs out after password change. Tests cover change + reset.
+
+Prompt: proceed.
+
+## 2026-11-14 - SEC-06 upload magic sniff
+
+Avatar and memory uploads require file magic bytes to match the declared Content-Type. Spoofed `image/jpeg` with non-image bytes returns 422. OpenAPI notes the sniff. Postgres migrate probe uses a 2s connect timeout so the suite does not hang when nothing listens on 5433.
+
+Prompt: proceed.
+
+## 2026-11-14 - SEC-07 delete space clears media
+
+`purge_couple_media` removes the couple media directory on space delete; `delete_media_file` refuses path escapes. Tests assert disk + DB cleanup. OpenAPI 204 notes media removal.
+
+Prompt: proceed with next slice, then commit and push all.

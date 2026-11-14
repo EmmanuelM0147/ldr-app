@@ -18,6 +18,8 @@ class User(Base):
     display_name: Mapped[str] = mapped_column(String(40))
     timezone: Mapped[str] = mapped_column(String(64))
     created_at: Mapped[datetime] = mapped_column(UtcDateTime)
+    # When set, bearer tokens with iat strictly before this instant are rejected (SEC-04).
+    password_changed_at: Mapped[datetime | None] = mapped_column(UtcDateTime, nullable=True)
     avatar_content_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
     avatar_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
     avatar_path: Mapped[str | None] = mapped_column(String(512), nullable=True)

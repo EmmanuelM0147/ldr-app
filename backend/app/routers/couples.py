@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.deps import get_clock, get_current_user, get_db
 from app.deps import get_current_couple as load_couple
-from app.media import delete_media_file
+from app.media import delete_media_file, purge_couple_media
 from app.models import (
     AiDailyUsage,
     AppNotification,
@@ -109,6 +109,8 @@ async def delete_current_couple(
     memories = db.scalars(select(Memory).where(Memory.couple_id == couple_id)).all()
     for memory in memories:
         delete_media_file(memory.media_path)
+    # Drop any leftover couple media directory (SEC-07).
+    purge_couple_media(couple_id)
     db.execute(delete(Memory).where(Memory.couple_id == couple_id))
     db.execute(delete(Presence).where(Presence.couple_id == couple_id))
     db.execute(delete(AiDailyUsage).where(AiDailyUsage.couple_id == couple_id))
