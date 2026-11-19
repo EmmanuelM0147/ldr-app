@@ -1,4 +1,4 @@
-from app.media import sniff_content_type
+from app.media import absolute_media_path, safe_display_filename, sniff_content_type
 
 
 PNG = (
@@ -63,6 +63,8 @@ def test_avatar_accepts_real_png(client) -> None:
 
 def test_delete_media_file_refuses_path_escape(tmp_path, monkeypatch) -> None:
     """Poisoned relative paths must not delete outside MEDIA_ROOT."""
+    from fastapi import HTTPException
+
     from app.media import delete_media_file, media_root
 
     monkeypatch.setenv("MEDIA_ROOT", str(tmp_path / "media"))
@@ -75,3 +77,30 @@ def test_delete_media_file_refuses_path_escape(tmp_path, monkeypatch) -> None:
     delete_media_file("../../secret.txt")
     assert outside.is_file()
     assert root.is_dir()
+    try:
+        absolute_media_path("../secret.txt")
+        assert False, "expected 404 for path escape"
+    except HTTPException as exc:
+        assert exc.status_code == 404
+
+
+def test_safe_display_filename_strips_path_segments() -> None:
+    assert safe_display_filename("../../evil.jpg", "fallback.jpg") == "evil.jpg"
+    assert safe_display_filename("..", "fallback.jpg") == "fallback.jpg"
+    assert safe_display_filename(None, "fallback.jpg") == "fallback.jpg"
+
+
+def test_avatar_rejects_oversize_payload(client) -> None:
+    """SEC-12: oversize avatar → 422."""
+    from app.media import AVATAR_MAX
+    from tests.conftest import auth, register
+
+    token = register(client, "ada@example.com")
+    huge = b"\xff\xd8\xff" + b"\x00" * (AVATAR_MAX + 1)
+    response = client.post(
+        "/me/avatar",
+        files={"file": ("big.jpg", huge, "image/jpeg")},
+        headers=auth(token),
+    )
+    assert response.status_code == 422
+    assert "large" in response.json()["detail"].lower()

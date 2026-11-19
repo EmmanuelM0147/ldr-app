@@ -480,3 +480,9 @@ Prompt: proceed with next slice, then commit and push all.
 Added `docs/agent-team.md` (roles + collaboration), `docs/process.md` (per-task loop), linked them from `AGENTS.md` and the README. Added `scripts/test.sh` / `scripts/test.ps1` so unit+integration suites run with one command. Clarified CI + Vercel/AWS CD in the README.
 
 Prompt: (rubric screenshots for project2 eval criteria 1–9).
+
+## 2026-11-19 - Remaining polish (SEC-08/11/12, FUNC-14, SMTP, demo script)
+
+Hardened media path handling; documented register 409; expired JWT + oversize tests; check-in note maxLength 280; optional SMTP for reset email; demo video recording script. FUNC-23 verified already fixed; FUNC-18 deferred.
+
+Prompt: go with all procedurally.

@@ -171,3 +171,7 @@ Done already: repo layout, Cursor rules, `GET /health`, draft Compose file.
 - [x] 36. Rubric docs: agent team, process, single-command tests.
   - Acceptance: `docs/agent-team.md` + `docs/process.md`; `AGENTS.md` links modular docs; `scripts/test.sh` / `test.ps1`; README points to tracker/team/CI+CD.
   - Tests: n/a (docs/scripts); suites still run via the script.
+
+- [x] 37. Remaining QA polish + optional SMTP + demo script.
+  - Acceptance: SEC-08 path harden; SEC-11 documented; SEC-12 expired/oversize tests; FUNC-14 note 280; optional SMTP_*; `docs/demo-video.md`.
+  - Tests: media escape/basename/oversize; expired JWT; mail SMTP mock.

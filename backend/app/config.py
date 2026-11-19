@@ -34,6 +34,13 @@ class Settings(BaseSettings):
     public_app_url: str = "http://localhost:5173"
     # When true, forgot-password may include reset_url in JSON (local/tests only).
     auth_reset_debug: bool = False
+    # Optional SMTP for password-reset email. When smtp_host is empty, no mail is sent.
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
+    smtp_use_tls: bool = True
 
     @field_validator("jwt_secret")
     @classmethod

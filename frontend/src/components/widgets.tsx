@@ -380,7 +380,7 @@ export function CheckInForm({
       </div>
       <label className="field">
         <span>Note</span>
-        <textarea name="note" maxLength={320} defaultValue={existing?.note ?? ""} rows={3} />
+        <textarea name="note" maxLength={280} defaultValue={existing?.note ?? ""} rows={3} />
       </label>
       {error ? <p className="error">{error}</p> : null}
       <button className="primary" type="submit" disabled={!mood}>

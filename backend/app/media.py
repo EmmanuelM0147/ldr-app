@@ -29,6 +29,15 @@ def media_root() -> Path:
     return root
 
 
+def safe_display_filename(name: str | None, fallback: str) -> str:
+    """Keep only the basename; strip path segments and nulls (SEC-08)."""
+    raw = (name or "").replace("\x00", "").strip()
+    base = Path(raw).name if raw else ""
+    if not base or base in {".", ".."} or ".." in base:
+        return fallback[:255]
+    return base[:255]
+
+
 def sniff_content_type(payload: bytes) -> str | None:
     """Return a supported media type from magic bytes, or None if unrecognized."""
     if len(payload) >= 3 and payload[:3] == b"\xff\xd8\xff":
@@ -84,9 +93,10 @@ async def save_memory_file(couple_id: uuid.UUID, upload: UploadFile) -> tuple[st
     stored_name = f"{uuid.uuid4().hex}{extension}"
     path = folder / stored_name
     path.write_bytes(payload)
+    # Stored paths are UUID-only under the couple folder — never client path input.
     relative = f"{couple_id}/{stored_name}"
-    filename = upload.filename or stored_name
-    return kind, content_type, filename[:255], relative
+    filename = safe_display_filename(upload.filename, stored_name)
+    return kind, content_type, filename, relative
 
 
 async def save_avatar_file(user_id: uuid.UUID, upload: UploadFile) -> tuple[str, str, str]:
@@ -104,15 +114,24 @@ async def save_avatar_file(user_id: uuid.UUID, upload: UploadFile) -> tuple[str,
     path = folder / stored_name
     path.write_bytes(payload)
     relative = f"avatars/{user_id}/{stored_name}"
-    filename = upload.filename or stored_name
-    return content_type, filename[:255], relative
+    filename = safe_display_filename(upload.filename, stored_name)
+    return content_type, filename, relative
+
+
+def _resolved_under_root(relative: str) -> Path | None:
+    """Return the resolved path if it stays under MEDIA_ROOT; else None."""
+    if not relative or ".." in relative.replace("\\", "/").split("/"):
+        return None
+    root = media_root()
+    path = (root / relative).resolve()
+    if not str(path).startswith(str(root)):
+        return None
+    return path
 
 
 def absolute_media_path(relative: str) -> Path:
-    path = (media_root() / relative).resolve()
-    if not str(path).startswith(str(media_root())):
-        raise HTTPException(status_code=404, detail="Media not found.")
-    if not path.is_file():
+    path = _resolved_under_root(relative)
+    if path is None or not path.is_file():
         raise HTTPException(status_code=404, detail="Media not found.")
     return path
 
@@ -121,11 +140,8 @@ def delete_media_file(relative: str | None) -> None:
     """Delete a stored media file if it resolves under MEDIA_ROOT (no path escape)."""
     if not relative:
         return
-    root = media_root()
-    path = (root / relative).resolve()
-    if not str(path).startswith(str(root)):
-        return
-    if path.is_file():
+    path = _resolved_under_root(relative)
+    if path is not None and path.is_file():
         path.unlink()
 
 

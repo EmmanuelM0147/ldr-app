@@ -147,7 +147,7 @@ describe("forms", () => {
     expect(screen.getByRole("heading", { name: "No visit planned" })).toBeInTheDocument()
   })
 
-  it("updates today's check-in and blocks a long note", async () => {
+  it("updates today's check-in and caps notes at 280 characters (FUNC-14)", async () => {
     const user = userEvent.setup()
     const existing: CheckIn = {
       id: "check-1",
@@ -169,11 +169,7 @@ describe("forms", () => {
     expect(screen.getByRole("button", { name: "Save today's check-in" })).toBeDisabled()
     await user.click(screen.getByRole("radio", { name: /Good/i }))
     expect(screen.getByRole("button", { name: "Save today's check-in" })).toBeEnabled()
-    await user.click(screen.getByLabelText("Note"))
-    await user.paste("a".repeat(281))
-    await user.click(screen.getByRole("button", { name: "Save today's check-in" }))
-    expect(screen.getByText("Notes can be at most 280 characters.")).toBeInTheDocument()
-    expect(onSave).not.toHaveBeenCalled()
+    expect(screen.getByLabelText("Note")).toHaveAttribute("maxLength", "280")
   }, 10_000)
 
   it("uses a clear neutral face for Okay", () => {

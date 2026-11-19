@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings, registration_allowlist
 from app.deps import get_clock, get_current_user, get_db
+from app.mail import send_password_reset_email, smtp_configured
 from app.media import absolute_media_path, delete_media_file, save_avatar_file
 from app.models import (
     LoginFailure,
@@ -207,9 +208,13 @@ def forgot_password(
         # Non-PII only: never log the email or plaintext token outside debug URL.
         logger.info("password_reset_token_created")
         settings = get_settings()
+        base = settings.public_app_url.rstrip("/")
+        link = f"{base}/reset-password?token={token}"
+        if smtp_configured(settings):
+            send_password_reset_email(settings=settings, to_email=email, reset_url=link)
         if settings.auth_reset_debug:
-            base = settings.public_app_url.rstrip("/")
-            reset_url = f"{base}/reset-password?token={token}"
+            # Local/tests only — never enable in production.
+            reset_url = link
 
     db.commit()
     return ForgotPasswordResponse(detail=GENERIC_FORGOT_DETAIL, reset_url=reset_url)

@@ -201,6 +201,37 @@ def test_me_requires_token(client) -> None:
     assert isinstance(client.get("/me").json()["detail"], str)
 
 
+def test_expired_access_token_is_rejected(client) -> None:
+    """SEC-12: expired JWT → 401."""
+    from datetime import UTC, datetime, timedelta
+    from uuid import uuid4
+
+    past = datetime.now(UTC) - timedelta(hours=2)
+    token = jwt.encode(
+        {"sub": str(uuid4()), "iat": past, "exp": past + timedelta(minutes=60)},
+        SECRET,
+        algorithm="HS256",
+    )
+    response = client.get("/me", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 401
+
+
+def test_register_duplicate_uses_generic_detail(client) -> None:
+    """SEC-11: duplicate email uses the same generic 409 detail (no enumeration copy)."""
+    register(client, "ada@example.com")
+    again = client.post(
+        "/auth/register",
+        json={
+            "email": "ada@example.com",
+            "password": "password123",
+            "display_name": "Ada",
+            "timezone": "UTC",
+        },
+    )
+    assert again.status_code == 409
+    assert again.json()["detail"] == "Unable to create an account with that email."
+
+
 def test_update_me_profile_and_password(client) -> None:
     token = register(client, "ada@example.com", timezone="UTC")
     headers = {"Authorization": f"Bearer {token}"}

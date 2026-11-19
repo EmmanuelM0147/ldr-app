@@ -208,3 +208,46 @@ Fixes for issues from `docs/qa-report.md`. One entry per issue.
 - OpenAPI 204 description notes on-disk memory media removed.
 
 **OpenAPI:** `DELETE /couples/current` 204 description.
+
+---
+
+## SEC-08 — Path escape / poisoned filenames (low)
+
+**Issue:** Client filenames could include `../`; delete path checks were weaker than read.
+
+**Fix:**
+- `safe_display_filename` stores basename only.
+- Shared `_resolved_under_root` for read + delete; reject `..` segments.
+- Tests: escape delete/read; basename strip; oversize avatar (SEC-12).
+
+---
+
+## SEC-11 — Register email enumeration (low)
+
+**Issue:** Duplicate register returned 409 revealing existence.
+
+**Decision:** Keep 409 with **generic** detail shared with allowlist rejection (`Unable to create an account with that email.`). Documented as accepted MVP risk. OpenAPI already describes generic 409.
+
+---
+
+## SEC-12 — Expired JWT / oversize upload tests (low)
+
+**Fix:** Added `test_expired_access_token_is_rejected` and `test_avatar_rejects_oversize_payload`.
+
+---
+
+## FUNC-14 — Check-in note maxLength 320 vs 280 (low)
+
+**Fix:** UI `maxLength` aligned to 280 (OpenAPI/spec).
+
+---
+
+## FUNC-23 — Pairing e2e Route/city labels (medium)
+
+**Status:** Already fixed — visit form uses From/To; e2e asserts `Route · Lagos → Abuja`. No further code change.
+
+---
+
+## FUNC-18 — Uneven empty/loading/error (medium)
+
+**Decision:** Shared `LoadingState` / `EmptyState` / `ErrorState` exist; full offline UX deferred. Accepted residual polish.

@@ -6,7 +6,7 @@ Shared visit calendar and countdown, trip budget split, daily check-ins, a memor
 
 **Repo:** https://github.com/EmmanuelM0147/ldr-app  
 **Live demo:** [app](https://frontend-kohl-one-76.vercel.app) · [API](https://backend-lilac-nine-81.vercel.app)  
-**Demo video:** not published yet
+**Demo video:** not published yet — recording script: [`docs/demo-video.md`](docs/demo-video.md)
 
 Hosted on Vercel (frontend + FastAPI) with Supabase Postgres. Presence/WebSocket is best locally or on AWS/ECS; see [`docs/deploy.md`](docs/deploy.md).
 
@@ -171,7 +171,8 @@ Production path: GitHub Actions builds images, then a gated `deploy` job pushes 
 - Passwords: **argon2id**. JWTs expire in **60 minutes**. `JWT_SECRET` must be ≥32 characters (placeholders rejected at boot).
 - Invite codes: single-use, 7-day expiry, SHA-256 at rest, rate-limited. Login/register are rate-limited too.
 - Optional `REGISTRATION_ALLOWED_EMAILS` locks who can sign up (demos / closed beta).
-- Forgot/reset password uses hashed, single-use, short-lived tokens. **SMTP is not wired**; `AUTH_RESET_DEBUG=1` may return `reset_url` locally — never in production.
+- Forgot/reset password uses hashed, single-use, short-lived tokens. Optional **SMTP_*** env sends the reset email; `AUTH_RESET_DEBUG=1` may also return `reset_url` locally — never in production.
+- Register returns a **generic 409** for taken or disallowed emails (same copy); status may still hint existence — accepted for this MVP.
 - AI date ideas are **off until the couple opts in** (`ai_enabled`). Only short form fields go to Gemini via `GEMINI_API_KEY` / `GEMINI_MODEL`. Prompts and replies are not logged; no model call when opt-in is off (limit: 10/couple/UTC day).
 - Delete space removes couple-owned rows and media under `MEDIA_ROOT`. User accounts remain.
 - Media is on the API host filesystem today — encrypt volumes/backups or move to object storage for production. No E2E encryption of couple content.
@@ -200,10 +201,10 @@ Auth, invites, scoping, delete cascades, media isolation, secrets-in-env, and AI
 - No push notifications (in-app inbox + WebSocket only)
 - One couple space per user; no chat or video (by design)
 - Media is local disk in Compose / ephemeral on Vercel, not object storage/CDN yet
-- Password-reset email (SMTP) not wired
-- Demo video still outstanding
+- Password-reset email needs `SMTP_HOST` (and related) configured; otherwise only debug `reset_url` / no delivery
+- Demo video still outstanding (script in [`docs/demo-video.md`](docs/demo-video.md))
 - Vercel serverless WebSocket for presence is unreliable; prefer Compose or AWS/ECS for realtime demos
-- AWS (ECR/ECS/RDS) + GitHub secrets required before the full CI deploy path succeeds
+- AWS (ECR/ECS/RDS) + GitHub secrets + `DEPLOY_ENABLED=true` required before the full CI→ECS deploy path runs
 
 ---
 
