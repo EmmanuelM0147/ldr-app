@@ -96,7 +96,14 @@ React PWA  ──HTTPS / WS──►  FastAPI (+ Alembic)  ──SQL──►  P
 
 **Contract:** [`docs/openapi.yaml`](docs/openapi.yaml) is the source of truth — update it before changing endpoints.
 
-Product intent: [`docs/spec.md`](docs/spec.md). Task history: [`docs/backlog.md`](docs/backlog.md). Agent prompts: [`docs/ai-log.md`](docs/ai-log.md).
+| Doc | Link |
+| --- | --- |
+| Product spec | [`docs/spec.md`](docs/spec.md) |
+| Task tracker (acceptance criteria) | [`docs/backlog.md`](docs/backlog.md) |
+| Agent team + collaboration | [`docs/agent-team.md`](docs/agent-team.md) |
+| Dev process loop | [`docs/process.md`](docs/process.md) |
+| Agent rules | [`AGENTS.md`](AGENTS.md) |
+| Prompt log (evidence agents used the tracker) | [`docs/ai-log.md`](docs/ai-log.md) |
 
 ---
 
@@ -127,21 +134,26 @@ PowerShell-oriented steps: [`docs/demo.md`](docs/demo.md).
 
 ## Tests
 
+Unit + API/integration suites in one command:
+
 ```bash
-# Backend
-cd backend && pytest
+# Unix / Git Bash
+./scripts/test.sh
 
-# Frontend unit
-cd frontend && npm test
-
-# E2E against mock API
-cd frontend && npm run test:e2e
-
-# E2E pairing against Compose (stack must be up)
-cd frontend && npm run test:e2e:compose
+# Windows PowerShell
+.\scripts\test.ps1
 ```
 
-CI (`.github/workflows/test.yml`): Ruff + pytest, frontend typecheck + Vitest, image builds; deploy on `main` only after those pass.
+Or separately:
+
+```bash
+cd backend && pytest
+cd frontend && npm test
+cd frontend && npm run test:e2e              # Playwright vs mock API
+cd frontend && npm run test:e2e:compose      # pairing e2e (Compose up)
+```
+
+CI (`.github/workflows/test.yml`): Ruff + pytest, frontend typecheck + Vitest, image builds on every PR/push. CD: Vercel auto-deploys the live app/API from `main`; the workflow also has a gated AWS/ECS deploy job when `DEPLOY_ENABLED=true` (see [`docs/deploy.md`](docs/deploy.md)).
 
 ---
 
@@ -168,7 +180,7 @@ Production path: GitHub Actions builds images, then a gated `deploy` job pushes 
 
 ## How AI was used on this project
 
-Built with Cursor (Agent) under an explicit process: spec → backlog → contract-first OpenAPI → one backlog task at a time with tests → prompts logged in [`docs/ai-log.md`](docs/ai-log.md). Rules live in `AGENTS.md` and `.cursor/rules`.
+Built with Cursor agents under an explicit team process: product-manager → planner → contract → implementer, one backlog task at a time, with prompts logged after each slice. See [`docs/agent-team.md`](docs/agent-team.md) and [`docs/process.md`](docs/process.md). Rules: [`AGENTS.md`](AGENTS.md), [`.cursor/rules/closer.mdc`](.cursor/rules/closer.mdc).
 
 **Worked well:** OpenAPI + backlog from the charter; couple-scoped CRUD with denial tests; WebSocket presence; iterative UI without inventing chat.
 
@@ -200,6 +212,7 @@ Auth, invites, scoping, delete cascades, media isolation, secrets-in-env, and AI
 ```
 backend/    FastAPI app, models, migrations, pytest
 frontend/   React PWA, Vitest, Playwright
-docs/       spec, backlog, openapi.yaml, ai-log, demo, deploy, screenshots
-AGENTS.md   rules for coding agents
+docs/       spec, backlog, agent-team, process, openapi, ai-log, demo, deploy, screenshots
+scripts/    single-command test runners (test.sh / test.ps1)
+AGENTS.md   rules for coding agents (+ links to modular docs)
 ```

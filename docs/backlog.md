@@ -167,3 +167,7 @@ Done already: repo layout, Cursor rules, `GET /health`, draft Compose file.
 - [x] 35. SEC-07 delete space clears on-disk memory media.
   - Acceptance: delete removes memory files and the couple media folder; path escape refused on delete.
   - Tests: upload → delete → file/folder gone + DB rows zero; escape delete no-op.
+
+- [x] 36. Rubric docs: agent team, process, single-command tests.
+  - Acceptance: `docs/agent-team.md` + `docs/process.md`; `AGENTS.md` links modular docs; `scripts/test.sh` / `test.ps1`; README points to tracker/team/CI+CD.
+  - Tests: n/a (docs/scripts); suites still run via the script.

@@ -7,7 +7,7 @@ alwaysApply: true
 
 Two-person long-distance couple space. No chat or video calls.
 
-- Read `docs/spec.md` and `docs/backlog.md` before coding. One backlog task at a time.
+- Read `docs/spec.md`, `docs/backlog.md`, and `docs/agent-team.md` / `docs/process.md` before coding. One backlog task at a time.
 - Update `docs/openapi.yaml` before changing an endpoint. It is the source of truth.
 - Every task ships tests. Each data endpoint has a cross-couple denial test.
 - Scope every query by the caller's `couple_id`. Hash passwords. Use a short-lived JWT. Invite codes are single-use, expiring, and rate-limited.

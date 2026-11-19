@@ -474,3 +474,9 @@ Prompt: proceed.
 `purge_couple_media` removes the couple media directory on space delete; `delete_media_file` refuses path escapes. Tests assert disk + DB cleanup. OpenAPI 204 notes media removal.
 
 Prompt: proceed with next slice, then commit and push all.
+
+## 2026-11-19 - Rubric: agent team + process + test script
+
+Added `docs/agent-team.md` (roles + collaboration), `docs/process.md` (per-task loop), linked them from `AGENTS.md` and the README. Added `scripts/test.sh` / `scripts/test.ps1` so unit+integration suites run with one command. Clarified CI + Vercel/AWS CD in the README.
+
+Prompt: (rubric screenshots for project2 eval criteria 1–9).

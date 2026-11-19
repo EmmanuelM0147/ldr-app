@@ -3,6 +3,19 @@
 ## Product
 Closer is a two-person app for couples in long-distance relationships. One "couple space" has exactly 2 members, joined via invite code. MVP: shared visit calendar + countdown, visit planner with budget split, daily check-in, memory log, presence status, small opt-in AI features. Non-goals: chat, video calls.
 
+## Modular docs (start here)
+
+| Doc | Purpose |
+| --- | --- |
+| [`docs/spec.md`](docs/spec.md) | Problem, users, stories, acceptance criteria |
+| [`docs/backlog.md`](docs/backlog.md) | Public task tracker (ordered; acceptance + tests) |
+| [`docs/agent-team.md`](docs/agent-team.md) | Agent roles and how they collaborate |
+| [`docs/process.md`](docs/process.md) | Per-task development loop |
+| [`docs/openapi.yaml`](docs/openapi.yaml) | API contract (source of truth) |
+| [`docs/ai-log.md`](docs/ai-log.md) | Prompts used after each task |
+| [`docs/deploy.md`](docs/deploy.md) | Compose, Vercel, AWS/ECS, CI/CD |
+| [`.cursor/rules/closer.mdc`](.cursor/rules/closer.mdc) | Always-on Cursor rules |
+
 ## Stack
 - Backend: FastAPI, SQLAlchemy, Alembic, Postgres (SQLite only in early dev), pytest
 - Frontend: React + Vite + TypeScript (PWA), Playwright for e2e
@@ -12,7 +25,7 @@ Closer is a two-person app for couples in long-distance relationships. One "coup
 ## Workflow rules
 1. Read /docs/spec.md and /docs/backlog.md before starting. Work on ONE backlog task at a time, in order.
 2. Contract-first: update openapi.yaml BEFORE implementing or changing any endpoint.
-3. Every task ships with tests. Run the full test suite before saying a task is done.
+3. Every task ships with tests. Run the full test suite before saying a task is done (`./scripts/test` or `.\scripts\test.ps1`).
 4. Small diffs. Do not refactor unrelated code. Explain what changed and why in 3-5 lines.
 5. After each task: tick it off in backlog.md and append the prompt used to /docs/ai-log.md.
 
